@@ -1,10 +1,18 @@
 using System;
+using System.IO;
 using System.Reflection;
 using System.Runtime.Serialization;
 
 static class Check
 {
-    static readonly Assembly Game = Assembly.LoadFrom("/src/WRogue/bin/Release/RogueSurvivor.exe");
+#if NATIVE_TESTS
+    static readonly Assembly Game = typeof(djack.RogueSurvivor.Engine.RogueGame).Assembly;
+#else
+    static readonly Assembly Game = Assembly.LoadFrom(Environment.GetEnvironmentVariable("ROGUE_GAME_ASSEMBLY") ??
+        (File.Exists(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "RogueSurvivor.exe")) ?
+        Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "RogueSurvivor.exe") :
+        Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "WRogue", "bin", "Release", "RogueSurvivor.exe"))));
+#endif
 
     public static Type Type(string name) { return Game.GetType("djack.RogueSurvivor." + name, true); }
     public static object Empty(string name) { return FormatterServices.GetUninitializedObject(Type(name)); }

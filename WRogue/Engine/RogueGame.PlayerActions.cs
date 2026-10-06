@@ -31,6 +31,7 @@ namespace djack.RogueSurvivor.Engine
             UpdatePlayerFOV(player);    // make sure LOS is up to date.
             m_Player = player;      // remember player.
             ComputeViewRect(player.Location.Position);
+            PresentEncounterSpeech();
             m_MouseMoveHover = null;
             m_MouseMovePreview = null;
 
@@ -257,7 +258,7 @@ namespace djack.RogueSurvivor.Engine
                                 HandleRelationships();
                                 break;
                             case PlayerCommand.HEARD_JOURNAL:
-                                HandleHeardJournal();
+                                if (HandleHeardJournal()) loop = false;
                                 break;
                             #endregion
 
@@ -525,6 +526,16 @@ namespace djack.RogueSurvivor.Engine
                                     break;
                                 }
                                 loop = !HandlePlayerShout(player, null);
+                                break;
+
+                            case PlayerCommand.RECALL_FOLLOWERS:
+                                if (TryPlayerInsanity()) { loop = false; break; }
+                                loop = !HandlePlayerRecall(player);
+                                break;
+
+                            case PlayerCommand.DISARM_TRAP:
+                                if (TryPlayerInsanity()) { loop = false; break; }
+                                loop = !HandlePlayerDisarmTrap(player);
                                 break;
 
                             case PlayerCommand.SLEEP:

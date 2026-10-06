@@ -8,7 +8,7 @@ namespace djack.RogueSurvivor.Gameplay.Personality
         public static void PrepareReply(RogueGame game, Actor owner, SignificantEvent source)
         {
             if (source.Other != owner || source.Subject == null || owner.Personality.Reactions.Count >= 4 ||
-                game.Rules.AreEnemies(owner, source.Subject) || (source.Kind != "requested_food" && source.Kind != "requested_medicine")) return;
+                game.Rules.IsKnownEnemy(owner, source.Subject) || (source.Kind != "requested_food" && source.Kind != "requested_medicine")) return;
             bool medical = source.Kind == "requested_medicine";
             bool supplies = medical ? NpcPlanExecution.Medicine(game, owner, owner.Location, true) != null : NpcFoodSupply.SpareFood(game, owner, source.Subject) != null;
             int compassion = PersonalitySystem.Bias(owner, DecisionKind.Compassion), law = PersonalitySystem.Bias(owner, DecisionKind.Law);

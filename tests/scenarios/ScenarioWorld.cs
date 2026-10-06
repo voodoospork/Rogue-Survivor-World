@@ -11,13 +11,14 @@ using djack.RogueSurvivor.Gameplay;
 // A small, deterministic world for exercising real game actions without a UI.
 sealed class ScenarioWorld
 {
-    readonly GameTiles tiles = new GameTiles();
+    readonly GameTiles tiles;
     public readonly Map Map;
     public readonly RogueGame Game;
     public readonly int Seed;
 
     public ScenarioWorld(int seed, params string[] rows)
     {
+        tiles = new GameTiles();
         if (rows == null || rows.Length == 0 || rows[0].Length == 0)
             throw new ArgumentException("A scenario needs a nonempty map");
         Seed = seed;
@@ -39,6 +40,8 @@ sealed class ScenarioWorld
         Seed = seed;
         Map = map;
         Game = game;
+        tiles = game.GameTiles;
+        Models.Tiles = tiles;
     }
 
     public void SetTile(int x, int y, char tile)

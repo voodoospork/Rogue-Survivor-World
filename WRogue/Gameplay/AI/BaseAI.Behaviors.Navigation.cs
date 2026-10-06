@@ -371,6 +371,7 @@ namespace djack.RogueSurvivor.Gameplay.AI
         #region Following
         protected ActorAction BehaviorFollowActor(RogueGame game, Actor other, Point otherPosition, bool isVisible, int maxDist)
         {
+            if (m_Actor.InPlayerParty) return SelectPersonalTravel(game, null);
             // if no other or dead, don't.
             if (other == null || other.IsDead)
                 return null;
@@ -573,9 +574,9 @@ namespace djack.RogueSurvivor.Gameplay.AI
                     continue;
                 if (!other.IsSleeping)
                     continue;
-                if (game.Rules.AreEnemies(m_Actor, other))
+                if (game.Rules.IsKnownEnemy(m_Actor, other))
                     continue;
-                if (!game.Rules.AreEnemies(other, nearestEnemy))
+                if (!game.Rules.IsKnownEnemy(other, nearestEnemy))
                     continue;
 
                 // friend sleeping, wake up!
@@ -599,7 +600,7 @@ namespace djack.RogueSurvivor.Gameplay.AI
                         return false;
                     if (otherActor.IsSleeping)
                         return false;
-                    if (game.Rules.AreEnemies(m_Actor, otherActor))
+                    if (game.Rules.IsKnownEnemy(m_Actor, otherActor))
                         return false;
                     return true;
                 });
@@ -894,7 +895,7 @@ namespace djack.RogueSurvivor.Gameplay.AI
             if ((useFlags & UseExitFlags.ATTACK_BLOCKING_ENEMIES) != 0)
             {
                 Actor blockingActor = exit.ToMap.GetActorAt(exit.ToPosition);
-                if (blockingActor != null && game.Rules.AreEnemies(m_Actor, blockingActor) && game.Rules.CanActorMeleeAttack(m_Actor, blockingActor))
+                if (blockingActor != null && game.Rules.IsKnownEnemy(m_Actor, blockingActor) && game.Rules.CanActorMeleeAttack(m_Actor, blockingActor))
                     return new ActionMeleeAttack(m_Actor, game, blockingActor);
             }
 

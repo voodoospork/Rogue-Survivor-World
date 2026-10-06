@@ -1,5 +1,65 @@
 # Fast gameplay scenarios
 
+## Native Windows runner
+
+This fork includes `tests/NativeTests.csproj` for Microsoft MSBuild and .NET
+Framework 4.8. After building the game in Release, open Developer PowerShell
+at the repository root and build/run the native runner:
+
+```powershell
+msbuild tests/NativeTests.csproj /t:Rebuild /nologo /verbosity:minimal
+$env:ROGUE_PROJECT_ROOT = (Get-Location).Path
+$env:ROGUE_COMMUNITY_ARTIFACTS = Join-Path $env:ROGUE_PROJECT_ROOT 'working/native-tests'
+New-Item -ItemType Directory -Force -Path $env:ROGUE_COMMUNITY_ARTIFACTS | Out-Null
+Push-Location 'WRogue/bin/Release'
+try { & '../../../tests/bin/Release/UnitTests.exe' } finally { Pop-Location }
+```
+
+Pass `--unit-only` for native unit checks, `--all` for scenarios alone, or a
+scenario name. The no-argument invocation runs units and scenarios. The genuine
+older format-5 community check is registered when `ROGUE_COMMUNITY_LEGACY_FILE`
+identifies its preserved fixture. That development fixture and local validation
+logs are not included in the source repository; recorded counts include it.
+New cases include `world/community-generation`, `world/community-new-world`,
+`npc/community-encounter`, `npc/community-boundaries` and
+`storage/community-legacy-format-5`.
+
+The clarity cases in `CommunityClarityScenario.cs` exercise the four call
+tones through actual civilian controller turns, noisy hostile warnings,
+shared encounter cooldowns and succession, survival/order/combat priorities,
+heard-knowledge boundaries, stale affiliation/home labels, actual V/G/J
+input handlers and unwitnessed claimed pickup. Added recheck cases reproduce
+greeting starvation by a real group food job, retain speech through ordinary
+message churn until actual next-player input, and exercise an armed owner's
+actual attack after witnessed theft. The generated World case also walks
+from the starting shelter, gathers existing food, hears a home/supply
+warning, talks, gives, leaves and returns. It now runs three complete real
+scheduler/survival rounds for every actor on the encounter map. Travel
+remains selectively scheduled; these scenarios do not visually review the
+native Windows interface or run every district actor's metabolism on every
+walking turn.
+
+Seven cases in `FollowerCallScenario.cs` exercise S through the production
+shout handler and actual follower controller turns: named direction/distance
+replies through walls, multiple followers, one-action cost, retained orders
+and positions, real noise, a follower waking and answering the same call,
+distance-based wake chances, sleeping/distant/deaf and other-map boundaries,
+reciprocal hearing, urgent food, enemies, grenades, expiry, changed leadership,
+pending-reply save/reload and personalities disabled. The full encounter
+recheck passed native units and all 312 scenarios; evidence is in the workspace's
+`working/community-validation/encounter-roll-call-validation.log`. After the
+wake/reply sequencing correction, units and ten focused scenarios pass in
+`working/community-validation/follower-waking-validation.log`. The native
+baseline exclusion also omits follower-call cases so the preserved executable
+can use the same benchmark harness.
+
+Native reflection uses the runner's referenced game assembly. Save-budget
+workers distinguish native execution from a hosted Mono runtime. Scenario
+wrappers preserve the loaded game's tile registry, including during full
+new-world generation.
+
+## Existing Docker runner
+
 Run a named scenario without opening the game window:
 
 ```sh
@@ -77,10 +137,79 @@ in `tests/scenarios/TownScenarioFactory.cs`. Keep the seed fixed so failures rep
 Scenarios run individual actions; the VNC end-to-end test covers the running
 game and full district turns.
 
-There is one named scenario per file. The current suite includes a primary
+Related community cases may be registered together in one scenario class. The current suite includes a primary
 rule effect for every living and undead skill, saved progression, and scenarios for combat,
 factions, followers, doors, items, survival, weather, generation, map exits,
 and map saving. `SkillScenario.AssertCoverage` fails if a skill is added without a
 named scenario. These checks cover the stated outcomes; they do not yet
 simulate every AI choice, item model, quest, or multi-turn
 world event.
+
+## Rogue Survivor World membership and home checks
+
+From the workspace root in Windows Terminal PowerShell, use the installed native helper:
+
+```powershell
+& '.\working\run-game-scenarios.ps1' -Scenario @('--unit-only','--all')
+```
+
+`CommunityMembershipScenario` exercises known useful-aid eligibility, wary/hostile
+rejection, actual G and V/Y/N input, independent NPC command capacity, complete
+personal-party admission/departure/expulsion, preserved orders and identities,
+recruitment/dismissal, private claims and Ctrl+B restrictions, shared weapons/food,
+post-departure theft, food/medicine beneficiaries, refusal, persisted commitments,
+NPC succession and linked claims. The personal-autonomy case checks production
+collective proposals cannot select the player's personal subtree. The live-reload
+case invokes the actual engine loader in the same game instance for a membership
+save and the genuine older format-5 fixture, checking immediate cache cleanup.
+
+`CommunityHomeScenario` uses actual NPC turns for returns, watch rotation,
+entrance clearance, orders and urgent survival, greetings, sleep/noise,
+reported threat boundaries, real witnessed theft/alarm/armed defense, route
+blocking/retry and claim loss. Its controller benchmark reports diagnostics
+without creating a new performance budget.
+
+`world/community-membership-overnight` starts with the real World generator and
+uses generated resources, production G/V input and ordinary actions. Every travel
+and overnight round runs the complete active-map scheduler and survival upkeep.
+It reports round timings and saves/reloads membership. The map-aware headless
+driver does not replace human visual review or simulate distant districts.
+
+Preserved results, test saves and comparison builds are under
+`working/community-validation/` in the workspace. The helper's `GameAssembly`
+parameter can validate the installed game copy or preserved comparison executable;
+`ExcludeCommunityScenarios` permits older executables to use the common benchmark
+harness. Keep comparison runs sequential because the native runner output is shared.
+
+## Community diplomacy
+
+`CommunityDiplomacyScenario` and `CommunityDiplomacyEdgesScenario` exercise real
+combat, aid, trade, requests, promise expiry, theft, declaration turns, attributed
+reports, observer-aware hostility and V negotiation input. Cases retain snapshot
+affiliations, verify all killing weights, preserve personal revenge and stable
+succession, bound histories, test neutral-messenger eligibility, and save/reload
+carried offers. Short greeting news reveals no unspoken cause or rival roster.
+The peace-news boundary case separates leaders beyond their actual hearing range,
+then uses V reports, useful giving and a production report action. Ratification
+does not silently update the remote leader's account, and stale reports cannot
+overwrite a newer peace date.
+
+`world/community-diplomacy-police-conservation` snapshots generated actors before
+organization and checks identity/name uniqueness, existing command capacity and
+complete conservation of inventories, quantities, skills and locations.
+
+`world/community-diplomacy-round-trip` uses a fresh generated World, gathered
+provisions, normal travel/sleep/escape actions, full local scheduler turns and real
+V/G input. One existing officer's provocation and withdrawal are explicitly
+scripted; NPC reactions and survival remain ordinary. The offer is saved and
+reloaded through the actual engine loader before delivery and return. This is
+automated evidence, with unsuccessful trials preserved separately.
+
+The overnight driver records natural leader loss, seeks surviving homes and
+responds to visible danger. Its current seed is 4933; the diplomatic courier seed
+is 4923. These samples provide reproduced outcomes, not protection for communities
+or a guarantee that arbitrary seeds complete those loops.
+
+The Windows helper's `SaveBudgetPath` parameter measures a copy of a saved
+validation world under the existing 10-second/50-MB limits. It preserves the
+original file and reports memory separately.

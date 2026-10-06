@@ -637,6 +637,8 @@ namespace djack.RogueSurvivor.Engine
                 return;
             m_PlayerFOV = LOS.ComputeFOVFor(m_Rules, player, m_Session.WorldTime, m_Session.World.Weather);
             player.Location.Map.SetViewAndMarkVisited(m_PlayerFOV);
+            ObservePlayerSupplies(player);
+            ObservePersonalFollowers();
         }
         #endregion
 

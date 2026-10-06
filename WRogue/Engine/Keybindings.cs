@@ -30,6 +30,7 @@ namespace djack.RogueSurvivor.Engine
             Set(PlayerCommand.BARRICADE_MODE, Keys.B);
             Set(PlayerCommand.BREAK_MODE, Keys.K);
             Set(PlayerCommand.CLOSE_DOOR, Keys.C);
+            Set(PlayerCommand.DISARM_TRAP, Keys.D);
             Set(PlayerCommand.FIRE_MODE, Keys.F);
             Set(PlayerCommand.HELP_MODE, Keys.H);
             Set(PlayerCommand.KEYBINDING_MODE, Keys.K | Keys.Shift);
@@ -77,9 +78,10 @@ namespace djack.RogueSurvivor.Engine
             Set(PlayerCommand.QUIT_GAME, Keys.Q | Keys.Shift);
             Set(PlayerCommand.REVIVE_CORPSE, Keys.R | Keys.Shift);
             Set(PlayerCommand.RUN_TOGGLE, Keys.R);
-            Set(PlayerCommand.SAVE_GAME, Keys.S | Keys.Shift);
+            Set(PlayerCommand.SAVE_GAME, Keys.S | Keys.Control | Keys.Shift);
             Set(PlayerCommand.SCREENSHOT, Keys.N | Keys.Shift);
             Set(PlayerCommand.SHOUT, Keys.S);
+            Set(PlayerCommand.RECALL_FOLLOWERS, Keys.S | Keys.Shift);
             Set(PlayerCommand.SLEEP, Keys.Z);
             Set(PlayerCommand.SWITCH_PLACE, Keys.S | Keys.Control);
             Set(PlayerCommand.LEAD_MODE, Keys.T);
@@ -183,6 +185,22 @@ namespace djack.RogueSurvivor.Engine
             try
             {
                 kb = BinarySaveStore.Load<Keybindings>(filepath);
+                if (kb.Get(PlayerCommand.DISARM_TRAP) == Keys.None)
+                {
+                    if (kb.Get(Keys.D) == PlayerCommand.NONE)
+                        kb.Set(PlayerCommand.DISARM_TRAP, Keys.D);
+                    else if (kb.Get(Keys.D | Keys.Control) == PlayerCommand.NONE)
+                        kb.Set(PlayerCommand.DISARM_TRAP, Keys.D | Keys.Control);
+                }
+                if (kb.Get(PlayerCommand.RECALL_FOLLOWERS) == Keys.None)
+                {
+                    if (kb.Get(Keys.S | Keys.Shift) == PlayerCommand.SAVE_GAME && kb.Get(Keys.S | Keys.Control | Keys.Shift) == PlayerCommand.NONE)
+                        kb.Set(PlayerCommand.SAVE_GAME, Keys.S | Keys.Control | Keys.Shift);
+                    if (kb.Get(Keys.S | Keys.Shift) == PlayerCommand.NONE)
+                        kb.Set(PlayerCommand.RECALL_FOLLOWERS, Keys.S | Keys.Shift);
+                    else if (kb.Get(Keys.S | Keys.Control | Keys.Shift) == PlayerCommand.NONE)
+                        kb.Set(PlayerCommand.RECALL_FOLLOWERS, Keys.S | Keys.Control | Keys.Shift);
+                }
                 if (kb.Get(PlayerCommand.MOUSE_MOVE_MODE) == Keys.None && kb.Get(Keys.M) == PlayerCommand.NONE)
                     kb.Set(PlayerCommand.MOUSE_MOVE_MODE, Keys.M);
                 if (kb.Get(PlayerCommand.XPD_BASE) == Keys.None &&

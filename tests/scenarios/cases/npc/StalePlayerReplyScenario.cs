@@ -27,6 +27,7 @@ static class StalePlayerReplyScenario
             var staleAtInput = new NpcReaction(target, "old request", 3, 0, "removed_event");
             player.Personality.Reactions.Add(staleAtInput);
             player.ActionPoints = Rules.BASE_ACTION_COST;
+            ((ScenarioUI)world.Game.UI).QueueWaitKey(System.Windows.Forms.Keys.D1);
             Check.Equal(true, Check.Call(world.Game, "HandlePlayerTalk", new[] { typeof(Actor) }, player),
                 "talking after content changes skips the obsolete Y/N prompt");
             Check.Equal(false, player.Personality.Reactions.Contains(staleAtInput), "talk input discards obsolete request");

@@ -114,6 +114,7 @@ namespace djack.RogueSurvivor.Gameplay.AI
         public override void SetOrder(ActorOrder newOrder)
         {
             m_Order = newOrder;
+            if (newOrder != null) ResetFollowerTravel();
         }
 
         public override ActorAction GetAction(RogueGame game)
@@ -125,12 +126,14 @@ namespace djack.RogueSurvivor.Gameplay.AI
 
             // 2. Update sensors.
             List<Percept> percepts = UpdateSensors(game);
+            ObserveFollowerContact(game, percepts);
 
             // 3. Issue action.
             if (m_prevLocation.Map == null)
                 m_prevLocation = m_Actor.Location;
             m_Actor.TargetActor = null;
-            ActorAction bestAction = SelectAction(game, percepts);
+            ActorAction bestAction = SelectFollowerReply(game, percepts) ?? SelectPersonalTravel(game, percepts) ?? SelectAction(game, percepts);
+            bestAction = ConstrainFollowerRoutine(game, bestAction);
             m_prevLocation = m_Actor.Location;
             if (bestAction == null)
             {

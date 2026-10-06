@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Drawing;
 using System.Threading;
@@ -27,29 +28,31 @@ namespace djack.RogueSurvivor.Engine
         bool HandlePlayerOrderMode(Actor player)
         {
             // check if we have followers to order.
-            if (player.CountFollowers == 0)
+            ObservePersonalFollowers();
+            var party = PersonalFollowers();
+            foreach (Actor actor in party)
+                if (!player.FollowerReports.Any(r => r.Identity == actor.PersonalityIdentity))
+                    player.RecordFollower(new FollowerReport { Identity = actor.PersonalityIdentity, Name = actor.UnmodifiedName,
+                        Status = "last contact unknown", Location = "unknown", Source = "your party", Turn = m_Session.WorldTime.TurnCounter });
+            if (party.Count == 0 && player.FollowerReports.Count == 0)
             {
                 AddMessage(MakeErrorMessage("No followers to give orders to."));
                 return false;
             }
 
             // get followers data.
-            Actor[] followers = new Actor[player.CountFollowers];
-            HashSet<Point>[] fovs = new HashSet<Point>[player.CountFollowers];
-            bool[] hasLinkWith = new bool[player.CountFollowers];
+            FollowerReport[] reports = player.FollowerReports.ToArray();
+            Actor[] followers = reports.Select(r => party.FirstOrDefault(a => a.PersonalityIdentity == r.Identity)).ToArray();
+            bool[] hasLinkWith = new bool[followers.Length];
             int iFo = 0;
-            foreach (Actor fo in player.Followers)
+            foreach (Actor fo in followers)
             {
-                followers[iFo] = fo;
-                fovs[iFo] = LOS.ComputeFOVFor(m_Rules, fo, m_Session.WorldTime, m_Session.World.Weather);
-                bool inView = fovs[iFo].Contains(player.Location.Position) && m_PlayerFOV.Contains(fo.Location.Position);
-                bool linkedByPhone = AreLinkedByPhone(player, fo);
-                hasLinkWith[iFo] = inView || linkedByPhone;
+                hasLinkWith[iFo] = fo != null && FollowerOrderLink(fo);
                 ++iFo;
             }
 
             // if one follower and he's linked, skip selection and directly go to its menu.
-            if (player.CountFollowers == 1 && hasLinkWith[0])
+            if (followers.Length == 1 && hasLinkWith[0])
             {
                 bool done = HandlePlayerOrderFollower(player, followers[0]);
                 // cleanup.
@@ -62,7 +65,7 @@ namespace djack.RogueSurvivor.Engine
             // loop.
             bool loop = true;
             bool actionDone = false;
-            const int maxFoOnPage = MAX_MESSAGES - 2;
+            const int maxFoOnPage = (MAX_MESSAGES - 3) / 3;
             int iFirstFollower = 0;
             do
             {
@@ -77,18 +80,19 @@ namespace djack.RogueSurvivor.Engine
                 ClearOverlays();
                 AddOverlay(new OverlayPopup(ORDER_MODE_TEXT, MODE_TEXTCOLOR, MODE_BORDERCOLOR, MODE_FILLCOLOR, new Point(0, 0)));
                 ClearMessages();
-                AddMessage(new Message("Choose a follower.", m_Session.WorldTime.TurnCounter, Color.Yellow));
+                AddMessage(new Message("Choose a follower. " + s_KeyBindings.Get(PlayerCommand.SHOUT) + ": sound off; " +
+                    s_KeyBindings.Get(PlayerCommand.RECALL_FOLLOWERS) + ": recall travelling followers.", m_Session.WorldTime.TurnCounter, Color.Yellow));
                 int foShown;
                 for (foShown = 0; foShown < maxFoOnPage && (iFirstFollower + foShown < followers.Length); foShown++)
                 {
                     iFo = foShown + iFirstFollower;
                     Actor f = followers[iFo];
-                    string desc = DescribePlayerFollowerStatus(f);
-
-                    if (hasLinkWith[iFo])
-                        AddMessage(new Message(String.Format("{0}. {1}/{2} {3}... {4}.", (1 + foShown), iFo + 1, followers.Length, f.Name, desc), m_Session.WorldTime.TurnCounter, Color.LightGreen));
-                    else
-                        AddMessage(new Message(String.Format("{0}. {1}/{2} ({3}) {4}.", (1 + foShown), iFo + 1, followers.Length, f.Name, desc), m_Session.WorldTime.TurnCounter, Color.DarkGray));
+                    DescribeKnownFollower(f, reports[iFo]);
+                    var report = player.FollowerReports.First(r => r.Identity == reports[iFo].Identity);
+                    Color color = hasLinkWith[iFo] ? Color.LightGreen : Color.DarkGray;
+                    AddMessage(new Message(String.Format("{0}. {1}: {2}", 1 + foShown, report.Name, report.Status), m_Session.WorldTime.TurnCounter, color));
+                    AddMessage(new Message("   Last contact: " + report.Location, m_Session.WorldTime.TurnCounter, color));
+                    AddMessage(new Message("   Turn " + report.Turn + "; " + report.Source + (hasLinkWith[iFo] ? "" : "; no order contact"), m_Session.WorldTime.TurnCounter, color));
                 }
                 if (foShown < followers.Length)
                 {
@@ -236,7 +240,7 @@ namespace djack.RogueSurvivor.Engine
             }
 
             // current order.
-            string desc = DescribePlayerFollowerStatus(follower);
+            DescribePlayerFollowerStatus(follower);
 
             // compute follower fov.
             HashSet<Point> followerFOV = LOS.ComputeFOVFor(m_Rules, follower, m_Session.WorldTime, m_Session.World.Weather);
@@ -257,15 +261,14 @@ namespace djack.RogueSurvivor.Engine
                 ClearOverlays();
                 AddOverlay(new OverlayPopup(ORDER_MODE_TEXT, MODE_TEXTCOLOR, MODE_BORDERCOLOR, MODE_FILLCOLOR, new Point(0, 0)));
                 ClearMessages();
-                AddMessage(new Message(String.Format("Order {0} to...", follower.Name), m_Session.WorldTime.TurnCounter, Color.Yellow));
-                AddMessage(new Message(String.Format("0. Cancel current order {0}.", desc), m_Session.WorldTime.TurnCounter, Color.Green));
-                AddMessage(new Message("1. Set directives...", m_Session.WorldTime.TurnCounter, Color.Cyan));
-                AddMessage(new Message("2. Barricade (one)...    6. Drop all items.      A. Give me...", m_Session.WorldTime.TurnCounter, Color.LightGreen));
-                AddMessage(new Message("3. Barricade (max)...    7. Build small fort.    B. Sleep now.", m_Session.WorldTime.TurnCounter, Color.LightGreen));
-                AddMessage(new Message(String.Format("4. Guard...              8. Build large fort.    C. {0} following me.   ", startStopFollow), m_Session.WorldTime.TurnCounter, Color.LightGreen));
-                AddMessage(new Message("5. Patrol...             9. Report events.       D. Where are you?", m_Session.WorldTime.TurnCounter, Color.LightGreen));
-                if (m_Session.GamePreset.Bases)
-                    AddMessage(new Message("E. Scavenge supplies for base.", m_Session.WorldTime.TurnCounter, Color.LightGreen));
+                var known = player.FollowerReports.FirstOrDefault(r => r.Identity == follower.PersonalityIdentity);
+                AddMessage(new Message(follower.UnmodifiedName + ": " + (known == null ? "last contact unknown" : known.Status), m_Session.WorldTime.TurnCounter, Color.Yellow));
+                AddMessage(new Message("Last contact: " + (known == null ? "unknown" : known.Location), m_Session.WorldTime.TurnCounter, Color.Yellow));
+                AddMessage(new Message(known == null ? "No dated report." : "Turn " + known.Turn + "; " + known.Source, m_Session.WorldTime.TurnCounter, Color.Yellow));
+                AddMessage(new Message("0 Cancel; 1 Directives; 2 Barricade one; 3 Max", m_Session.WorldTime.TurnCounter, Color.LightGreen));
+                AddMessage(new Message("4 Guard; 5 Patrol; 6 Drop all; 9 Report", m_Session.WorldTime.TurnCounter, Color.LightGreen));
+                AddMessage(new Message("7 Small fort; 8 Large fort; A Give; B Sleep", m_Session.WorldTime.TurnCounter, Color.LightGreen));
+                AddMessage(new Message("C " + startStopFollow + " following; D Location" + (m_Session.GamePreset.Bases ? "; E Scavenge base" : ""), m_Session.WorldTime.TurnCounter, Color.LightGreen));
                 RedrawPlayScreen();
 
                 // 2. Get input.

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Drawing;
 using System.Threading;
@@ -426,6 +427,9 @@ namespace djack.RogueSurvivor.Engine
         #endregion
         #region Leaving maps & Using exits.
         public bool DoLeaveMap(Actor actor, Point exitPoint, bool askForConfirmation)
+        { return DoLeaveMapCore(actor, exitPoint, askForConfirmation, null); }
+
+        bool DoLeaveMapCore(Actor actor, Point exitPoint, bool askForConfirmation, Point? followerLanding)
         {
             bool isPlayer = actor.IsPlayer;
 
@@ -434,6 +438,7 @@ namespace djack.RogueSurvivor.Engine
 
             // get exit.
             Exit exit = fromMap.GetExitAt(exitPoint);
+            if (exit != null && followerLanding.HasValue) exit = new Exit(exit.ToMap, followerLanding.Value);
             if (exit == null)
             {
                 if (isPlayer)
@@ -443,8 +448,10 @@ namespace djack.RogueSurvivor.Engine
                 return true;
             }
 
-            // if player, ask for a confirmation.
-            if (isPlayer && askForConfirmation)
+            bool followerPrompt = false;
+            if (isPlayer && !ConfirmFollowerDeparture(actor, fromMap, fromPos, exit, out followerPrompt)) return false;
+            // Combine the existing departure confirmation with the party warning.
+            if (isPlayer && askForConfirmation && !followerPrompt)
             {
                 ClearMessages();
                 AddMessage(MakeYesNoMessage(String.Format("REALLY LEAVE {0}", fromMap.Name)));
@@ -516,6 +523,7 @@ namespace djack.RogueSurvivor.Engine
             }
 
             // 2. Remove from previous map (+corpse)
+            InformFollowerTransition(actor, exitPoint, new Location(exit.ToMap, exit.ToPosition));
             if (IsVisibleToPlayer(actor))
             {
                 AddMessage(MakeMessage(actor, String.Format("{0} {1}.", Conjugate(actor, VERB_LEAVE), fromMap.Name)));
@@ -555,7 +563,7 @@ namespace djack.RogueSurvivor.Engine
             // 4. Handle followers.
             if (actor.CountFollowers > 0)
             {
-                DoFollowersEnterMap(actor, fromMap, fromPos, exit.ToMap, exit.ToPosition);
+                DoFollowersEnterMap(actor, fromMap, fromPos, exitPoint, exit.ToMap, exit.ToPosition);
             }
 
             // alpha10
@@ -567,14 +575,18 @@ namespace djack.RogueSurvivor.Engine
             return true;
         }
 
-        void DoFollowersEnterMap(Actor leader, Map fromMap, Point fromPos, Map toMap, Point toPos)
+        void DoFollowersEnterMap(Actor leader, Map fromMap, Point fromPos, Point exitPoint, Map toMap, Point toPos)
         {
+            if (leader.InPlayerParty)
+            { TransferPersonalFollowers(leader, fromMap, fromPos, exitPoint, toMap, toPos); return; }
             bool leavePeopleBehind = toMap.District != fromMap.District;
             bool isPlayer = m_Player == leader;
             List<Actor> leftBehind = null;
 
             foreach (Actor fo in leader.Followers)
             {
+                // NPC community leadership cannot move the independent player party.
+                if (fo.IsPlayer || fo.InPlayerParty) continue;
                 // can follow only if was adj to leader and find free adj spot on the new map.
                 bool canFollow = false;
                 List<Point> adjList = null;
@@ -650,6 +662,12 @@ namespace djack.RogueSurvivor.Engine
 
         public bool DoUseExit(Actor actor, Point exitPoint)
         {
+            if (!actor.IsPlayer && BaseAI.Travelling(actor))
+            {
+                Exit exit = actor.Location.Map.GetExitAt(exitPoint);
+                Point? landing = exit == null ? null : PersonalExitLanding(actor, exit);
+                if (landing.HasValue) return DoLeaveMapCore(actor, exitPoint, false, landing);
+            }
             // leave map.
             return DoLeaveMap(actor, exitPoint, false);
         }
@@ -681,6 +699,7 @@ namespace djack.RogueSurvivor.Engine
 
             // take lead.
             actor.AddFollower(other);
+            if (actor.IsPlayer) RecordFollowerContact(other, "recruited here");
             ReportPersonalityEvent("joined_group", other, actor, other.Location.Map, other.Location.Position);
 
             // reset trust in leader.
@@ -733,6 +752,15 @@ namespace djack.RogueSurvivor.Engine
         {
             // spend AP.
             SpendActorActionPoints(actor, Rules.BASE_ACTION_COST);
+
+            if (actor.IsPlayer)
+                foreach (Actor member in BaseAI.TravelParty(follower))
+                {
+                    var previous = actor.FollowerReports.FirstOrDefault(r => r.Identity == member.PersonalityIdentity);
+                    actor.RecordFollower(new FollowerReport { Identity = member.PersonalityIdentity, Name = member.UnmodifiedName,
+                        Status = "dismissed from your party", Location = previous == null ? "last location unknown" : previous.Location,
+                        Source = "your dismissal", Turn = m_Session.WorldTime.TurnCounter });
+                }
 
             // remove lead.
             actor.RemoveFollower(follower);
@@ -841,6 +869,8 @@ namespace djack.RogueSurvivor.Engine
 
             if (bump.IsLegal())
             {
+                if (bump.ConcreteAction is ActionLeaveMap)
+                    return DoLeaveMap(player, player.Location.Position + direction, true);
                 bump.Perform();
                 return true;
             }

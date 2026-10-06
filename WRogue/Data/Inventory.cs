@@ -85,6 +85,12 @@ namespace djack.RogueSurvivor.Data
         #endregion
 
         #region Managing
+        // Generation relocation must preserve each object's condition and expiry, without stack merging.
+        internal bool AddIntact(Item item)
+        {
+            if (item == null || IsFull || m_Items.Contains(item)) return false;
+            m_Items.Add(item); m_TotalReceived += item.Quantity; return true;
+        }
         /// <summary>
         /// Try to add all the item quantity.
         /// </summary>

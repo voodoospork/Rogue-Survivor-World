@@ -10,7 +10,7 @@ namespace djack.RogueSurvivor.Gameplay.Personality
             c.Event(new NpcEventDefinition("group_protection_requested", NpcRecordCategory.Combat | NpcRecordCategory.Help, true,
                 e => (e.Subject ?? "Someone") + " asked " + (e.Other ?? "someone") + " to protect a companion."));
             c.Collective(new NpcCollectiveDefinition("group_protection", "group_protection_requested", ProtectionOffer,
-                (a, b, p) => b.PersonalityIdentity == p.CollectorId && NpcIntentSystem.Enabled(b),
+                (a, b, p) => !b.InPlayerParty && b.PersonalityIdentity == p.CollectorId && NpcIntentSystem.Enabled(b),
                 (a, p) => "Our companion was attacked. Keep the attacker away from us.", AcceptProtection));
             c.On("group_protection_requested", NpcObservationPhase.Knowledge, o => NpcStorySystem.AcceptCollective(o.Game, o.Owner, o.Source));
             c.AfterEvent("defended_person", (game, e) => {
@@ -36,7 +36,7 @@ namespace djack.RogueSurvivor.Gameplay.Personality
                 if (threat == null || threat.Dead || c.Group.Members.Contains(threat.Id)) continue;
                 foreach (Actor member in c.Visible)
                 {
-                    if (member.IsPlayer || member.IsSleeping || member == c.Leader || member.SocialGroup != c.Group ||
+                    if (member.InPlayerParty || member.IsSleeping || member == c.Leader || member.SocialGroup != c.Group ||
                         member.PersonalityIdentity == fact.SubjectId || !NpcIntentSystem.Enabled(member)) continue;
                     NpcIntentDefinition capability = c.Game.NpcContent.Capability("defend_person");
                     if (capability.AssignedScore(c.Game.NpcContent, member, threat.Id) < capability.Threshold) continue;
@@ -48,7 +48,7 @@ namespace djack.RogueSurvivor.Gameplay.Personality
         }
         static void AcceptProtection(RogueGame game, Actor owner, SignificantEvent source)
         {
-            if (owner.PersonalityIdentity != source.Task.CollectorId) return;
+            if (owner.InPlayerParty || owner.PersonalityIdentity != source.Task.CollectorId) return;
             NpcFact evidence = source.Subject.Personality.Knowledge.Facts.Find(f => f.Kind == "attack" && f.EventId == source.Task.CauseId);
             NpcKnownPerson threat = evidence == null ? null : source.Subject.Personality.Knowledge.Person(evidence.OtherId);
             if (threat == null) return;

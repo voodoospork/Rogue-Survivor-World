@@ -10,14 +10,29 @@ namespace djack.RogueSurvivor.Data
         public readonly Guid Identity;
         public Guid LeaderId;
         public string LeaderName;
+        [System.Runtime.Serialization.OptionalField]
+        string m_CommunityName;
+        public string CommunityName { get {
+            return m_CommunityName ?? (m_CommunityName = LeaderName + "'s circle");
+        } set { if (String.IsNullOrWhiteSpace(value)) throw new ArgumentException("A community needs a name."); m_CommunityName = value; } }
         public readonly int FactionId;
         public readonly List<Guid> Members = new List<Guid>();
         public long PlanSequence;
         public int NextPlanTurn;
         public NpcGroupPlan Plan;
+        [System.Runtime.Serialization.OptionalField] public CommunityContactState CommunityContact;
+        [System.Runtime.Serialization.OptionalField] public CommunityHomeState Home;
+        [System.Runtime.Serialization.OptionalField] public CommunityDiplomacyState Diplomacy;
         public SocialGroup(Actor founder, Guid identity)
         { Identity = identity; LeaderId = founder.PersonalityIdentity; LeaderName = founder.UnmodifiedName;
             FactionId = founder.Faction == null ? -1 : founder.Faction.ID; Members.Add(founder.PersonalityIdentity); }
+    }
+    [Serializable]
+    sealed class CommunityContactState
+    {
+        public Guid PlayerId;
+        public int LastSeenTurn, LastCallTurn;
+        public bool Called, NeedsGreeting = true, LastCallHostile, HostileWarningIssued;
     }
     [Serializable]
     sealed class NpcGroupPlan
@@ -65,18 +80,24 @@ namespace djack.RogueSurvivor.Data
         {
             if (m_SocialGroup == null && m_Leader != null) m_SocialGroup = m_Leader.SocialGroup;
             if (m_SocialGroup == null) InitializeSocialGroup();
+            if (follower.m_SocialGroup != m_SocialGroup) DetachSocialGroup(follower, follower.m_SocialGroup);
             AssignSocialGroup(follower, m_SocialGroup);
         }
         void LeaveSocialGroup(Actor follower)
         {
             DetachSocialGroup(follower, m_SocialGroup);
+            if (follower.CommunityMembership != null && !follower.PreserveCommunityMembership)
+                follower.RestorePersonalParty();
         }
         public void TransferSocialGroupTo(Actor successor)
         {
             if (successor == null || successor.IsDead || successor.Leader != this) throw new ArgumentException("Successor must be a living follower.");
             SocialGroup group = m_SocialGroup ?? new SocialGroup(this, m_GroupSequence++ == 0 ? PersonalityIdentity : Guid.NewGuid());
             var survivors = new List<Actor>(m_Followers);
-            RemoveAllFollowers(); m_SocialGroup = null;
+            foreach (Actor follower in survivors) follower.PreserveCommunityMembership = true;
+            try { RemoveAllFollowers(); }
+            finally { foreach (Actor follower in survivors) follower.PreserveCommunityMembership = false; }
+            m_SocialGroup = null;
             successor.m_SocialGroup = group; group.Members.Clear(); group.Members.Add(successor.PersonalityIdentity);
             AssignSocialGroup(successor, group);
             group.LeaderId = successor.PersonalityIdentity; group.LeaderName = successor.UnmodifiedName;

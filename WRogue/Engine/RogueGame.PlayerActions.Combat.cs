@@ -230,7 +230,7 @@ namespace djack.RogueSurvivor.Engine
                             if (actorTo != null)
                             {
                                 // only if enemy.
-                                if (m_Rules.AreEnemies(player, actorTo))
+                                if (m_Rules.IsKnownEnemy(player, actorTo))
                                 {
                                     // check melee rule.
                                     if (m_Rules.CanActorMeleeAttack(player, actorTo, out reason))
@@ -578,7 +578,7 @@ namespace djack.RogueSurvivor.Engine
                         AddMessage(MakeErrorMessage("Can't make your leader your enemy."));
                         allowed = false;
                     }
-                    else if (m_Rules.AreEnemies(m_Player, currentActor))
+                    else if (m_Rules.IsKnownEnemy(m_Player, currentActor))
                     {
                         AddMessage(MakeErrorMessage("Already enemies."));
                         allowed = false;

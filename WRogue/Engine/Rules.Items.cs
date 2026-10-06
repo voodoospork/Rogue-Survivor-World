@@ -15,6 +15,31 @@ namespace djack.RogueSurvivor.Engine
     partial class Rules
     {
         #region Items
+        public bool CanActorDisarmTrap(Actor actor, Point position, ItemTrap trap, out string reason)
+        {
+            if (actor == null) throw new ArgumentNullException("actor");
+            if (trap == null) throw new ArgumentNullException("trap");
+            Map map = actor.Location.Map;
+            if (actor.IsDead || actor.IsSleeping || actor.Model.Abilities.IsUndead ||
+                !actor.Model.Abilities.CanUseItems || !actor.Model.Abilities.CanUseMapObjects)
+            { reason = "cannot handle traps"; return false; }
+            if (map == null || !map.IsInBounds(position) || GridDistance(actor.Location.Position, position) > 1)
+            { reason = "stand next to the trap"; return false; }
+            Inventory ground = map.GetItemsAt(position);
+            if (ground == null || !ground.Contains(trap) || trap.Quantity <= 0)
+            { reason = "trap is not on the ground here"; return false; }
+            if (trap.IsTriggered)
+            { reason = "trap has sprung; escape it before disarming"; return false; }
+            if (!trap.IsActivated)
+            { reason = "trap is already disarmed"; return false; }
+            MapObject obstacle = map.GetMapObjectAt(position);
+            if (!LOS.CanTraceViewLine(actor.Location, position) ||
+                (obstacle != null && (!obstacle.IsWalkable || IsTrapCoveringMapObjectThere(map, position))))
+            { reason = "trap is obstructed; move or open the obstacle first"; return false; }
+            reason = "";
+            return true;
+        }
+
         public bool CanActorGetItemFromContainer(Actor actor, Point position)
         {
             string reason;
@@ -465,8 +490,12 @@ namespace djack.RogueSurvivor.Engine
             // 4. Target can't receive item.
             /////////////////////////////////
 
-            // 1. Target is enemy.
-            if (AreEnemies(actor, target))
+            // A voluntary gift can repair a community grievance. It grants no protection:
+            // personal disputes and enemy factions still prevent the exchange.
+            bool collectiveFeud = Gameplay.Personality.CommunityDiplomacySystem.KnowsFeud(actor, target) ||
+                Gameplay.Personality.CommunityDiplomacySystem.KnowsFeud(target, actor);
+            if (AreEnemies(actor, target) && (!collectiveFeud || AreEnemies(actor, target, false) ||
+                PersonalPartyEnemy(actor, target) || PersonalPartyEnemy(target, actor)))
             {
                 reason = "enemy";
                 return false;
@@ -839,7 +868,7 @@ namespace djack.RogueSurvivor.Engine
             if (targetActor != null)
             {
                 // attacking?
-                if (AreEnemies(actor, targetActor))
+                if (IsKnownEnemy(actor, targetActor))
                 {
                     if (CanActorMeleeAttack(actor, targetActor, out reason))
                         return new ActionMeleeAttack(actor, game, targetActor);

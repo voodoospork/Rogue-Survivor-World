@@ -63,7 +63,7 @@ namespace djack.RogueSurvivor.Gameplay.Personality
                     intent.LastKnownTurn = turn;
                     intent.KnownAttitude = PersonalitySystem.Attitude(owner, target);
                     if (!definition.AllowHostile &&
-                        (intent.Generated == null || intent.Generated.SubjectId != owner.PersonalityIdentity) && game.Rules.AreEnemies(owner, target))
+                        (intent.Generated == null || intent.Generated.SubjectId != owner.PersonalityIdentity) && game.Rules.IsKnownEnemy(owner, target))
                     { Finish(game.NpcContent, owner, intent, NpcIntentStatus.Abandoned, "target became hostile"); continue; }
                 }
                 if (definition.Score(owner, intent, game.NpcContent) < definition.ThresholdFor(intent))

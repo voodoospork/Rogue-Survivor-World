@@ -72,6 +72,17 @@ namespace djack.RogueSurvivor.Engine
                 return;
             m_Messages.RemoveAt(m_Messages.Count - 1);
         }
+        public void RemoveFirstMessage()
+        {
+            if (m_Messages.Count > 0) m_Messages.RemoveAt(0);
+        }
+        public void PresentAgain(Message message, int maximum)
+        {
+            // The original message is already in history; refresh its visibility only.
+            m_Messages.Remove(message);
+            if (m_Messages.Count >= maximum) RemoveFirstMessage();
+            m_Messages.Add(message);
+        }
         #endregion
 
         #region Drawing

@@ -50,10 +50,10 @@ static class ScenarioRunner
 
     public static int Run(string name)
     {
-        int count = 0;
+        int count = 0, failures = 0;
         foreach (Scenario scenario in scenarios)
         {
-            if (name != "--all" && name != scenario.Name) continue;
+            if (name != "--all" && name != "--all-continue" && name != scenario.Name) continue;
             count++;
             ScenarioWorld world = null;
             try
@@ -67,7 +67,8 @@ static class ScenarioRunner
                 Console.Error.WriteLine("FAIL " + scenario.Name + " (seed " + (world == null ? "unknown" : world.Seed.ToString()) + ")");
                 Console.Error.WriteLine(error);
                 if (world != null) Console.Error.WriteLine("Map:\n" + world.Draw());
-                return 1;
+                failures++;
+                if (name != "--all-continue") return 1;
             }
         }
         if (count == 0)
@@ -75,7 +76,7 @@ static class ScenarioRunner
             Console.Error.WriteLine("Unknown scenario: " + name + ". Use --list to see names.");
             return 2;
         }
-        Console.WriteLine(count + " scenario(s) passed");
-        return 0;
+        Console.WriteLine((count - failures) + " scenario(s) passed" + (failures == 0 ? "" : "; " + failures + " failed"));
+        return failures == 0 ? 0 : 1;
     }
 }

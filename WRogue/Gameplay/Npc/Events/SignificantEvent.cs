@@ -24,6 +24,9 @@ namespace djack.RogueSurvivor.Gameplay.Personality
         public Location ResourcePlace;
         public int Units, ModelId = -1;
         public Guid ItemId;
+        public long CombatEpisode;
+        public bool KnownMurder, KnownSelfDefense;
+        public DiplomacyMessage DiplomacyMessage;
 
         public SignificantEvent(string kind, Actor subject, Actor other, Map map,
             System.Drawing.Point position, int turn, bool otherIsDirect = true,

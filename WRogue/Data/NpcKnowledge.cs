@@ -14,11 +14,22 @@ namespace djack.RogueSurvivor.Data
         public Location Place;
         public NpcKnowledgeSource Source;
         public bool NoSubjectLocation;
+        [System.Runtime.Serialization.OptionalField] public DiplomacyEvidence DiplomacyEvidence;
+        [System.Runtime.Serialization.OptionalField] public DiplomacyMessage DiplomacyMessage;
+        [System.Runtime.Serialization.OptionalField] public CommunityShelterLocation SupplyLocation;
+        [System.Runtime.Serialization.OptionalField] public bool SupplyClaimed;
+        public NpcFact SpeechSnapshot()
+        {
+            NpcFact copy=(NpcFact)MemberwiseClone();
+            if(DiplomacyMessage!=null) { copy.SubjectId=Guid.Empty; copy.SubjectName=null; copy.OtherId=Guid.Empty; copy.OtherName=null; copy.NoSubjectLocation=true; }
+            return copy;
+        }
         public NpcFact Retell(Guid speaker, int turn, int confidence)
         {
             return new NpcFact { EventId = EventId, Kind = Kind, SubjectName = SubjectName, OtherName = OtherName,
                 StoryId = StoryId, SubjectId = SubjectId, OtherId = OtherId, SourceId = speaker, EventTurn = EventTurn,
-                LearnedTurn = turn, Confidence = confidence, Hops = Hops + 1, Units = Units, Risk = Risk, Place = Place, Source = NpcKnowledgeSource.Told, NoSubjectLocation = NoSubjectLocation };
+                LearnedTurn = turn, Confidence = confidence, Hops = Hops + 1, Units = Units, Risk = Risk, Place = Place, Source = NpcKnowledgeSource.Told, NoSubjectLocation = NoSubjectLocation,
+                DiplomacyEvidence = DiplomacyEvidence, DiplomacyMessage = DiplomacyMessage, SupplyLocation = SupplyLocation == null ? null : SupplyLocation.Copy(), SupplyClaimed = SupplyClaimed };
         }
     }
     [Serializable]
@@ -98,6 +109,7 @@ namespace djack.RogueSurvivor.Data
         public void RememberPlace(NpcKnownPlace place)
         {
             NpcKnownPlace old = Places.Find(p => p.Kind == place.Kind && p.Place == place.Place);
+            if (old != null && old.SeenTurn > place.SeenTurn) return;
             if (old == null || old.Units != place.Units || old.Risk != place.Risk) Revision++;
             Places.RemoveAll(p => p.Kind == place.Kind && p.Place == place.Place);
             Places.Add(place); Trim(Places, 16);

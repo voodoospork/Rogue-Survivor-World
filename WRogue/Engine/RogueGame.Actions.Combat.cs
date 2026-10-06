@@ -68,6 +68,8 @@ namespace djack.RogueSurvivor.Engine
         // FIXME factorize common code with OnMakeEnemyOfSoldier
         void OnMakeEnemyOfCop(Actor aggressor, Actor cop, bool wasAlreadyEnemy)
         {
+            // Local witnesses and reports replace the old district-wide enemy broadcast.
+            if (m_Session.GamePreset.NpcPersonalitiesEnabled) return;
             // say.
             if (!wasAlreadyEnemy)
                 DoSay(cop, aggressor, String.Format("TO DISTRICT PATROLS : {0} MUST DIE!", aggressor.TheName), Sayflags.IS_FREE_ACTION | Sayflags.IS_DANGER);
@@ -176,14 +178,15 @@ namespace djack.RogueSurvivor.Engine
         public void DoMeleeAttack(Actor attacker, Actor defender, NpcIntent npcGoal = null)
         {
             // An unexpected attack is significant; routine blows in an ongoing fight are not.
-            if (!m_Rules.AreEnemies(attacker, defender))
+            if (!m_Rules.AreEnemies(attacker, defender) ||
+                ((Gameplay.Personality.CommunityDiplomacySystem.PoliticalGroup(attacker) || Gameplay.Personality.CommunityDiplomacySystem.PoliticalGroup(defender)) && !m_Rules.AreEnemies(attacker, defender, false)))
                 ReportPersonalityEvent("attack", defender, attacker, defender.Location.Map, defender.Location.Position, causeId: npcGoal == null ? 0 : npcGoal.CauseId, storyId: npcGoal == null ? null : npcGoal.StoryId);
             // set activiy & target.
             attacker.Activity = Activity.FIGHTING;
             attacker.TargetActor = defender;
 
             // if not already enemies, attacker is aggressor.
-            if (!m_Rules.AreEnemies(attacker, defender))
+            if (!m_Rules.AreEnemies(attacker, defender, false))
                 DoMakeAggression(attacker, defender);
 
             // get attack & defence.
@@ -262,7 +265,7 @@ namespace djack.RogueSurvivor.Engine
                 if (dmgRoll > 0)
                 {
                     // inflict dmg.
-                    InflictDamage(defender, dmgRoll);
+                    InflictDamage(defender, dmgRoll, attacker);
 
                     // regen HP/Rot and infection?
                     if (attacker.Model.Abilities.CanZombifyKilled && !defender.Model.Abilities.IsUndead)
@@ -399,10 +402,11 @@ namespace djack.RogueSurvivor.Engine
 
         public void DoRangedAttack(Actor attacker, Actor defender, List<Point> LoF, FireMode mode)
         {
-            if (!m_Rules.AreEnemies(attacker, defender))
+            if (!m_Rules.AreEnemies(attacker, defender) ||
+                ((Gameplay.Personality.CommunityDiplomacySystem.PoliticalGroup(attacker) || Gameplay.Personality.CommunityDiplomacySystem.PoliticalGroup(defender)) && !m_Rules.AreEnemies(attacker, defender, false)))
                 ReportPersonalityEvent("attack", defender, attacker, defender.Location.Map, defender.Location.Position);
             // if not enemies, aggression.
-            if (!m_Rules.AreEnemies(attacker, defender))
+            if (!m_Rules.AreEnemies(attacker, defender, false))
                 DoMakeAggression(attacker, defender);
 
             // resolve, depending on mode.
@@ -538,7 +542,7 @@ namespace djack.RogueSurvivor.Engine
                 if (dmgRoll > 0)
                 {
                     // inflict dmg.
-                    InflictDamage(defender, dmgRoll);
+                    InflictDamage(defender, dmgRoll, attacker);
 
                     // Killed?
                     if (defender.HitPoints <= 0) // def killed!

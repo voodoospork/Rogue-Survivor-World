@@ -70,6 +70,8 @@ namespace djack.RogueSurvivor.Engine
         XPD_BASE,
         RELATIONSHIPS,
         TALK,
-        HEARD_JOURNAL
+        HEARD_JOURNAL,
+        RECALL_FOLLOWERS,
+        DISARM_TRAP
     }
 }

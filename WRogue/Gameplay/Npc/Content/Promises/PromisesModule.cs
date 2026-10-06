@@ -83,6 +83,7 @@ namespace djack.RogueSurvivor.Gameplay.Personality
                     GroupId = source.Subject.SocialGroup == null ? Guid.Empty : source.Subject.SocialGroup.Identity,
                     GroupName = source.Subject.SocialGroup == null ? null : source.Subject.SocialGroup.LeaderName,
                     FactionId = source.Subject.Faction.ID, FactionName = source.Subject.Faction.Name,
+                    PoliticalAttribution = CommunityDiplomacySystem.Recognizes(owner, source.Subject),
                     Resource = source.Kind == "food_promised" ? "food" : "medicine", DueTurn = source.Turn + 180, StoryId = source.StoryId });
             if (owner.Personality.HasCommitments && (source.Kind == "shared_food" || source.Kind == "shared_medicine"))
                 foreach (NpcCommitment promise in owner.Personality.Commitments)

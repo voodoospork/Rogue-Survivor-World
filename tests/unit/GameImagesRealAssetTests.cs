@@ -8,8 +8,9 @@ static class GameImagesRealAssetTests
 {
     public static void Run()
     {
-        string root = Path.GetFullPath(Path.Combine(
-            AppDomain.CurrentDomain.BaseDirectory, "..", "WRogue"));
+        string project = Environment.GetEnvironmentVariable("ROGUE_PROJECT_ROOT");
+        string root = project == null ? Path.GetFullPath(Path.Combine(
+            AppDomain.CurrentDomain.BaseDirectory, "..", "WRogue")) : Path.Combine(project, "WRogue");
         string images = Path.Combine(root, "Resources", "Images");
         if (!Directory.Exists(images))
             throw new DirectoryNotFoundException("Game image resources: " + images);

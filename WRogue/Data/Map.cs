@@ -708,6 +708,19 @@ namespace djack.RogueSurvivor.Data
             
         }
 
+        internal bool PlaceItemIntact(Item item, Point position)
+        {
+            if (item == null || !IsInBounds(position)) return false;
+            Inventory inventory = GetItemsAt(position);
+            if (inventory != null) return inventory.AddIntact(item);
+            inventory = new Inventory(GROUND_INVENTORY_SLOTS);
+            if (!inventory.AddIntact(item)) return false;
+            m_aux_GroundItemsList.Add(inventory);
+            m_GroundItemsByPosition.Add(position, inventory);
+            m_aux_GroundItemsPosition.Add(inventory, position);
+            return true;
+        }
+
         public void DropItemAt(Item it, int x, int y)
         {
             DropItemAt(it, new Point(x, y));

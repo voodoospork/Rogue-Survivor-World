@@ -10,6 +10,9 @@ namespace djack.RogueSurvivor.Engine
         public string Name;
         public bool Bases;
         public bool NpcPersonalitiesEnabled;
+        [System.Runtime.Serialization.OptionalField]
+        public bool InitialCommunities;
+        [System.Runtime.Serialization.OptionalField] public bool PatchySupplies;
         public bool ImmediateZombification;
         public bool Infection;
         public bool Corpses;
@@ -49,6 +52,15 @@ namespace djack.RogueSurvivor.Engine
         public GamePreset Copy()
         {
             return (GamePreset)MemberwiseClone();
+        }
+
+        public static GamePreset World()
+        {
+            GamePreset preset = BuiltIn(GameMode.GM_XPD);
+            preset.Name = "World";
+            preset.InitialCommunities = true;
+            preset.PatchySupplies = true;
+            return preset;
         }
 
         public static GamePreset BuiltIn(GameMode mode)
@@ -91,6 +103,8 @@ namespace djack.RogueSurvivor.Engine
         {
             if (String.IsNullOrWhiteSpace(Name) || Name.Length > 40)
                 throw new ArgumentException("Preset name must contain 1 to 40 characters.");
+            if (InitialCommunities && (!Bases || !NpcPersonalitiesEnabled))
+                throw new ArgumentException("Initial communities require bases and NPC traits and memories.");
             if (!Skeletons && !Shamblers && !ZombieMasters && !Zombified && !RatZombies)
                 throw new ArgumentException("At least one zombie type must be enabled.");
             if (HasOptions && !Zombified && !RatZombies &&
@@ -144,6 +158,8 @@ namespace djack.RogueSurvivor.Engine
         public void AddOrReplace(GamePreset preset)
         {
             preset.Validate();
+            if (String.Equals(preset.Name, "World", StringComparison.OrdinalIgnoreCase))
+                throw new ArgumentException("Built-in preset names cannot be replaced.");
             foreach (GameMode mode in new[] { GameMode.GM_STANDARD, GameMode.GM_CORPSES_INFECTION,
                 GameMode.GM_VINTAGE, GameMode.GM_XPD })
                 if (String.Equals(preset.Name, GamePreset.BuiltIn(mode).Name, StringComparison.OrdinalIgnoreCase))

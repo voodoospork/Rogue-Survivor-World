@@ -160,7 +160,7 @@ namespace djack.RogueSurvivor.Gameplay.Personality
             SignificantEvent source = observation.Source;
             PersonalityState state = owner.Personality;
             if (source.Kind == "requested_food" && source.Other == owner && source.Subject != null &&
-                !game.Rules.AreEnemies(owner, source.Subject))
+                !game.Rules.IsKnownEnemy(owner, source.Subject))
             {
                 bool answering = state.Reactions.Exists(r => r.CauseId == source.Id && r.TargetId == source.Subject.PersonalityIdentity && r.Kind == "food_promised");
                 foreach (NpcIntent intent in state.Intents)

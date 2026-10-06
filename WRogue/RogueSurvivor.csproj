@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -190,6 +190,10 @@
     <Compile Include="Gameplay\Npc\Events\NpcEventDefinition.cs" />
     <Compile Include="Gameplay\Npc\Conversation\NpcConversation.cs" />
     <Compile Include="Gameplay\Npc\Events\NpcObservation.cs" />
+    <Compile Include="Gameplay\Npc\Knowledge\CommunityKnowledgeSystem.cs" />
+    <Compile Include="Gameplay\Npc\Knowledge\CommunityEncounterSystem.cs" />
+    <Compile Include="Engine\Actions\ActionCommunityCall.cs" />
+    <Compile Include="Engine\Actions\ActionFollowerReply.cs" />
     <Compile Include="Gameplay\Npc\Events\NpcRecordDescriptions.cs" />
     <Compile Include="Gameplay\Npc\Goals\NpcGoalContext.cs" />
     <Compile Include="Gameplay\Npc\Goals\NpcGoalGenerator.State.cs" />
@@ -400,6 +404,7 @@
     <Compile Include="Engine\RogueGame.Actions.Items.cs" />
     <Compile Include="Engine\RogueGame.Actions.Objects.cs" />
     <Compile Include="Engine\RogueGame.WorldGeneration.cs" />
+    <Compile Include="Engine\RogueGame.WorldCommunities.cs" />
     <Compile Include="Engine\RogueGame.Messaging.cs" />
     <Compile Include="Engine\RogueGame.Rendering.cs" />
     <Compile Include="Engine\RogueGame.Rendering.Elements.cs" />
@@ -486,7 +491,24 @@
     <Compile Include="Engine\RogueGame.Actions.Plans.cs" />
     <Compile Include="Data\NpcKnowledge.cs" />
     <Compile Include="Data\NpcStories.cs" />
+    <Compile Include="Data\CommunityDiplomacy.cs" />
+    <Compile Include="Engine\Actions\ActionCommunityDiplomacy.cs" />
+    <Compile Include="Engine\RogueGame.CommunityDiplomacy.cs" />
+    <Compile Include="Engine\RogueGame.PlayerActions.Diplomacy.cs" />
+    <Compile Include="Gameplay\Npc\Knowledge\CommunityDiplomacySystem.cs" />
+    <Compile Include="Gameplay\Npc\Knowledge\CommunityDiplomacySystem.Peace.cs" />
     <Compile Include="Data\SocialGroup.cs" />
+    <Compile Include="Data\CommunityKnowledge.cs" />
+    <Compile Include="Data\ScavengingState.cs" />
+    <Compile Include="Gameplay\Npc\Knowledge\ScavengingSystem.cs" />
+    <Compile Include="Engine\RogueGame.Scavenging.cs" />
+    <Compile Include="Gameplay\Generators\ScavengingStock.cs" />
+    <Compile Include="Data\CommunityHomeState.cs" />
+    <Compile Include="Gameplay\Npc\Knowledge\CommunityMembershipSystem.cs" />
+    <Compile Include="Engine\Actions\ActionCommunityMembership.cs" />
+    <Compile Include="Engine\RogueGame.CommunityHome.cs" />
+    <Compile Include="Gameplay\AI\OrderableAI.CommunityHome.cs" />
+    <Compile Include="Engine\Actions\ActionCommunityAlarm.cs" />
     <Compile Include="Data\ResidentRecords.Stories.cs" />
     <Compile Include="Data\ResidentRecords.Intents.cs" />
     <Compile Include="Engine\Actions\ActionNpcTell.cs" />
@@ -495,6 +517,10 @@
     <Compile Include="Engine\Actions\ActionNpcIntent.cs" />
     <Compile Include="Engine\RogueGame.Actions.Intents.cs" />
     <Compile Include="Gameplay\AI\BaseAI.Intents.cs" />
+    <Compile Include="Gameplay\AI\BaseAI.FollowerCalls.cs" />
+    <Compile Include="Data\FollowerTravelState.cs" />
+    <Compile Include="Gameplay\AI\BaseAI.FollowerTravel.cs" />
+    <Compile Include="Engine\RogueGame.FollowerTravel.cs" />
     <Compile Include="Gameplay\GameTiles.cs" />
     <Compile Include="Gameplay\GameImages.cs" />
     <Compile Include="Gameplay\ZoneAttributes.cs" />

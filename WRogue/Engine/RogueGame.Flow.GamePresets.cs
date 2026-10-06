@@ -21,8 +21,16 @@ namespace djack.RogueSurvivor.Engine
             {
                 saved = new GamePresetCollection();
             }
-            GamePreset initial = BuiltInGamePreset(GameMode.GM_STANDARD);
-            return EditGamePreset(initial, saved, GameMode.GM_STANDARD);
+            GamePreset initial = WorldGamePreset();
+            return EditGamePreset(initial, saved, GameMode.GM_XPD);
+        }
+
+        GamePreset WorldGamePreset()
+        {
+            GamePreset preset = BuiltInGamePreset(GameMode.GM_XPD);
+            preset.Name = "World";
+            preset.InitialCommunities = true;
+            return preset;
         }
 
         GamePreset BuiltInGamePreset(GameMode mode)
@@ -47,7 +55,7 @@ namespace djack.RogueSurvivor.Engine
                 BuiltInGamePreset(GameMode.GM_STANDARD),
                 BuiltInGamePreset(GameMode.GM_CORPSES_INFECTION),
                 BuiltInGamePreset(GameMode.GM_VINTAGE),
-                BuiltInGamePreset(GameMode.GM_XPD)
+                BuiltInGamePreset(GameMode.GM_XPD), WorldGamePreset()
             };
             foreach (GamePreset custom in saved.Presets)
             {
@@ -99,9 +107,9 @@ namespace djack.RogueSurvivor.Engine
                 if (key.KeyCode == Keys.Down) selected = (selected + 1) % presets.Count;
                 if (key.KeyCode == Keys.Left) previewPage = (previewPage + previewPages - 1) % previewPages;
                 if (key.KeyCode == Keys.Right) previewPage = (previewPage + 1) % previewPages;
-                if (key.KeyCode == Keys.Delete && selected >= 4)
+                if (key.KeyCode == Keys.Delete && selected >= 5)
                 {
-                    saved.Presets.RemoveAt(selected - 4);
+                    saved.Presets.RemoveAt(selected - 5);
                     saved.Save(GamePresetsPath);
                     presets.RemoveAt(selected);
                     if (selected >= presets.Count) selected--;
@@ -109,7 +117,7 @@ namespace djack.RogueSurvivor.Engine
                 if (key.KeyCode == Keys.Enter)
                 {
                     preset = presets[selected].Copy();
-                    origin = selected < 4 ? (GameMode)selected : GameMode.GM_STANDARD;
+                    origin = selected < 4 ? (GameMode)selected : selected == 4 || preset.InitialCommunities ? GameMode.GM_XPD : GameMode.GM_STANDARD;
                     return true;
                 }
             }
@@ -125,7 +133,7 @@ namespace djack.RogueSurvivor.Engine
                 "Undead rot speed", "Skeleton spawn weight", "Shambler spawn weight",
                 "Master spawn weight", "Infection: weak at", "Infection: tired at",
                 "Infection: vomiting at", "Infection: bleeding at", "Infection: death at",
-                "Infection symptom rate", "NPC traits and memories", "Other gameplay options"
+                "Infection symptom rate", "NPC traits and memories", "Initial communities", "Other gameplay options"
             };
 
         static readonly string[] GamePresetDescriptions = {
@@ -163,6 +171,7 @@ namespace djack.RogueSurvivor.Engine
             "Infection percentage at which infection becomes fatal.",
             "Scale how often infection symptoms occur. 100% is the normal rate.",
             "Give living NPCs personality traits and evolving memories.",
+            "Settle up to three civilian communities near your starting district in a new world.\nUses existing survivors, residential shelters and supplies; requires bases and NPC traits.",
             "Open the full gameplay options, including population, events and other rules."
         };
 
@@ -182,7 +191,7 @@ namespace djack.RogueSurvivor.Engine
                     preset.InfectionWeakThreshold + "%", preset.InfectionTiredThreshold + "%",
                     preset.InfectionVomitThreshold + "%", preset.InfectionBleedThreshold + "%",
                     preset.InfectionDeathThreshold + "%", preset.InfectionEffectRatePercent + "%",
-                    OnOff(preset.NpcPersonalitiesEnabled), "ENTER"
+                    OnOff(preset.NpcPersonalitiesEnabled), OnOff(preset.InitialCommunities), "ENTER"
             };
         }
 
@@ -386,6 +395,7 @@ namespace djack.RogueSurvivor.Engine
                 case 30: preset.InfectionDeathThreshold = BoundedStep(preset.InfectionDeathThreshold, 5 * direction, 100); break;
                 case 31: preset.InfectionEffectRatePercent = BoundedStep(preset.InfectionEffectRatePercent, 10 * direction, 500); break;
                 case 32: preset.NpcPersonalitiesEnabled = !preset.NpcPersonalitiesEnabled; break;
+                case 33: preset.InitialCommunities = !preset.InitialCommunities; break;
             }
         }
 

@@ -1,0 +1,57 @@
+# Credits and source lineage
+
+Rogue Survivor World builds on years of work by the Rogue Survivor community.
+
+## Direct lineage
+
+1. **roguedjack — Rogue Survivor.** Original game, C# engine, survival mechanics,
+   original game data, resources and manual. Expanded identifies **Alpha 10.1**
+   as its foundation. [Official game site](https://roguesurvivor.blogspot.com/),
+   [source/download page](https://roguesurvivor.blogspot.com/p/download.html),
+   [original Alpha 9 source](https://github.com/roguedjack/Rogue-Survivor-Alpha-9).
+2. **Tranquill6 — Rogue Survivor Expanded.** Imported the newer original source
+   from the creator's blog and established the Expanded continuation.
+   [Project](https://github.com/Tranquill6/Rogue-Survivor-Expanded).
+3. **Qew7 and Expanded contributors — Rogue Survivor Expanded.** Immediate
+   starting project for World: platform/build improvements, mouse interaction,
+   mod support, presets, bases, the NPC personality/knowledge/planning framework,
+   and its development tools and tests.
+   [Project](https://github.com/Qew7/Rogue-Survivor-Expanded),
+   [pinned v0.4.1 starting source](https://github.com/Qew7/Rogue-Survivor-Expanded/tree/6da3d7b7dd21a8741826021ab86d6db14c3fe56c).
+4. **voodoospork — Rogue Survivor World.** Direction and ongoing development of
+   independent communities, community encounters and membership, local
+   diplomacy, scavenging journeys, follower travel/reunion and trap disarming.
+
+Existing authorship and copyright notices remain attached to their respective
+files. Contributions inherited through Expanded are credited to their original authors.
+
+## Bundled mod and artwork
+
+**Deon — Deonapocalypse.** Bundled redrawn tileset and gameplay data changes.
+Attribution is recorded in
+[WRogue/mods/Deonapocalypse/authors.json](WRogue/mods/Deonapocalypse/authors.json).
+[Original mod page](https://dffd.bay12games.com/file.php?id=3878).
+
+Original Rogue Survivor artwork and data remain credited to roguedjack and the
+creators named in inherited resources. Third-party notices stay with their libraries and assets.
+
+## Other Rogue Survivor continuations
+
+The wider community includes
+[zaimoni's RSRevived](https://github.com/zaimoni/RSRevived),
+[Rogue Survivor Still Alive](https://gitlab.com/RogueSurvivor-StillAlive/StillAlive),
+and [GalacticChimp's Rezombified](https://github.com/GalacticChimp/RogueSurvivorRezombified).
+These are related projects considered during the initial assessment. The direct
+source lineage used for this fork is recorded above.
+
+## Original licensing references
+
+The creator's [official download page](https://roguesurvivor.blogspot.com/p/download.html)
+identifies the source as GNU General Public License v3.0. The inherited full
+license is included in [LICENSE.txt](LICENSE.txt), copied unchanged from the older
+original repository's [license text](https://github.com/roguedjack/Rogue-Survivor-Alpha-9/blob/master/LICENSE.txt).
+That repository also retains a
+[README](https://github.com/roguedjack/Rogue-Survivor-Alpha-9) requesting
+noncommercial use. Those inherited statements and existing notices are preserved.
+The bundled mod retains its attribution manifest. This credits file does not
+replace inherited licenses or assign a new license to third-party assets.

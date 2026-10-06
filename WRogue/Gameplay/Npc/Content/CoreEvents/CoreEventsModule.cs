@@ -9,6 +9,14 @@ namespace djack.RogueSurvivor.Gameplay.Personality
         public string Id { get { return "core-events"; } }
         public void Register(NpcCatalogBuilder catalog)
         {
+            catalog.Event(new NpcEventDefinition("community_injury", NpcRecordCategory.Combat, true,
+                e => (e.Other ?? "Someone") + " injured " + (e.Subject ?? "someone") + ".", f => f.OtherName + " injured " + f.SubjectName));
+            catalog.Event(new NpcEventDefinition("community_killing", NpcRecordCategory.Combat, true,
+                e => (e.Other ?? "Someone") + " killed " + (e.Subject ?? "someone") + ".", f => f.OtherName + " killed " + f.SubjectName));
+            catalog.Event(new NpcEventDefinition("community_feud", NpcRecordCategory.Combat | NpcRecordCategory.Encounters, true,
+                e => (e.Subject ?? "Someone") + " declared a community blood feud.", f => "A community declared a blood feud", isPrivate: true) { AudibleReport = true });
+            catalog.Event(new NpcEventDefinition("community_peace", NpcRecordCategory.Encounters, true,
+                e => (e.Subject ?? "Someone") + " ratified community peace.", f => "A community ratified peace", isPrivate: true) { AudibleReport = true });
             foreach (var faction in PersonalityWorldContent.Factions) catalog.FactionPolicy((int)faction.Id, new NpcFactionPolicy(faction.Supply, faction.Shelter, faction.Care, faction.Security));
             catalog.Event(new NpcEventDefinition("craps", NpcRecordCategory.World));
             catalog.Event(new NpcEventDefinition("floods", NpcRecordCategory.World));

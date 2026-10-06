@@ -9,7 +9,7 @@ namespace djack.RogueSurvivor.Gameplay.Personality
         {
             NpcGroupPlan plan = source.Task;
             NpcCollectiveDefinition definition = game.NpcContent.Collective(plan.Kind);
-            if (definition == null || plan.CollectorId != owner.PersonalityIdentity ||
+            if (owner.InPlayerParty || definition == null || plan.CollectorId != owner.PersonalityIdentity ||
                 (definition.Scope == NpcCollectiveScope.Group && (owner.SocialGroup == null || source.Subject.SocialGroup != owner.SocialGroup)) ||
                 (definition.Scope == NpcCollectiveScope.Faction && owner.Faction.ID != source.Subject.Faction.ID)) return;
             NpcKnownPerson beneficiary = source.Subject.Personality.Knowledge.Person(plan.BeneficiaryId);
@@ -28,7 +28,7 @@ namespace djack.RogueSurvivor.Gameplay.Personality
         }
         public static void AcceptShelter(RogueGame game, Actor owner, SignificantEvent source)
         {
-            if (!NpcIntentSystem.Enabled(owner)) return;
+            if (owner.InPlayerParty || !NpcIntentSystem.Enabled(owner)) return;
             NpcIntent goal = NpcStorySystem.StartKnown(game.NpcContent, owner,
                 new NpcKnownPerson { Id = owner.PersonalityIdentity, Name = owner.UnmodifiedName, Place = owner.Location },
                 game.NpcContent.Capability("seek_group_shelter"), source.Id, source.Task.StoryId,

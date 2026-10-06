@@ -55,7 +55,7 @@ namespace djack.RogueSurvivor.Gameplay.AI
                 Actor other = p.Percepted as Actor;
                 if (other != null && other != m_Actor)
                 {
-                    if (game.Rules.AreEnemies(m_Actor, other))
+                    if (game.Rules.IsKnownEnemy(m_Actor, other))
                     {
                         if (list == null)
                             list = new List<Percept>(percepts.Count);
@@ -79,7 +79,7 @@ namespace djack.RogueSurvivor.Gameplay.AI
                 Actor other = p.Percepted as Actor;
                 if (other != null && other != m_Actor)
                 {
-                    if (!game.Rules.AreEnemies(m_Actor, other))
+                    if (!game.Rules.IsKnownEnemy(m_Actor, other))
                     {
                         if (list == null)
                             list = new List<Percept>(percepts.Count);

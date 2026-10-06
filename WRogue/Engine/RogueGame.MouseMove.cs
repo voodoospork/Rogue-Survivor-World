@@ -59,7 +59,7 @@ namespace djack.RogueSurvivor.Engine
         {
             HashSet<Actor> visible = new HashSet<Actor>();
             foreach (Actor other in player.Location.Map.Actors)
-                if (other != player && IsVisibleToPlayer(other) && m_Rules.AreEnemies(player, other))
+                if (other != player && IsVisibleToPlayer(other) && m_Rules.IsKnownEnemy(player, other))
                     visible.Add(other);
             return visible;
         }

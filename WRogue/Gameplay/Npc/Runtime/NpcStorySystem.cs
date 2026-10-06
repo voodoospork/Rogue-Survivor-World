@@ -53,6 +53,8 @@ namespace djack.RogueSurvivor.Gameplay.Personality
                 if (best == null || value > score || (value == score && follower.PersonalityIdentity.CompareTo(best.PersonalityIdentity) < 0)) { best = follower; score = value; }
             }
             if (best == null) return;
+            Guid identity = leader.SocialGroup.Identity;
+            game.TransferCommunityBases(leader, best, identity);
             leader.TransferSocialGroupTo(best);
             PersonalitySystem.Report(game, new SignificantEvent("group_succession", best, leader, best.Location.Map, best.Location.Position,
                 best.Location.Map.LocalTime.TurnCounter, otherIsDirect: false));

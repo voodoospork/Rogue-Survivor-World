@@ -302,7 +302,12 @@ namespace djack.RogueSurvivor.Engine
             IS_DANGER = (1 << 2),
             IS_STORY = (1 << 3),
             IS_RUMOR = (1 << 4),
-            IS_REQUEST = (1 << 5)
+            IS_REQUEST = (1 << 5),
+            IS_SHOUT = (1 << 6),
+            IS_COMMUNITY_CALL = (1 << 7),
+            IS_BRIEF = (1 << 8),
+            IS_FOLLOWER_CALL = (1 << 9),
+            IS_FOLLOWER_STATUS = (1 << 10)
         }
 
         public void DoSay(Actor speaker, Actor target, string text, Sayflags flags, long causeId = 0, string storyId = null)
@@ -312,6 +317,9 @@ namespace djack.RogueSurvivor.Engine
             // spend APS?
             if ((flags & Sayflags.IS_FREE_ACTION) == 0)
                 SpendActorActionPoints(speaker, Rules.BASE_ACTION_COST);
+            if ((flags & Sayflags.IS_SHOUT) != 0)
+                OnLoudNoise(speaker.Location.Map, speaker.Location.Position, "A SHOUT");
+            FollowerSpeech(speaker, target, flags, text);
 
             // message.
             bool story = (flags & Sayflags.IS_STORY) != 0;
@@ -319,7 +327,15 @@ namespace djack.RogueSurvivor.Engine
                 m_Rules.StdDistance(m_Player.Location.Position, speaker.Location.Position) <= m_Player.AudioRange;
             bool visible = m_Player != null && ((IsVisibleToPlayer(speaker) && (!story || audible)) ||
                 (!story && IsVisibleToPlayer(target) && !(m_Player.IsSleeping && target == m_Player)));
-            if (visible)
+            if ((flags & (Sayflags.IS_BRIEF | Sayflags.IS_COMMUNITY_CALL)) != 0 && (visible || audible))
+            {
+                bool followerCall = (flags & (Sayflags.IS_FOLLOWER_CALL | Sayflags.IS_FOLLOWER_STATUS)) != 0 && speaker.InPlayerParty;
+                string prefix = followerCall ? FollowerVoicePrefix(speaker) : IsVisibleToPlayer(speaker) ? speaker.UnmodifiedName +
+                    ((flags & Sayflags.IS_SHOUT) != 0 ? " shouts: " : ": ") : "You overhear: ";
+                if ((flags & Sayflags.IS_FOLLOWER_STATUS) != 0 && (flags & Sayflags.IS_SHOUT) == 0) prefix = prefix.Replace(" shouts", " says");
+                AddCommunitySpeech(prefix + text, sayColor, followerCall || (flags & Sayflags.IS_COMMUNITY_CALL) != 0);
+            }
+            else if (visible)
             {
                 bool isPlayer = target.IsPlayer;
                 bool isBot = target.IsBotPlayer; // alpha10.1 handle bot
@@ -350,9 +366,12 @@ namespace djack.RogueSurvivor.Engine
                     if (listener == speaker || listener.IsDead || listener.IsSleeping || listener.Model.Abilities.IsUndead ||
                         !listener.Model.Abilities.IsIntelligent ||
                         m_Rules.StdDistance(listener.Location.Position, speaker.Location.Position) > listener.AudioRange) continue;
-                    bool identified = listener == target || (m_Rules.GridDistance(listener.Location.Position, speaker.Location.Position) <=
+                    bool communityCall = (flags & Sayflags.IS_COMMUNITY_CALL) != 0;
+                    bool identified = (listener == target && !communityCall) || (m_Rules.GridDistance(listener.Location.Position, speaker.Location.Position) <=
                         m_Rules.ActorFOV(listener, speaker.Location.Map.LocalTime, m_Session.World.Weather) &&
                         LOS.CanTraceViewLine(listener.Location, speaker.Location.Position));
+                    if (communityCall && listener.IsPlayer) identified = IsVisibleToPlayer(speaker);
+                    if (communityCall) Gameplay.Personality.CommunityKnowledgeSystem.HearCall(this, speaker, listener, identified);
                     string kind = (flags & Sayflags.IS_RUMOR) != 0 ? "heard_rumor" :
                         (flags & Sayflags.IS_REQUEST) != 0 ? "heard_request" : "heard_reply";
                     if (listener.IsPlayer)
@@ -429,6 +448,22 @@ namespace djack.RogueSurvivor.Engine
             DoTakeItem(actor, position, it);
         }
 
+        public bool DoDisarmTrap(Actor actor, Point position, ItemTrap trap)
+        {
+            string reason;
+            if (!m_Rules.CanActorDisarmTrap(actor, position, trap, out reason)) return false;
+            Map map = actor.Location.Map;
+            XpdBase claim = map.XpdBaseAt(position);
+            SpendActorActionPoints(actor, Rules.BASE_ACTION_COST);
+            // Tampering with a claimed defense has the same witnessed consequences as taking it.
+            if (claim != null && !claim.Owns(actor) && trap.LastDroppedBy != actor)
+                NoticeXpdBaseTheft(actor, claim, position, trap, units: trap.Quantity);
+            trap.Desactivate();
+            if (IsVisibleToPlayer(actor) || IsVisibleToPlayer(new Location(map, position)))
+                AddMessage(MakeMessage(actor, String.Format("disarm{0} {1}.", actor.IsPlayer ? "" : "s", trap.TheName)));
+            return true;
+        }
+
         public void DoTakeItem(Actor actor, Point position, Item it, bool noticeTheft = true, long causeId = 0, string storyId = null)
         {
             Map map = actor.Location.Map;
@@ -498,9 +533,10 @@ namespace djack.RogueSurvivor.Engine
         {
             // spend APs.
             SpendActorActionPoints(actor, Rules.BASE_ACTION_COST);
-            bool neededFood = gift is ItemFood && m_Rules.IsActorHungry(target);
+            bool neededFood = gift is ItemFood && m_Rules.IsActorHungry(target) && !m_Rules.IsFoodSpoiled((ItemFood)gift, actor.Location.Map.LocalTime.TurnCounter);
             bool neededMedicine = gift is ItemMedicine &&
-                (target.HitPoints < m_Rules.ActorMaxHPs(target) / 2 || target.Infection > 0);
+                (target.HitPoints < m_Rules.ActorMaxHPs(target) / 2 && ((ItemMedicine)gift).Healing > 0 ||
+                 target.Infection > 0 && ((ItemMedicine)gift).InfectionCure > 0);
 
             // if leader give to follower, improve trust.
             if (target.Leader == actor)
@@ -519,7 +555,7 @@ namespace djack.RogueSurvivor.Engine
                 ModifyActorTrustInLeader(target, isInterestingItem ? Rules.TRUST_GOOD_GIFT_INCREASE : Rules.TRUST_MISC_GIFT_INCREASE, true);
             }
             // if follower give to leader, decrease trust.
-            else if (actor.Leader == target)
+            else if (actor.Leader == target && !(actor.IsPlayer && actor.CommunityMembership != null))
             {
                 // emote.
                 DoSay(target, actor, "Well, here it is...", Sayflags.IS_FREE_ACTION);

@@ -21,7 +21,8 @@ namespace djack.RogueSurvivor.Gameplay.AI
                     NpcIntentSystem.CanSee(game, m_Actor, actor)) visible.Add(actor);
             }
             bool danger = false;
-            foreach (Actor actor in visible) if (game.Rules.AreEnemies(m_Actor, actor)) { danger = true; break; }
+            foreach (Actor actor in visible) if (game.Rules.IsKnownEnemy(m_Actor, actor)) { danger = true; break; }
+            CommunityEncounterSystem.ObserveContact(game, m_Actor, visible);
             NpcIntentSystem.Maintain(game, m_Actor, visible, danger, Order != null);
             return visible;
         }
@@ -47,8 +48,18 @@ namespace djack.RogueSurvivor.Gameplay.AI
                 ActionNpcReaction action = new ActionNpcReaction(m_Actor, game, reaction, target);
                 if (action.IsLegal()) return action;
             }
+            NpcIntent intent = NpcIntentSystem.Select(game.NpcContent, m_Actor);
+            // Preserve an actual group-security decision ahead of a social introduction.
+            if (intent != null && intent.DefinitionId == "expel_member") return BehaviorNpcPlan(game, intent, visible);
+            if (m_Actor.Controller is CivilianAI && game.Session.GamePreset.InitialCommunities)
+            {
+                ActorAction greeting = CommunityEncounterSystem.Select(game, m_Actor, visible, false);
+                if (greeting != null) return greeting;
+            }
+            ActorAction diplomacy = CommunityDiplomacySystem.Select(game, m_Actor, visible);
+            if (diplomacy != null) return diplomacy;
             ActorAction groupPlan = BehaviorNpcGroupPlans(game, visible); if (groupPlan != null) return groupPlan;
-            NpcIntent intent = NpcIntentSystem.Select(game.NpcContent, m_Actor); if (intent == null) return BehaviorNpcRumors(game, visible);
+            if (intent == null) return BehaviorNpcRumors(game, visible);
             return BehaviorNpcPlan(game, intent, visible);
         }
     }

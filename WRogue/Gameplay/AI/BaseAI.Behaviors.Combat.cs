@@ -898,7 +898,7 @@ namespace djack.RogueSurvivor.Gameplay.AI
                         // other actor within blast radius.
                         // - if friend, abort and never throw there.
                         // - if enemy, increase score.
-                        if (game.Rules.AreEnemies(m_Actor, otherActor))
+                        if (game.Rules.IsKnownEnemy(m_Actor, otherActor))
                         {
                             // score = damage inflicted vs target toughness(max hp).
                             // -> means it is better to hurt badly one big enemy than a few scratch on a group of weaklings.
@@ -967,7 +967,7 @@ namespace djack.RogueSurvivor.Gameplay.AI
 
             // filter murderers that are not our enemies yet.
             List<Percept> murderers = FilterActors(game, percepts,
-                (a) => a.MurdersCounter > 0 && !game.Rules.AreEnemies(m_Actor, a));
+                (a) => a.MurdersCounter > 0 && !game.Rules.IsKnownEnemy(m_Actor, a));
 
             // if none, nothing to do.
             if (murderers == null || murderers.Count == 0)
@@ -1090,7 +1090,7 @@ namespace djack.RogueSurvivor.Gameplay.AI
                     foreach (Corpse c in corpsesThere)
                     {
                         // dont revive enemies!
-                        if (game.Rules.CanActorReviveCorpse(m_Actor, c) && !game.Rules.AreEnemies(m_Actor, c.DeadGuy))
+                        if (game.Rules.CanActorReviveCorpse(m_Actor, c) && !game.Rules.IsKnownEnemy(m_Actor, c.DeadGuy))
                             return true;
                     }
                     return false;
@@ -1107,7 +1107,7 @@ namespace djack.RogueSurvivor.Gameplay.AI
                 // get the first corpse we can revive.
                 foreach (Corpse c in corpses)
                 {
-                    if (game.Rules.CanActorReviveCorpse(m_Actor, c) && !game.Rules.AreEnemies(m_Actor, c.DeadGuy))
+                    if (game.Rules.CanActorReviveCorpse(m_Actor, c) && !game.Rules.IsKnownEnemy(m_Actor, c.DeadGuy))
                         return new ActionReviveCorpse(m_Actor, game, c);
                 }
             }

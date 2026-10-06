@@ -28,8 +28,10 @@ static class SaveBudgetRunner
     {
         using (Process runtime = Process.GetCurrentProcess())
         {
+            string assembly = Assembly.GetExecutingAssembly().Location;
+            bool hosted = !String.Equals(Path.GetFullPath(runtime.MainModule.FileName), Path.GetFullPath(assembly), StringComparison.OrdinalIgnoreCase);
             var start = new ProcessStartInfo(runtime.MainModule.FileName,
-                Quote(Assembly.GetExecutingAssembly().Location) + " --save-budget-worker " + mode + " " + Quote(path)) { UseShellExecute = false };
+                (hosted ? Quote(assembly) + " " : "") + "--save-budget-worker " + mode + " " + Quote(path)) { UseShellExecute = false };
             using (Process child = Process.Start(start))
             {
                 if (!child.WaitForExit(60000))
@@ -42,7 +44,7 @@ static class SaveBudgetRunner
         }
     }
 
-    static string Quote(string value) { return "\"" + value.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\""; }
+    static string Quote(string value) { return "\"" + value.Replace("\"", "\\\"") + "\""; }
 
     public static int RunWorker(string mode, string path)
     {

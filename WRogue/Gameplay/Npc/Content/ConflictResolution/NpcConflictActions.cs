@@ -18,7 +18,9 @@ namespace djack.RogueSurvivor.Gameplay.Personality
             c.Publish("apologized", c.Target); c.Done(c.Game.NpcContent.Facts.Mask("ApologyCommunicated"));
         }); }
         public static ActorAction Expel(NpcActionContext c)
-        { return c.Action(() => Talkable(c) && c.Target.Leader == c.Owner && c.Owner.SocialGroup != null &&
+        { return c.Action(() => c.Target != null && !c.Target.IsSleeping && c.Target.Model.Abilities.IsIntelligent &&
+            NpcIntentSystem.CanSee(c.Game, c.Owner, c.Target) && NpcPlanExecution.Near(c.Game, c.Owner, c.Target.Location) &&
+            c.Target.Leader == c.Owner && c.Owner.SocialGroup != null &&
             c.Owner.SocialGroup.LeaderId == c.Owner.PersonalityIdentity, () => {
             c.Game.DoSay(c.Owner, c.Target, "You've put us at risk. You must leave the group.", RogueGame.Sayflags.NONE);
             c.Owner.RemoveFollower(c.Target); c.Target.TrustInLeader = Rules.TRUST_NEUTRAL;

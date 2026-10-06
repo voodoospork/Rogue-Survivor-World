@@ -372,7 +372,7 @@ namespace djack.RogueSurvivor.Gameplay.AI
                     Actor other = map.GetActorAt(pt);
                     if (other == null)
                         return false;
-                    return game.Rules.AreEnemies(actor, other);
+                    return game.Rules.IsKnownEnemy(actor, other);
                 });
         }
 
@@ -653,7 +653,7 @@ namespace djack.RogueSurvivor.Gameplay.AI
         /// <returns></returns>
         protected bool IsFriendOf(RogueGame game, Actor other)
         {
-            return !game.Rules.AreEnemies(m_Actor, other) && m_Actor.Faction == other.Faction;
+            return !game.Rules.IsKnownEnemy(m_Actor, other) && m_Actor.Faction == other.Faction;
         }
 
         protected Actor GetNearestTargetFor(RogueGame game, Actor actor)
@@ -667,7 +667,7 @@ namespace djack.RogueSurvivor.Gameplay.AI
             {
                 if (a.IsDead) continue;
                 if (a == actor) continue;
-                if (!game.Rules.AreEnemies(actor, a)) continue;
+                if (!game.Rules.IsKnownEnemy(actor, a)) continue;
 
                 int d = game.Rules.GridDistance(a.Location.Position, actor.Location.Position);
                 if (d < best)

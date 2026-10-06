@@ -52,6 +52,7 @@ namespace djack.RogueSurvivor.Data
         public readonly int Deadline;
         public readonly NpcKnownPerson ReportedPerson;
         [System.Runtime.Serialization.OptionalField] public bool Overheard;
+        [System.Runtime.Serialization.OptionalField] public Guid CommunityBeneficiary;
         public Location ResourcePlace;
         public string Resource;
         public NpcReaction(Actor target, string text, long causeId, int turn, string kind = "aid_acknowledged", string storyId = null, NpcKnownPerson report = null, bool overheard = false)

@@ -13,7 +13,7 @@ namespace djack.RogueSurvivor.Gameplay.Personality
         public void Register(NpcCatalogBuilder catalog)
         {
             catalog.OperatorSource(new NpcOperatorSource("food.acquire", c => (ulong)(NpcPlanFact.Food | NpcPlanFact.SpareFood), FoodPlanOperators.Acquisition));
-            catalog.Event(new NpcEventDefinition("food_cache", describeReport: f => "there was food"));
+            catalog.Event(new NpcEventDefinition("food_cache", describeReport: f => f.Units == 0 ? "no usable food remained at that spot" : "there was food"));
             catalog.OnReport("food_cache", c => c.RememberPlace("food"));
             catalog.Resource(new NpcResourceDefinition("food", (g, a) => g.Rules.IsActorHungry(a)));
             catalog.GoalSource(this);

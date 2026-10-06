@@ -1,0 +1,98 @@
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using djack.RogueSurvivor.Data;
+using djack.RogueSurvivor.Engine;
+using djack.RogueSurvivor.Engine.Actions;
+using djack.RogueSurvivor.Engine.MapObjects;
+using djack.RogueSurvivor.Engine.AI;
+using djack.RogueSurvivor.Gameplay.AI.Tools;
+using djack.RogueSurvivor.Gameplay.Personality;
+
+namespace djack.RogueSurvivor.Gameplay.AI
+{
+    abstract partial class OrderableAI
+    {
+        protected ActorAction BehaviorCommunityAlarm(RogueGame game, List<Actor> visible)
+        {
+            SocialGroup group = m_Actor.SocialGroup;
+            if (group == null || group.Home == null || group.Home.Watcher != m_Actor.PersonalityIdentity ||
+                Order != null || m_Actor.InPlayerParty || game.ResolveCommunityHome(m_Actor) == null ||
+                m_Actor.Location.Map.LocalTime.TurnCounter < group.Home.NextAlarmTurn || visible == null ||
+                game.Rules.IsActorStarving(m_Actor) || game.Rules.IsActorTired(m_Actor) || game.Rules.IsActorSleepy(m_Actor) ||
+                m_Actor.HitPoints < game.Rules.ActorMaxHPs(m_Actor) / 2 ||
+                (game.Rules.IsActorHungry(m_Actor) && NpcFoodSupply.HasFood(game, m_Actor))) return null;
+            Actor enemy = null;
+            foreach (Actor actor in visible)
+                if (game.Rules.IsKnownEnemy(m_Actor, actor))
+                {
+                    if (game.Rules.GridDistance(m_Actor.Location.Position, actor.Location.Position) <= 1) return null;
+                    if (enemy == null) enemy = actor;
+                }
+            return enemy == null ? null : new ActionCommunityAlarm(m_Actor, game, enemy);
+        }
+        protected ActorAction BehaviorCommunityHome(RogueGame game, bool onlyReturn = false)
+        {
+            if (m_Actor.InPlayerParty || Order != null) return null;
+            ResolvedCommunityHome resolved = game.ResolveCommunityHome(m_Actor);
+            if (resolved == null) return null;
+            CommunityHomeState home = m_Actor.SocialGroup.Home;
+            int turn = m_Actor.Location.Map.LocalTime.TurnCounter;
+            if (turn < home.RetryTurn(m_Actor.PersonalityIdentity)) return null;
+            game.ScheduleCommunityWatch(m_Actor);
+            bool watch = !onlyReturn && home.Watcher == m_Actor.PersonalityIdentity;
+            Location destination = resolved.Anchor;
+            if (watch)
+            {
+                Point? post = WatchPosition(game, resolved);
+                if (!post.HasValue) { home.Retry(m_Actor.PersonalityIdentity, turn + 30); home.Watcher = Guid.Empty; return null; }
+                destination = new Location(resolved.Map, post.Value);
+            }
+            else
+            {
+                XpdBase here = m_Actor.Location.Map.XpdBaseAt(m_Actor.Location.Position);
+                if (here != null && here.IsPartOf(resolved.Claim)) return onlyReturn ? null : new ActionWait(m_Actor, game);
+                Point? free = FirstWalkableBaseCell(resolved.Map, resolved.Claim);
+                if (!free.HasValue) { home.Retry(m_Actor.PersonalityIdentity, turn + 30); return null; }
+                destination = new Location(resolved.Map, free.Value);
+            }
+            if (m_Actor.Location.Map == destination.Map && m_Actor.Location.Position == destination.Position)
+                return new ActionWait(m_Actor, game);
+            Point? routePoint = m_Actor.Location.Map == destination.Map ? (Point?)destination.Position :
+                m_Actor.Location.Map.GetExitPos(XpdSupplyRoutes.NextExit(m_Actor.Location.Map, destination.Map, null));
+            if (!routePoint.HasValue || !CanReachSimple(game, routePoint.Value, RouteFinder.SpecialActions.DOORS | RouteFinder.SpecialActions.JUMP))
+            { home.Retry(m_Actor.PersonalityIdentity, turn + 30); return null; }
+            ActorAction travel = GoTo(game, destination);
+            if (travel == null) home.Retry(m_Actor.PersonalityIdentity, turn + 30);
+            return travel;
+        }
+        Point? WatchPosition(RogueGame game, ResolvedCommunityHome home)
+        {
+            Point? best = null; int bestDistance = Int32.MaxValue;
+            foreach (Point point in home.Claim.Cells)
+            {
+                Map map = home.Map;
+                if (!map.IsWalkable(point.X, point.Y) || map.GetExitAt(point) != null || map.GetMapObjectAt(point) is DoorWindow ||
+                    (map.GetActorAt(point) != null && map.GetActorAt(point) != m_Actor)) continue;
+                bool entrance = false, clear = true;
+                foreach (Direction direction in Direction.COMPASS)
+                {
+                    Point next = point + direction;
+                    if (!map.IsInBounds(next)) continue;
+                    if (map.GetMapObjectAt(next) is DoorWindow || map.GetExitAt(next) != null) entrance = true;
+                    // Exclude a one-tile corridor: a watcher must leave room to pass.
+                }
+                int neighbors = 0;
+                foreach (Direction direction in new[] { Direction.N, Direction.E, Direction.S, Direction.W })
+                { Point next = point + direction; if (map.IsInBounds(next) && map.IsWalkable(next.X, next.Y)) neighbors++; }
+                clear = neighbors >= 3;
+                if (!entrance || !clear) continue;
+                if (map == m_Actor.Location.Map && !CanReachSimple(game, point, RouteFinder.SpecialActions.DOORS | RouteFinder.SpecialActions.JUMP)) continue;
+                int distance = game.Rules.GridDistance(home.Anchor.Position, point);
+                if (distance < bestDistance || (distance == bestDistance && (best == null || point.Y < best.Value.Y ||
+                    (point.Y == best.Value.Y && point.X < best.Value.X)))) { best = point; bestDistance = distance; }
+            }
+            return best;
+        }
+    }
+}

@@ -313,10 +313,15 @@ namespace djack.RogueSurvivor.Engine
             }
             int gridCenter = world.Size / 2;
 
+            if (m_Session.GamePreset.PatchySupplies)
+                for (int x = 0; x < world.Size; x++) for (int y = 0; y < world.Size; y++)
+                    ScavengingStock.Redistribute(world[x, y].EntryMap);
+
             Map startMap = world[gridCenter, gridCenter].EntryMap;
             GeneratePlayerOnMap(startMap, m_TownGenerator);
             SetCurrentMap(startMap);
             RefreshPlayer();
+            EstablishInitialCommunities(startMap);
             UpdatePlayerFOV(m_Player);  // to make sure we get notified of actors acting before us in turn 0.
 #if DEBUG
             AddDevCheatItems();

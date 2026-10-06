@@ -15,6 +15,7 @@ namespace djack.RogueSurvivor.Engine.Actions
         #endregion
 
         #region Properties
+        internal Location Destination { get { return m_NewLocation; } }
         #endregion
 
         #region Init

@@ -4,11 +4,12 @@ using System.Drawing;
 
 namespace djack.RogueSurvivor.Data
 {
-    // XPD territory belongs to the claimant's leader and direct followers.
+    // NPC territory follows a stable community identity; player territory remains personal.
     [Serializable]
     class XpdBase
     {
-        readonly Actor m_GroupLeader;
+        Actor m_GroupLeader;
+        [System.Runtime.Serialization.OptionalField] Guid m_CommunityIdentity;
         readonly Faction m_Faction;
         readonly List<Point> m_Cells;
         // Null for the original claim and for saves made before linked levels existed.
@@ -32,7 +33,8 @@ namespace djack.RogueSurvivor.Data
         {
             if (claimant == null || claimant.Model.Abilities.IsUndead)
                 throw new ArgumentException("A living actor must claim the base");
-            m_GroupLeader = claimant.HasLeader ? claimant.Leader : claimant;
+            m_GroupLeader = claimant.IsPlayer ? claimant : claimant.GroupRoot;
+            BindCommunity();
             m_Faction = claimant.Faction;
             if (linkedBase != null && !linkedBase.Owns(claimant))
                 throw new ArgumentException("Actor does not own linked base");
@@ -44,9 +46,22 @@ namespace djack.RogueSurvivor.Data
         public bool Owns(Actor actor)
         {
             if (actor == null || actor.Model.Abilities.IsUndead) return false;
-            return m_GroupLeader != null &&
-                (actor == m_GroupLeader || actor.Leader == m_GroupLeader);
+            BindCommunity();
+            if (m_CommunityIdentity != Guid.Empty)
+                return actor.SocialGroup != null && actor.SocialGroup.Identity == m_CommunityIdentity;
+            if (m_GroupLeader == null) return false;
+            for (Actor parent = actor; parent != null; parent = parent.Leader)
+                if (parent == m_GroupLeader) return true;
+            return false;
         }
+
+        public Guid CommunityIdentity { get { BindCommunity(); return m_CommunityIdentity; } }
+        void BindCommunity()
+        { if (m_CommunityIdentity == Guid.Empty && m_GroupLeader != null && !m_GroupLeader.IsPlayer && m_GroupLeader.SocialGroup != null)
+            m_CommunityIdentity = m_GroupLeader.SocialGroup.Identity; }
+        public bool CanManage(Actor actor) { return actor == m_GroupLeader; }
+        public void TransferCommunity(Actor previous, Actor successor, Guid identity)
+        { if (m_GroupLeader == previous && CommunityIdentity == identity) m_GroupLeader = successor; }
 
         public bool Contains(Point point) { return m_Cells.Contains(point); }
         public bool IsPartOf(XpdBase other) { return other != null && Root == other.Root; }

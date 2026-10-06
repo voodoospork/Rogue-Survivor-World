@@ -18,8 +18,8 @@ namespace djack.RogueSurvivor.Gameplay.Personality
             NpcKnowledge knowledge = owner.Personality.Knowledge;
             NpcKnownPerson subject = observation.SeesSubject ? knowledge.See(source.Subject, source.Turn) : null;
             NpcKnownPerson other = observation.SeesOther ? knowledge.See(source.Other, source.Turn) : null;
-            if (subject != null) subject.Hostile = observation.Game.Rules.AreEnemies(owner, source.Subject);
-            if (other != null) other.Hostile = observation.Game.Rules.AreEnemies(owner, source.Other);
+            if (subject != null) subject.Hostile = observation.Game.Rules.IsKnownEnemy(owner, source.Subject);
+            if (other != null) other.Hostile = observation.Game.Rules.IsKnownEnemy(owner, source.Other);
             NpcEventDefinition definition = observation.Game.NpcContent.Event(source.Kind);
             if (definition != null && definition.ProvesDeath && source.Subject != null)
             {
@@ -36,7 +36,8 @@ namespace djack.RogueSurvivor.Gameplay.Personality
                 Source = observation.Direct ? NpcKnowledgeSource.Participant : NpcKnowledgeSource.Witness, Confidence = observation.Direct ? 100 : 90,
                 SourceId = owner.PersonalityIdentity, SubjectId = !seesSubject ? Guid.Empty : source.Subject.PersonalityIdentity,
                 OtherId = !seesOther ? Guid.Empty : source.Other.PersonalityIdentity, SubjectName = !seesSubject ? null : source.Subject.UnmodifiedName,
-                OtherName = !seesOther ? null : source.Other.UnmodifiedName, Place = new Location(source.Map, source.Position), StoryId = source.StoryId });
+                OtherName = !seesOther ? null : source.Other.UnmodifiedName, Place = new Location(source.Map, source.Position), StoryId = source.StoryId,
+                DiplomacyEvidence = observation.DiplomacyEvidence, DiplomacyMessage = source.DiplomacyMessage });
         }
         public static void Perceive(RogueGame game, Actor actor, IList<Percept> percepts)
         {
@@ -49,7 +50,7 @@ namespace djack.RogueSurvivor.Gameplay.Personality
                 if (person != null)
                 {
                     NpcKnownPerson known = knowledge.See(person, turn);
-                    known.Hostile = game.Rules.AreEnemies(actor, person);
+                    known.Hostile = game.Rules.IsKnownEnemy(actor, person);
                     game.NpcContent.Perceive(NpcPerceptionKind.Person, new NpcPerceptionContext(game, actor, percept.Location, person));
                 }
                 Inventory items = percept.Percepted as Inventory;
@@ -65,6 +66,7 @@ namespace djack.RogueSurvivor.Gameplay.Personality
                     }
                 }
             }
+            ScavengingSystem.ObserveEmptyNpc(game, actor);
             game.NpcContent.Perceive(NpcPerceptionKind.Surroundings, new NpcPerceptionContext(game, actor, actor.Location));
         }
         public static bool Hear(RogueGame game, Actor listener, Actor speaker, NpcFact source)
@@ -83,6 +85,9 @@ namespace djack.RogueSurvivor.Gameplay.Personality
                 listener.Personality.Knowledge.LearnPerson(new NpcKnownPerson { Id = fact.OtherId, Name = fact.OtherName, Place = fact.Place,
                     SeenTurn = fact.EventTurn, Confidence = confidence, Source = NpcKnowledgeSource.Told });
             if (learned) game.NpcContent.Hear(new NpcReportContext(listener, fact, improvement, game.NpcContent));
+            if (learned) ScavengingSystem.Hear(game, listener, speaker, fact);
+            if (learned) CommunityDiplomacySystem.Hear(listener, speaker, fact,
+                game.IdentifiesDiplomacySpeaker(listener, speaker) ? "reported by " + speaker.UnmodifiedName : "reported by an unseen voice");
             return learned;
         }
         public static void HearLocation(Actor listener, Actor speaker, NpcKnownPerson report, long eventId, NpcContentCatalog catalog)

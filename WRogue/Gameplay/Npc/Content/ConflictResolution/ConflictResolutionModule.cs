@@ -18,6 +18,8 @@ namespace djack.RogueSurvivor.Gameplay.Personality
                 m => 20 + m.Compassion + m.Law + m.Attachment / 2, NpcConflictActions.Apologize);
             RegisterMechanic(c, "GroupSecurity", "Exclude a dangerous companion", "expel_member", "MemberExpelled",
                 m => 15 + m.Group + m.Law + m.Courage + m.Grievance / 3, NpcConflictActions.Expel);
+            c.Capabilities["expel_member"].AllowHostile = true;
+            c.Capabilities["expel_member"].ActDuringDanger = true;
             c.Capabilities["defend_person"].OnTargetDeath = killed => new NpcIntentOutcome(NpcIntentStatus.Completed, "the known threat died");
             c.Capabilities["retaliate"].OnTargetDeath = killed => new NpcIntentOutcome(killed ? NpcIntentStatus.Completed : NpcIntentStatus.Abandoned,
                 killed ? "actually retaliated against the attacker" : "someone else ended the threat");
@@ -52,7 +54,18 @@ namespace djack.RogueSurvivor.Gameplay.Personality
                     offers.Add(person, "Intimidation", "intimidate", 0, 1, person.Violation, person.ViolationConfidence, person.ViolationCause);
                 if (owner.SocialGroup != null && owner.SocialGroup.LeaderId == c.Self.Id &&
                     owner.SocialGroup.Members.Contains(person.Id) && person.Violation >= 80 && person.ViolationConfidence >= 80)
-                    offers.Add(person, "GroupSecurity", "expel_member", 0, 1, person.Violation, person.ViolationConfidence, person.ViolationCause);
+                {
+                    NpcKnownPerson responsible = person;
+                    foreach (Actor member in owner.PartyTree())
+                    {
+                        if (member.PersonalityIdentity != person.Id || !member.InPlayerParty) continue;
+                        Actor personalLeader = member;
+                        while (!personalLeader.IsPlayer && personalLeader.Leader != null) personalLeader = personalLeader.Leader;
+                        responsible = c.FindPerson(p => p.Id == personalLeader.PersonalityIdentity) ?? person;
+                        break;
+                    }
+                    offers.Add(responsible, "GroupSecurity", "expel_member", 0, 1, person.Violation, person.ViolationConfidence, person.ViolationCause);
+                }
             }
             foreach (NpcFact fact in owner.Personality.Knowledge.Facts)
             {

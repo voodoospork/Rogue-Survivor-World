@@ -15,7 +15,7 @@ namespace djack.RogueSurvivor.Gameplay.Personality
         public void Register(NpcCatalogBuilder catalog)
         {
             catalog.Collective(new NpcCollectiveDefinition(id, eventId, Propose,
-                (a, b, p) => b.PersonalityIdentity == p.CollectorId && NpcIntentSystem.Enabled(b),
+                (a, b, p) => !b.InPlayerParty && b.PersonalityIdentity == p.CollectorId && NpcIntentSystem.Enabled(b),
                 (a, p) => "Fetch " + resource + " near " + p.Destination.Map.Name + " for " +
                     (a.Personality.Knowledge.Person(p.BeneficiaryId) == null ? "our companion" : a.Personality.Knowledge.Person(p.BeneficiaryId).Name) + ". Then report back.",
                 (g, a, e) => NpcGroupTasks.AcceptSupply(g, a, e, resource, capability)) { Scope = scope, RequiresDeliveryReport = true, CoordinatorCapability = scope == NpcCollectiveScope.Group ? "coordinate_group_supplies" : null });
@@ -33,7 +33,7 @@ namespace djack.RogueSurvivor.Gameplay.Personality
                 NpcIntentDefinition definition = c.Game.NpcContent.Capability(capability);
                 foreach (Actor member in c.Visible)
                 {
-                    if (member.IsPlayer || member.IsSleeping || member.PersonalityIdentity == beneficiary.Id || (scope == NpcCollectiveScope.Group ? member.SocialGroup != c.Group : member.Faction.ID != c.Leader.Faction.ID) || !NpcIntentSystem.Enabled(member)) continue;
+                    if (member.InPlayerParty || member.IsSleeping || member.PersonalityIdentity == beneficiary.Id || (scope == NpcCollectiveScope.Group ? member.SocialGroup != c.Group : member.Faction.ID != c.Leader.Faction.ID) || !NpcIntentSystem.Enabled(member)) continue;
                     int value = definition.ScoreKnown(member, 0, false, c.Game.NpcContent.Personalities);
                     if (value >= definition.Threshold && value > score) { collector = member; score = value; }
                 }

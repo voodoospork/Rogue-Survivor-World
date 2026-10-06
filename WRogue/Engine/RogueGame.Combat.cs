@@ -24,7 +24,7 @@ namespace djack.RogueSurvivor.Engine
     partial class RogueGame
     {
         #region Damaging, Killing & Disarming actors
-        void InflictDamage(Actor actor, int dmg)
+        void InflictDamage(Actor actor, int dmg, Actor attacker = null)
         {
             // HP.
             actor.HitPoints -= dmg;
@@ -60,6 +60,7 @@ namespace djack.RogueSurvivor.Engine
             // If sleeping, wake up dude!
             if (actor.IsSleeping)
                 DoWakeUp(actor);
+            if (attacker != null && dmg > 0 && actor.HitPoints > 0) ReportCommunityCombat(attacker, actor, false);
         }
 
         // alpha10 drop corpse optional
@@ -74,6 +75,7 @@ namespace djack.RogueSurvivor.Engine
 #endif
 
             bool wasMurder = (killer != null && m_Rules.IsMurder(killer, deadGuy));
+            if (killer != null) ReportCommunityCombat(killer, deadGuy, true);
             ReportPersonalityEvent("death", deadGuy, killer, deadGuy.Location.Map, deadGuy.Location.Position);
             if (wasMurder)
                 ReportPersonalityEvent("murder", deadGuy, killer, deadGuy.Location.Map, deadGuy.Location.Position);
@@ -83,7 +85,6 @@ namespace djack.RogueSurvivor.Engine
 
             // Set dead flag.
             deadGuy.IsDead = true;
-            ReleaseGroupBases(deadGuy);
 
             // force to stop dragging corpses.
             DoStopDraggingCorpses(deadGuy);
@@ -166,6 +167,7 @@ namespace djack.RogueSurvivor.Engine
 
             // Remove followers.
             Gameplay.Personality.NpcStorySystem.Succession(this, deadGuy);
+            ReleaseGroupBases(deadGuy);
             deadGuy.RemoveAllFollowers();
 
             // Remove aggressor & self defence relations.

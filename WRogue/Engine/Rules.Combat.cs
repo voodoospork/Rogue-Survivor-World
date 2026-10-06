@@ -327,7 +327,7 @@ namespace djack.RogueSurvivor.Engine
                     continue;
                 if (other == actor)
                     continue;
-                if (!AreEnemies(actor, other))
+                if (!IsKnownEnemy(actor, other))
                     continue;
 
                 if (list == null)
@@ -374,6 +374,7 @@ namespace djack.RogueSurvivor.Engine
                 throw new ArgumentNullException("actor");
             if (target == null)
                 throw new ArgumentNullException("target");
+
 
             ///////////////////////////////////////
             // Cannot fire if:
@@ -638,12 +639,23 @@ namespace djack.RogueSurvivor.Engine
             return CanActorTakeLead(actor, target, out reason);
         }
 
+        public int ActorCommandedFollowers(Actor actor)
+        {
+            int count = actor.CountFollowers;
+            if (!actor.IsPlayer && count > 0)
+                foreach (Actor follower in actor.Followers)
+                    if (follower.IsPlayer && follower.CommunityMembership != null) count--;
+            return count;
+        }
         public bool CanActorTakeLead(Actor actor, Actor target, out string reason)
         {
             if (actor == null)
                 throw new ArgumentNullException("actor");
             if (target == null)
                 throw new ArgumentNullException("target");
+
+            if (actor.IsPlayer && actor.CommunityMembership != null && target.SocialGroup == actor.SocialGroup && target.Leader != actor)
+            { reason = "belongs to your NPC-led community"; return false; }
 
             ///////////////////////////////////////
             // Can't if any is true:
@@ -695,7 +707,8 @@ namespace djack.RogueSurvivor.Engine
             }
 
             // 4. Target is a leader.
-            if (target.CountFollowers > 0)
+            if (target.CountFollowers > 0 || Gameplay.Personality.CommunityDiplomacySystem.IsLeader(target) &&
+                Gameplay.Personality.CommunityDiplomacySystem.PoliticalGroup(target))
             {
                 reason = "is a leader";
                 return false;
@@ -708,7 +721,7 @@ namespace djack.RogueSurvivor.Engine
                 reason = "can't lead";
                 return false;
             }
-            if (actor.CountFollowers >= maxFollowers)
+            if (ActorCommandedFollowers(actor) >= maxFollowers)
             {
                 reason = "too many followers";
                 return false;

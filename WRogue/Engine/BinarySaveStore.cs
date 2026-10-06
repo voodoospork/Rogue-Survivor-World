@@ -172,7 +172,8 @@ namespace djack.RogueSurvivor.Engine
                 ResidentRecords records = ReadRecordsSection(stream, true, out isSession, out enabled, out turn);
                 object value;
                 using (GZipStream compressed = new GZipStream(stream, CompressionMode.Decompress, true))
-                    value = ObjectGraphStore.Read(compressed);
+                using (BufferedStream buffer = new BufferedStream(compressed, 65536))
+                    value = ObjectGraphStore.Read(buffer);
                 if (isSession)
                 {
                     Session session = value as Session;

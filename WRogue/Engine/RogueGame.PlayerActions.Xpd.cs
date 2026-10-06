@@ -61,7 +61,7 @@ namespace djack.RogueSurvivor.Engine
                 if (exit == null || exit.ToMap == null || exit.ToMap == map ||
                     exit.ToMap.District != map.District) continue;
                 XpdBase candidate = exit.ToMap.XpdBaseAt(exit.ToPosition);
-                if (candidate == null || !candidate.Owns(actor)) continue;
+                if (candidate == null || !candidate.CanManage(actor)) continue;
                 Exit returnExit = exit.ToMap.GetExitAt(exit.ToPosition);
                 if (returnExit != null && returnExit.ToMap == map &&
                     returnExit.ToPosition == cell) return candidate;
@@ -168,7 +168,7 @@ namespace djack.RogueSurvivor.Engine
                     m_Session.WorldTime.TurnCounter, Color.LightGreen));
                 return true;
             }
-            if (!baseClaim.Owns(player))
+            if (!baseClaim.CanManage(player))
             {
                 AddMessage(MakeErrorMessage("This base belongs to another group."));
                 return false;

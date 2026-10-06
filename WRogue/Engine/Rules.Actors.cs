@@ -95,52 +95,36 @@ namespace djack.RogueSurvivor.Engine
         /// <returns></returns>
         public bool AreGroupEnemies(Actor actorA, Actor actorB)
         {
-            if (actorA == null || actorB == null)
-                return false;
-            if (actorA == actorB)
-                return false;
-
-            // my leader enemies are my enemies.
-            // my mates enemies are my enemies.
-            bool IsEnemyOfMyLeaderOrMates(Actor groupActor, Actor target)
-            {
-                if (AreEnemies(groupActor.Leader, target, false))
-                    return true;
-                foreach (Actor mate in groupActor.Leader.Followers)
-                    if (mate != groupActor && AreEnemies(mate, target, false))
-                        return true;
-                return false;
-            }
-
-            // my followers enemies are my enemies
-            bool IsEnemyOfMyFollowers(Actor groupActor, Actor target)
-            {
-                foreach (Actor follower in groupActor.Followers)
-                    if (AreEnemies(follower, target, false))
-                        return true;
-                return false;
-            }
-
-            // check A group
-            if (actorA.HasLeader)
-                if (IsEnemyOfMyLeaderOrMates(actorA, actorB))
-                    return true;
-            if (actorA.CountFollowers > 0)
-                if (IsEnemyOfMyFollowers(actorA, actorB))
-                    return true;
-
-            // check B group
-            if (actorB.HasLeader)
-                if (IsEnemyOfMyLeaderOrMates(actorB, actorA))
-                    return true;
-            if (actorB.CountFollowers > 0)
-                if (IsEnemyOfMyFollowers(actorB, actorA))
-                    return true;
-
-            // nope
+            if (actorA == null || actorB == null || actorA == actorB) return false;
+            if (Gameplay.Personality.CommunityDiplomacySystem.PoliticalGroup(actorA) || Gameplay.Personality.CommunityDiplomacySystem.PoliticalGroup(actorB))
+                return Gameplay.Personality.CommunityDiplomacySystem.KnowsFeud(actorA, actorB) ||
+                    Gameplay.Personality.CommunityDiplomacySystem.KnowsFeud(actorB, actorA) ||
+                    PersonalPartyEnemy(actorA, actorB) || PersonalPartyEnemy(actorB, actorA);
+            if (actorA.Leader == null && actorA.CountFollowers == 0 && actorB.Leader == null && actorB.CountFollowers == 0) return false;
+            Actor rootA = actorA.GroupRoot, rootB = actorB.GroupRoot;
+            // Personal disputes still apply, but don't turn every member against its own community.
+            if (rootA == rootB) return false;
+            foreach (Actor memberA in rootA.PartyTree())
+                foreach (Actor memberB in rootB.PartyTree())
+                    if (!memberA.IsDead && !memberB.IsDead && AreEnemies(memberA, memberB, false)) return true;
             return false;
         }
-
+        bool PersonalPartyEnemy(Actor observer, Actor target)
+        {
+            if (!observer.InPlayerParty) return false;
+            Actor player = observer;
+            while (!player.IsPlayer && player.Leader != null) player = player.Leader;
+            foreach (Actor member in player.PartyTree()) if (!member.IsDead && AreEnemies(member, target, false)) return true;
+            return false;
+        }
+        public bool IsKnownEnemy(Actor observer, Actor target)
+        {
+            if (observer == null || target == null || observer == target) return false;
+            if (AreEnemies(observer, target, false)) return true;
+            if (Gameplay.Personality.CommunityDiplomacySystem.PoliticalGroup(observer) || Gameplay.Personality.CommunityDiplomacySystem.PoliticalGroup(target))
+                return PersonalPartyEnemy(observer, target) || Gameplay.Personality.CommunityDiplomacySystem.KnowsFeud(observer, target);
+            return AreGroupEnemies(observer, target);
+        }
         public bool IsMurder(Actor killer, Actor victim)
         {
             if (killer == null || victim == null)

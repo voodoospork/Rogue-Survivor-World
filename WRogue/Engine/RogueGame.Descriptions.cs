@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Drawing;
 using System.Threading;
@@ -27,36 +28,51 @@ namespace djack.RogueSurvivor.Engine
         #region Describing a game element
         string[] DescribeStuffAt(Map map, Point mapPos)
         {
+            List<string> context = new List<string>(LastReportedShelterLines(map, mapPos));
+            Inventory ground = map.GetItemsAt(mapPos);
+            if (ground != null && !ground.IsEmpty)
+            {
+                string warning = ClaimedSupplyWarning(map, mapPos);
+                if (warning != null) context.Add(warning);
+                foreach (Item item in ground.Items)
+                {
+                    ItemTrap trap = item as ItemTrap;
+                    if (trap == null || !trap.IsActivated || trap.IsTriggered) continue;
+                    context.Add(String.Format("Disarm from an adjacent tile: <{0}>, then direction (one turn).",
+                        s_KeyBindings.Get(PlayerCommand.DISARM_TRAP)));
+                    break;
+                }
+            }
             // Actor?
             Actor actor = map.GetActorAt(mapPos);
             if (actor != null)
             {
-                return DescribeActor(actor);
+                context.AddRange(DescribeActor(actor)); return context.ToArray();
             }
 
             // Object/Items?
             MapObject obj = map.GetMapObjectAt(mapPos);
             if (obj != null)
             {
-                return DescribeMapObject(obj, map, mapPos);
+                context.AddRange(DescribeMapObject(obj, map, mapPos)); return context.ToArray();
             }
 
             // Items?
             Inventory inv = map.GetItemsAt(mapPos);
             if (inv != null && !inv.IsEmpty)
             {
-                return DescribeInventory(inv);
+                context.AddRange(DescribeInventory(inv)); return context.ToArray();
             }
 
             // Corpses?
             List<Corpse> corpses = map.GetCorpsesAt(mapPos);
             if (corpses != null)
             {
-                return DescribeCorpses(corpses);
+                context.AddRange(DescribeCorpses(corpses)); return context.ToArray();
             }
 
             // Nothing to describe!
-            return null;
+            return context.Count == 0 ? null : context.ToArray();
         }
 
         string[] DescribeActor(Actor actor)
@@ -74,6 +90,7 @@ namespace djack.RogueSurvivor.Engine
             }
             else
                 lines.Add(String.Format("{0}.", Capitalize(actor.Name)));
+            lines.AddRange(KnownAffiliationLines(actor));
             lines.Add(String.Format("{0}.", Capitalize(actor.Model.Name)));
 
             lines.Add(String.Format("{0} since {1}.", actor.Model.Abilities.IsUndead ? "Undead" : "Staying alive", new WorldTime(actor.SpawnTime).ToString()));
@@ -144,7 +161,7 @@ namespace djack.RogueSurvivor.Engine
                 lines.Add(String.Format("You aggressed {0}.", HimOrHer(actor)));
             if (actor.IsSelfDefenceFrom(m_Player))
                 lines.Add("Killing you would be self-defence.");
-            if (!m_Player.Faction.IsEnemyOf(actor.Faction) && m_Rules.AreGroupEnemies(m_Player, actor)) // alpha10
+            if (!m_Player.Faction.IsEnemyOf(actor.Faction) && m_Rules.IsKnownEnemy(m_Player, actor)) // alpha10
                 lines.Add("You are enemies through groups.");
 
             lines.Add("");
@@ -333,16 +350,8 @@ namespace djack.RogueSurvivor.Engine
 
         string DescribePlayerFollowerStatus(Actor follower)
         {
-            string desc;
-
-            BaseAI foAI = follower.Controller as BaseAI;
-            if (foAI.Order == null)
-                desc = "(no orders)";
-            else
-                desc = foAI.Order.ToString();
-            desc += String.Format("(trust:{0})", follower.TrustInLeader);
-
-            return desc;
+            FollowerReport report = m_Player.FollowerReports.FirstOrDefault(r => r.Identity == follower.PersonalityIdentity);
+            return DescribeKnownFollower(follower, report);
         }
 
         string[] DescribeMapObject(MapObject obj, Map map, Point mapPos)
@@ -665,6 +674,9 @@ namespace djack.RogueSurvivor.Engine
             else if (it is ItemTrap)
             {
                 lines.AddRange(DescribeItemTrap(it as ItemTrap));
+                if (!isPlayerInventory && (it as ItemTrap).IsActivated && !(it as ItemTrap).IsTriggered)
+                    lines.Add(String.Format("To disarm from next to it: <{0}>, then direction (one turn).",
+                        s_KeyBindings.Get(PlayerCommand.DISARM_TRAP)));
                 // alpha10
                 if ((it as ItemTrap).TrapModel.ActivatesWhenDropped)
                     inInvAdditionalDesc = "to activate trap : drop it";
@@ -700,6 +712,12 @@ namespace djack.RogueSurvivor.Engine
             {
                 lines.Add(" ");
                 lines.Add("----");
+                if (m_Player != null)
+                {
+                    string warning = ClaimedSupplyWarning(m_Player.Location.Map, m_Player.Location.Position, it);
+                    if (warning != null) lines.Add(warning);
+                    lines.AddRange(LastReportedShelterLines(m_Player.Location.Map, m_Player.Location.Position));
+                }
                 lines.Add(string.Format("to take : <LMB> or <Shift-{0}>", iSlot + 1));
             }
 
@@ -1129,8 +1147,9 @@ namespace djack.RogueSurvivor.Engine
                         lines.Add(string.Format("Trap setup by {0}.", tr.Owner.Name));
                 }
             }
-            // alpha10
-            lines.Add(string.Format("Trigger chance for you : {0}%.", m_Rules.GetTrapTriggerChance(tr, m_Player)));
+            if (!tr.IsActivated && !tr.IsTriggered) lines.Add("** Disarmed **");
+            lines.Add(string.Format("Trigger chance for you : {0}%.",
+                tr.IsActivated ? m_Rules.GetTrapTriggerChance(tr, m_Player) : 0));
 
             // 2. Flags
             if (m.IsOneTimeUse) lines.Add("Desactives when triggered.");

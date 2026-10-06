@@ -23,6 +23,50 @@ namespace djack.RogueSurvivor.Engine
 {
     partial class RogueGame
     {
+        bool HandlePlayerDisarmTrap(Actor player)
+        {
+            ClearOverlays();
+            AddOverlay(new OverlayPopup(new[] {
+                "DISARM TRAP - click a nearby tile or choose a direction; 5 selects your tile; ESC cancels",
+                "One turn; leaves the trap on the ground. Sprung traps must be escaped first.",
+                "Tampering with claimed defenses may provoke their owners."
+            }, MODE_TEXTCOLOR, MODE_BORDERCOLOR, MODE_FILLCOLOR, new Point(0, 0)));
+            try
+            {
+                while (true)
+                {
+                    RedrawPlayScreen();
+                    Direction direction = WaitDirectionOrCancel();
+                    if (direction == null) return false;
+                    Point position = player.Location.Position + direction;
+                    Map map = player.Location.Map;
+                    if (!map.IsInBounds(position) || !IsVisibleToPlayer(map, position))
+                    {
+                        AddMessage(MakeErrorMessage("You cannot see a trap there."));
+                        continue;
+                    }
+                    Inventory ground = map.GetItemsAt(position);
+                    ItemTrap selected = null;
+                    if (ground != null)
+                        foreach (Item item in ground.Items)
+                        {
+                            ItemTrap trap = item as ItemTrap;
+                            if (trap == null) continue;
+                            if (selected == null) selected = trap;
+                            if (trap.IsActivated && !trap.IsTriggered) { selected = trap; break; }
+                        }
+                    string reason;
+                    if (selected == null)
+                        AddMessage(MakeErrorMessage("No trap there."));
+                    else if (!m_Rules.CanActorDisarmTrap(player, position, selected, out reason))
+                        AddMessage(MakeErrorMessage("Cannot disarm trap: " + reason + "."));
+                    else
+                        return DoDisarmTrap(player, position, selected);
+                }
+            }
+            finally { ClearOverlays(); }
+        }
+
         bool HandleMouseLook(Point mousePos)
         {
             // Ignore if out of view rect.
@@ -705,7 +749,20 @@ namespace djack.RogueSurvivor.Engine
                 return false;
             }
 
-            DoShout(player, text);
+            // Resolve the shout's normal wake-up roll before asking followers to answer.
+            DoShout(player, text ?? (player.CountFollowers > 0 ? "Followers, sound off!" : null));
+            if (player.CountFollowers > 0)
+                foreach (Actor follower in player.Followers)
+                {
+                    BaseAI ai = follower.Controller as BaseAI;
+                    if (ai != null)
+                    {
+                        ai.HearFollowerCall(this, player);
+                        if (!follower.IsSleeping && follower.Location.Map == player.Location.Map &&
+                            m_Rules.StdDistance(follower.Location.Position, player.Location.Position) <= follower.AudioRange)
+                            ai.ContactFollower(this, player, "heard location check");
+                    }
+                }
             return true;
         }
 
@@ -717,7 +774,12 @@ namespace djack.RogueSurvivor.Engine
             int iSlot;
             Item gift = MouseToInventoryItem(screen, out inv, out itemPos, out iSlot);
             if (inv == null || inv != player.Inventory || gift == null)
+            {
+                Message guidance = MakeErrorMessage(String.Format("Hover an item in your inventory, press {0}, then choose an adjacent direction to give.",
+                    s_KeyBindings.Get(PlayerCommand.GIVE_ITEM)));
+                AddCommunitySpeech(guidance.Text, guidance.Color);
                 return false;
+            }
 
             // handle give item.
             bool loop = true;

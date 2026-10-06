@@ -92,6 +92,15 @@ namespace djack.RogueSurvivor.Gameplay.Personality
                 string id = generated == null ? parent : parent != null && prior != null && !prior.Finished ? parent : null;
                 id = id ?? owner.PersonalityIdentity.ToString("N") + ":" + owner.Personality.NextIntentSequence;
                 string key = generated == null ? definition.Id + ":" + owner.PersonalityIdentity + ":" + target.Id : "value:" + owner.PersonalityIdentity + ":" + generated.Key;
+                // A settled leader must be able to end a dangerous membership even when
+                // a routine reciprocity episode occupies the bounded local story slots.
+                if (definition.Id == "expel_member" && !director.CanOpen(owner.Location.Map, turn, key, default(Location), Guid.Empty))
+                    foreach (NpcIntent routine in owner.Personality.Intents)
+                    {
+                        if (routine.Finished || routine.DefinitionId != "repay_aid") continue;
+                        Finish(catalog, owner, routine, NpcIntentStatus.Abandoned, "community security took priority over voluntary reciprocity");
+                        if (director.CanOpen(owner.Location.Map, turn, key, default(Location), Guid.Empty)) break;
+                    }
                 NpcStory story = director.Open(id, definition.Id, owner, cause, turn + definition.Duration, key);
                 if (story == null || story.Roles.Count >= 8) return null;
                 if (definition.CompleteEpisodeOnSuccess) story.CompletionGoal = definition.Id;

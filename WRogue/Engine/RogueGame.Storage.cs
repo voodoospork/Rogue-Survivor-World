@@ -177,6 +177,8 @@ namespace djack.RogueSurvivor.Engine
                 return false;
             }
             m_Session = Session.Get;
+            CheckCommunityHomeCache();
+            ClearDiplomacyCache();
             m_Session.Mods = ModCatalog.Stamps(chosen);
             m_Rules = new Rules(m_Session.GameDiceRoller);
             if (m_Session.GamePreset.HasOptions)

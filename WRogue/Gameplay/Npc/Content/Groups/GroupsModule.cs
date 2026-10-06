@@ -69,6 +69,29 @@ namespace djack.RogueSurvivor.Gameplay.Personality
         }
         void RegisterEvents(NpcCatalogBuilder catalog)
         {
+            catalog.Event(new NpcEventDefinition("community_food_requested", NpcRecordCategory.Help, true,
+                e => (e.Subject ?? "Someone") + " requested food for a companion.") {
+                PlayerReply = new NpcPlayerReply("food for a companion", "food_promised", "request_refused", "Yes, I'll bring them food within 180 turns.", "No, I can't help with that food request.") });
+            catalog.Event(new NpcEventDefinition("community_medicine_requested", NpcRecordCategory.Help, true,
+                e => (e.Subject ?? "Someone") + " requested medicine for a companion.") {
+                PlayerReply = new NpcPlayerReply("medicine for a companion", "medicine_promised", "request_refused", "Yes, I'll bring them medicine within 180 turns.", "No, I can't help with that medicine request.") });
+            // Participation records have no rewards, skill triggers or compulsory duties.
+            catalog.Event(new NpcEventDefinition("community_joined", NpcRecordCategory.Encounters, false,
+                e => (e.Subject ?? "Someone") + " joined the community led by " + (e.Other ?? "someone") + "."));
+            catalog.Event(new NpcEventDefinition("community_left", NpcRecordCategory.Encounters, false,
+                e => (e.Subject ?? "Someone") + " left the community led by " + (e.Other ?? "someone") + "."));
+            catalog.Event(new NpcEventDefinition("community_alarm", NpcRecordCategory.Combat, true,
+                e => (e.Other ?? "Someone") + " raised an alarm about " + (e.Subject ?? "a threat") + ".",
+                f => f.OtherName + " reported " + f.SubjectName + " as a threat", isPrivate: true) {
+                PrivateAudience = e => e.Other, CanObserve = (owner, e) => owner == e.Other });
+            catalog.OnReport("community_alarm", report => {
+                NpcKnownPerson threat = report.Listener.Personality.Knowledge.Person(report.Fact.SubjectId);
+                if (threat == null || report.Fact.Confidence < 40) return;
+                threat.Danger = System.Math.Max(threat.Danger, 70);
+                threat.ThreatTurn = report.Fact.EventTurn; threat.ThreatCause = report.Fact.EventId;
+                threat.ThreatConfidence = report.Fact.Confidence;
+                report.Listener.Personality.Knowledge.Revision++;
+            });
             catalog.Event(new NpcEventDefinition("supplies_requested", NpcRecordCategory.None, false, e => (e.Subject ?? "Someone") + " asked " + (e.Other ?? "someone") + " to gather supplies for the group.", null) { StoryStage = (g, s, e) => "contacted" });
             catalog.Event(new NpcEventDefinition("supplies_delivered", NpcRecordCategory.None, false, e => (e.Subject ?? "Someone") + " reported the completed delivery to " + (e.Other ?? "someone") + ".", null) { StoryStage = (g, s, e) => "completed" });
             catalog.Event(new NpcEventDefinition("task_declined", NpcRecordCategory.None, false, e => (e.Subject ?? "Someone") + " declined " + (e.Other ?? "someone") + "'s task.", null) { StoryStage = (g, s, e) => "failed" });

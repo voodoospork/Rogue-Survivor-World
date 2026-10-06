@@ -13,6 +13,7 @@ namespace djack.RogueSurvivor.Engine.Actions
         #region Fields
         Point m_Position;
         Item m_Item;
+        internal Point Position { get { return m_Position; } }
         #endregion
 
         #region Init

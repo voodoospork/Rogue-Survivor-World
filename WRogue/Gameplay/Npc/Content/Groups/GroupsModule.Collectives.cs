@@ -27,7 +27,7 @@ namespace djack.RogueSurvivor.Gameplay.Personality
                 c => 10 + c.Policy.Care + PersonalitySystem.Bias(c.Leader, DecisionKind.Compassion),
                 (p, t) => p.MedicalNeed > 0 && t - p.MedicalTurn <= 60, p => p.MedicalCause, NpcCollectiveScope.Faction).Register(catalog);
             catalog.Collective(new NpcCollectiveDefinition("group_shelter", "shelter_suggested", ShelterOffer,
-                (a, b, p) => true, (a, p) => "Let's take shelter near " + p.Destination.Map.Name + ".", NpcGroupTasks.AcceptShelter));
+                (a, b, p) => !b.InPlayerParty, (a, p) => "Let's take shelter near " + p.Destination.Map.Name + ".", NpcGroupTasks.AcceptShelter));
             catalog.On("shelter_suggested", NpcObservationPhase.Knowledge, o => NpcStorySystem.AcceptCollective(o.Game, o.Owner, o.Source));
         }
         static NpcCollectiveOffer ShelterOffer(NpcCollectiveContext c)

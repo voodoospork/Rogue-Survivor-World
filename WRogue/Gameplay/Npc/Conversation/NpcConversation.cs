@@ -18,7 +18,13 @@ namespace djack.RogueSurvivor.Gameplay.Personality
                     !hearer.Model.Abilities.IsIntelligent || hearer.Model.Abilities.IsUndead ||
                     game.Rules.StdDistance(hearer.Location.Position, source.Position) > hearer.AudioRange) continue;
                 if (hearer.Personality == null) hearer.Personality = new PersonalityState();
-                NpcKnowledgeSystem.Hear(game, hearer, source.Subject, fact);
+                NpcFact spoken = fact.SpeechSnapshot();
+                NpcKnowledgeSystem.Hear(game, hearer, source.Subject, spoken);
+                if (fact.DiplomacyMessage != null && source.Subject.SocialGroup != null &&
+                    fact.DiplomacyMessage.Community == source.Subject.SocialGroup.Identity && game.IdentifiesDiplomacySpeaker(hearer,source.Subject))
+                    hearer.Personality.LearnCommunity(fact.DiplomacyMessage.Community,fact.DiplomacyMessage.Name,source.Turn,"heard declaration")
+                        .Member(new CommunityMember { Id=source.Subject.PersonalityIdentity, Name=source.Subject.UnmodifiedName, Status="spoke for community",
+                            Turn=source.Turn, Source="heard from visible speaker" });
             }
         }
 
@@ -56,8 +62,15 @@ namespace djack.RogueSurvivor.Gameplay.Personality
             if (reply == null) return;
             game.DoSay(player, target, yes ? reply.YesText : reply.NoText, RogueGame.Sayflags.IS_STORY,
                 pending.CauseId, pending.StoryId);
-            NpcEvents.Publish(game, yes ? reply.YesKind : reply.NoKind, player, target, pending.CauseId, pending.StoryId);
+            Actor beneficiary = ReplyBeneficiary(target, pending);
+            NpcEvents.Publish(game, yes ? reply.YesKind : reply.NoKind, player, yes && beneficiary != null ? beneficiary : target, pending.CauseId, pending.StoryId);
             game.DoSay(target, player, yes ? "Thank you. I'll remember." : "I understand.", RogueGame.Sayflags.IS_FREE_ACTION);
+        }
+        public static Actor ReplyBeneficiary(Actor target, NpcReaction pending)
+        {
+            if (pending.CommunityBeneficiary == Guid.Empty) return target;
+            foreach (Actor member in target.PartyTree()) if (member.PersonalityIdentity == pending.CommunityBeneficiary && !member.IsDead) return member;
+            return null;
         }
 
         public static NpcFact Rumor(Actor speaker, Actor listener)
@@ -77,7 +90,22 @@ namespace djack.RogueSurvivor.Gameplay.Personality
 
         public static void ShareRumor(RogueGame game, Actor speaker, Actor listener, NpcFact fact, bool free)
         {
+            if ((fact.Kind == "food_cache" || fact.Kind == "medicine_cache") && (fact.SupplyLocation != null || fact.Place.Map != null))
+            {
+                ScavengingSystem.Share(game, speaker, listener, ScavengingSystem.ReportSnapshot(fact));
+                if (!free) game.SpendActorActionPoints(speaker, Rules.BASE_ACTION_COST);
+                NpcEvents.Publish(game, "rumor_shared", speaker, listener, fact.EventId, fact.StoryId);
+                return;
+            }
             string report = NpcRecordDescriptions.Report(game.NpcContent, fact);
+            if (fact.DiplomacyEvidence != null)
+                report = fact.DiplomacyEvidence.Explanation + "; " + (fact.SubjectName ?? "someone") + " (" +
+                    (fact.DiplomacyEvidence.Subject.Name ?? "unknown affiliation") + "), " + (fact.OtherName ?? "someone") + " (" +
+                    (fact.DiplomacyEvidence.Other.Name ?? "unknown affiliation") + "), turn " + fact.EventTurn;
+            if (fact.DiplomacyMessage != null)
+                report = fact.DiplomacyMessage.Name + " reports " + fact.DiplomacyMessage.Stance + " with " + fact.DiplomacyMessage.Target.Name +
+                    "; " + fact.DiplomacyMessage.Reason + "; report turn " + fact.DiplomacyMessage.Turn +
+                    (fact.DiplomacyMessage.PeaceTurn > 0 ? "; peace ratified turn " + fact.DiplomacyMessage.PeaceTurn : "");
             District district = fact.Place.Map.District;
             string place = district == null ? "near " + fact.Place.Map.Name :
                 "in district " + World.CoordToString(district.WorldPosition.X, district.WorldPosition.Y);
@@ -92,7 +120,7 @@ namespace djack.RogueSurvivor.Gameplay.Personality
                 if (hearer == speaker || hearer.IsDead || hearer.IsSleeping || !hearer.Model.Abilities.IsIntelligent ||
                     hearer.Model.Abilities.IsUndead || game.Rules.StdDistance(hearer.Location.Position, speaker.Location.Position) > hearer.AudioRange) continue;
                 if (hearer.Personality == null) hearer.Personality = new PersonalityState();
-                NpcKnowledgeSystem.Hear(game, hearer, speaker, fact);
+                NpcKnowledgeSystem.Hear(game, hearer, speaker, fact.SpeechSnapshot());
             }
             int turn = speaker.Location.Map.LocalTime.TurnCounter;
             speaker.Personality.Knowledge.Told(fact.EventId, listener.PersonalityIdentity, turn);

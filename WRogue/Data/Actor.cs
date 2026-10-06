@@ -584,6 +584,7 @@ namespace djack.RogueSurvivor.Data
             if (other.Leader != null)
                 other.Leader.RemoveFollower(other);
             other.m_Leader = this;
+            Gameplay.AI.BaseAI.ResetPartyTravel(other);
             JoinSocialGroup(other);
         }
 
@@ -600,6 +601,7 @@ namespace djack.RogueSurvivor.Data
                 m_Followers = null;
 
             other.m_Leader = null;
+            Gameplay.AI.BaseAI.ResetPartyTravel(other);
             LeaveSocialGroup(other);
 
             // reset directives & order.

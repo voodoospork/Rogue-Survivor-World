@@ -299,6 +299,11 @@ namespace djack.RogueSurvivor.Gameplay.AI
             }
             #endregion
 
+            ActorAction hostileCall = CommunityEncounterSystem.Select(game, m_Actor, intentVisible, true);
+            if (hostileCall != null) return hostileCall;
+            ActorAction alarm = BehaviorCommunityAlarm(game, intentVisible);
+            if (alarm != null) return alarm;
+
             // 1 throw grenades at enemies.
             #region
             // if directive off, unequip.
@@ -473,7 +478,12 @@ namespace djack.RogueSurvivor.Gameplay.AI
             #region
             if (m_SafeTurns >= MIN_TURNS_SAFE_TO_SLEEP && this.Directives.CanSleep && 
                 WouldLikeToSleep(game, m_Actor) && IsInside(m_Actor) && game.Rules.CanActorSleep(m_Actor))
-            {               
+            {
+                if (!game.Rules.IsActorSleepy(m_Actor))
+                {
+                    ActorAction returnForSleep = BehaviorCommunityHome(game, true);
+                    if (returnForSleep != null) return returnForSleep;
+                }
                 // secure sleep.
                 ActorAction secureSleepAction = BehaviorSecurePerimeter(game, m_LOSSensor.FOV);
                 if (secureSleepAction != null)
@@ -498,6 +508,8 @@ namespace djack.RogueSurvivor.Gameplay.AI
             {
                 ActorAction intentAction = BehaviorNpcIntents(game, intentVisible);
                 if (intentAction != null) return intentAction;
+                ActorAction communityCall = CommunityEncounterSystem.Select(game, m_Actor, intentVisible, false);
+                if (communityCall != null) return communityCall;
             }
             #region
             ActorAction dropUseless = BehaviorDropUselessItem(game);
@@ -773,9 +785,16 @@ namespace djack.RogueSurvivor.Gameplay.AI
             }
             #endregion
 
+            // Home work follows survival, speech, current jobs and supply work.
+            if (!hasEnemies)
+            {
+                ActorAction homeAction = BehaviorCommunityHome(game);
+                if (homeAction != null) return homeAction;
+            }
+
             // 19 follow leader
             #region
-            if (checkOurLeader)
+            if (checkOurLeader && !m_Actor.InPlayerParty)
             {
                 Point lastKnownLeaderPosition = m_Actor.Leader.Location.Position;
                 bool isLeaderVisible = m_LOSSensor.FOV.Contains(m_Actor.Leader.Location.Position);
@@ -795,7 +814,7 @@ namespace djack.RogueSurvivor.Gameplay.AI
             bool hasLeadership = m_Actor.Sheet.SkillTable.GetSkillLevel((int)Skills.IDs.LEADERSHIP) >= 1;
             if (hasLeadership)
             {
-                bool canLead = !checkOurLeader && m_Actor.CountFollowers < game.Rules.ActorMaxFollowers(m_Actor);
+                bool canLead = !checkOurLeader && game.Rules.ActorCommandedFollowers(m_Actor) < game.Rules.ActorMaxFollowers(m_Actor);
                 if (canLead)
                 {
                     Percept nearestFriend = FilterNearest(game, FilterNonEnemies(game, mapPercepts));

@@ -17,7 +17,7 @@ namespace djack.RogueSurvivor.Gameplay.Personality
             catalog.OperatorSource(new NpcOperatorSource("medicine.aid", c => (ulong)NpcPlanFact.Helped, MedicalPlanOperators.Aid, c => (ulong)NpcPlanFact.Medicine));
             catalog.OperatorSource(new NpcOperatorSource("medicine.deliver", c => (ulong)NpcPlanFact.Delivered, MedicalPlanOperators.Aid,
                 c => (ulong)NpcPlanFact.Medicine, d => d.Resource == "medicine"));
-            catalog.Event(new NpcEventDefinition("medicine_cache", describeReport: f => "there was medicine"));
+            catalog.Event(new NpcEventDefinition("medicine_cache", describeReport: f => f.Units == 0 ? "no healing medicine remained at that spot" : "there was medicine"));
             catalog.OnReport("medicine_cache", c => c.RememberPlace("medicine"));
             catalog.Resource(new NpcResourceDefinition("medicine", (g, a) => a.HitPoints < g.Rules.ActorMaxHPs(a)));
             catalog.GoalSource(this);

@@ -13,6 +13,7 @@ namespace djack.RogueSurvivor.Data
         public Guid GroupId;
         public string GroupName, FactionName;
         public int FactionId = -1;
+        [System.Runtime.Serialization.OptionalField] public PoliticalIdentity? PoliticalAttribution;
         public int DueTurn, Units = 1;
         public NpcCommitmentStatus Status;
         public bool OutcomeReported;

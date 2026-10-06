@@ -1,4 +1,77 @@
-# Rogue Survivor Expanded
+# Rogue Survivor World
+
+A continuation of Rogue Survivor about **independent communities enduring the
+collapse**. You are one survivor among groups with homes, needs, relationships
+and uncertain futures. Cooperation, scarcity, zombies and violence have real
+consequences.
+
+Maintained by **voodoospork**, starting from
+[Qew7's Rogue Survivor Expanded](https://github.com/Qew7/Rogue-Survivor-Expanded),
+which continues [Tranquill6's Expanded project](https://github.com/Tranquill6/Rogue-Survivor-Expanded)
+and **roguedjack's original Rogue Survivor**. See [CREDITS.md](CREDITS.md) for the
+source lineage, bundled artwork and original licensing references.
+
+## World features
+
+- A World preset with independent civilian communities and named local police units.
+- Community introductions, real needs, aid, NPC-led membership and shared homes.
+- Home routines, eligible watch duty and witnessed defense.
+- Persistent relationships, blood feuds and negotiated peace carried through encounters.
+- Dated supply leads and food/medicine expeditions using existing resources.
+- Personal followers that travel together, remember contact and exits, and can be recalled.
+- Adjacent trap disarming without stepping onto the trap.
+
+Player knowledge comes from observations and reports and remains visibly dated.
+Supplies are finite; groups and followers have no guaranteed safety or survival.
+Community adaptation and distant strategic simulation remain future work.
+
+## Current Windows development
+
+Build `RogueSurvivor.sln` in Visual Studio with modern MSBuild/Roslyn, Microsoft's
+.NET desktop development workload and the **.NET Framework 4.8 targeting pack**.
+Select **Release / Any CPU**. Run `WRogue/bin/Release/RogueSurvivor.exe` with its
+generated Resources, mods and runtime configuration beside it. Choose **World**
+when starting a new game. Existing format-5 saves gain knowledge through play;
+loading does not generate groups or resources.
+
+| Default control | Action |
+|---|---|
+| **V** | Talk; leader conversations include membership, departure, relations and supply leads. |
+| **G** | Hover an inventory item, then choose an adjacent direction to give it. |
+| **J / Tab** | Heard journal, Communities and Scavenging notebook. |
+| **O** | Personal follower orders and dated travel/contact status. |
+| **S** | Sound-off and follower replies. |
+| **Shift+S** | Recall travelling followers within actual hearing range. |
+| **D** | Disarm an adjacent armed trap; choose direction or click nearby. |
+| **Ctrl+B** | Personal base claims and storage management. |
+| **Ctrl+Shift+S** | Save. |
+| **Shift+L** | Load. |
+| **Shift+K** | Rebind controls. |
+
+Disarming costs one turn and leaves the trap on the ground; Esc cancels free.
+Sprung traps retain existing escape rules. Witnessed interference with claimed
+supplies or defenses can provoke their owners. Assigned follower work stays
+intact when recalling; surviving followers left across a district remain in the party.
+
+The latest native build has **407/409 scenarios passing**. Two generated survival
+trials lose their NPC participants before completing diplomacy or medicine
+delivery. All six disarm cases and the genuine older format-5 check pass.
+Automated journeys are separate from human visual review and unscripted play.
+The inherited Docker/Linux workflows have not been reproduced for this fork
+in the Windows development session.
+
+Starting source: **Expanded v0.4.1**, commit
+[`6da3d7b7dd21a8741826021ab86d6db14c3fe56c`](https://github.com/Qew7/Rogue-Survivor-Expanded/tree/6da3d7b7dd21a8741826021ab86d6db14c3fe56c),
+based on Rogue Survivor Alpha 10.1. Original notices, resources, manual and mod
+attribution remain in place. The unchanged starting README is preserved at
+[docs/upstream-expanded-readme.md](docs/upstream-expanded-readme.md).
+
+## Inherited Expanded reference
+
+The following reference describes the starting Expanded project. World's
+features and controls above apply to this fork; engine/mod compatibility remains 0.4.1.
+
+### Rogue Survivor Expanded
 
 An expanded version of roguedjack's Rogue Survivor, based on the source from
 [Tranquill6](https://github.com/Tranquill6).

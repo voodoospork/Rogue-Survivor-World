@@ -51,6 +51,59 @@ namespace djack.RogueSurvivor.Engine
                 }
             }
             bool? answer = null;
+            if (pending == null && (CommunityDiplomacySystem.IsLeader(target) || m_Session.GamePreset.NpcPersonalitiesEnabled))
+            {
+                AddCommunitySpeech("1: News / requests" + (CommunityMembershipSystem.IsLeader(this, target) ? "   2: Membership" : "") +
+                    (player.CommunityMembership != null && player.SocialGroup == target.SocialGroup ? "   3: Leave" : "") +
+                    (CommunityDiplomacySystem.IsLeader(target) ? "   4: Relations / peace" : "") +
+                    (m_Session.GamePreset.NpcPersonalitiesEnabled ? "   5: Supply leads" : "") + "   Esc: cancel",
+                    Color.LightSkyBlue);
+                RedrawPlayScreen();
+                while (true)
+                {
+                    Keys choice = m_UI.UI_WaitKey().KeyCode;
+                    if (choice == Keys.Escape) return false;
+                    if ((choice == Keys.D4 || choice == Keys.NumPad4) && CommunityDiplomacySystem.IsLeader(target)) return HandleCommunityRelations(player, target);
+                    if ((choice == Keys.D5 || choice == Keys.NumPad5) && m_Session.GamePreset.NpcPersonalitiesEnabled) return HandleSupplyConversation(player, target);
+                    if (choice == Keys.D1 || choice == Keys.NumPad1 || choice == Keys.Enter) break;
+                    if (choice == Keys.D3 || choice == Keys.NumPad3)
+                    {
+                        if (player.CommunityMembership != null && player.SocialGroup == target.SocialGroup)
+                            return ConfirmCommunityDeparture(player);
+                        continue;
+                    }
+                    if ((choice != Keys.D2 && choice != Keys.NumPad2) || !CommunityMembershipSystem.IsLeader(this, target)) continue;
+                    string reason;
+                    if (!CommunityMembershipSystem.CanJoin(this, player, target, out reason))
+                    {
+                        DoSay(target, player, reason, Sayflags.IS_FREE_ACTION | Sayflags.IS_BRIEF);
+                        SpendActorActionPoints(player, Rules.BASE_ACTION_COST);
+                        return true;
+                    }
+                    AddOverlay(new OverlayPopup(new[] {
+                        "Invitation from " + target.UnmodifiedName + " to " + target.SocialGroup.CommunityName,
+                        "Share our shelter and communal ground supplies, including weapons.",
+                        "Give or trade for personal inventories.",
+                        "Help with real requests. Promises keep their deadlines; there is no quota.",
+                        "I remain community leader. You keep your personal follower orders.",
+                        "Leave with your party whenever you choose, through V or J / Tab / L.",
+                        "Y: join together   N: decline   Esc: later"
+                    }, MODE_TEXTCOLOR, MODE_BORDERCOLOR, MODE_FILLCOLOR, new Point(0, 0)));
+                    RedrawPlayScreen();
+                    while (true)
+                    {
+                        Keys decision = m_UI.UI_WaitKey().KeyCode;
+                        if (decision == Keys.Escape) { ClearOverlays(); return false; }
+                        if (decision == Keys.N)
+                        { ClearOverlays(); DoSay(player, target, "Thank you, but we're staying independent.", Sayflags.IS_BRIEF); return true; }
+                        if (decision != Keys.Y) continue;
+                        ClearOverlays();
+                        var join = new ActionJoinCommunity(player, this, target);
+                        if (!join.IsLegal()) { AddMessage(MakeErrorMessage("The invitation is no longer valid.")); return false; }
+                        join.Perform(); return true;
+                    }
+                }
+            }
             if (pending != null)
             {
                 AddMessage(new Message(target.TheName + (pending.Overheard ? " asked someone for " : " asked you for ") +
@@ -69,6 +122,20 @@ namespace djack.RogueSurvivor.Engine
             if (!action.IsLegal()) { AddMessage(MakeErrorMessage("You cannot talk to this person now.")); return false; }
             action.Perform();
             return true;
+        }
+        bool ConfirmCommunityDeparture(Actor player)
+        {
+            var leave = new ActionLeaveCommunity(player, this);
+            if (!leave.IsLegal()) return false;
+            AddCommunitySpeech("Leave " + player.CommunityMembership.Name + " with your followers? Promises remain in force. Y: leave, N / Esc: stay.", Color.LightSkyBlue);
+            RedrawPlayScreen();
+            while (true)
+            {
+                Keys key = m_UI.UI_WaitKey().KeyCode;
+                if (key == Keys.N || key == Keys.Escape) return false;
+                if (key != Keys.Y) continue;
+                leave.Perform(); return true;
+            }
         }
     }
 }

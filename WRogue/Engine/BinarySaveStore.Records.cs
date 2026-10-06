@@ -55,8 +55,9 @@ namespace djack.RogueSurvivor.Engine
             if (!load) { stream.Position += length; return null; }
             using (SectionStream section = new SectionStream(stream, length))
             using (GZipStream compressed = new GZipStream(section, CompressionMode.Decompress))
+            using (BufferedStream buffer = new BufferedStream(compressed, 65536))
             {
-                ResidentRecords records = ObjectGraphStore.Read(compressed) as ResidentRecords;
+                ResidentRecords records = ObjectGraphStore.Read(buffer) as ResidentRecords;
                 if (records == null || section.Remaining != 0) throw new InvalidDataException("Invalid resident archive.");
                 return records;
             }

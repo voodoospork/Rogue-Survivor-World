@@ -10,11 +10,13 @@ namespace djack.RogueSurvivor.Gameplay.Personality
         public readonly SignificantEvent Source;
         public readonly bool Direct, SeesSubject, SeesOther;
         public bool SkipGoals, SkipReplies;
+        public readonly DiplomacyEvidence DiplomacyEvidence;
         public NpcObservation(RogueGame game, Actor owner, SignificantEvent source, bool direct)
         {
             Game = game; Owner = owner; Source = source; Direct = direct;
             SeesSubject = source.Subject != null && (owner == source.Subject || NpcKnowledgeSystem.Visible(game, owner, source.Subject.Location));
             SeesOther = source.Other != null && (owner == source.Other || NpcKnowledgeSystem.Visible(game, owner, source.Other.Location));
+            DiplomacyEvidence = CommunityDiplomacySystem.Capture(this);
         }
     }
 
@@ -27,7 +29,9 @@ namespace djack.RogueSurvivor.Gameplay.Personality
             if (definition == null) return;
             definition.Apply(NpcObservationPhase.Knowledge, observation);
             NpcKnowledgeSystem.RetainEvent(observation, definition);
+            CommunityDiplomacySystem.Observe(observation);
             definition.Apply(NpcObservationPhase.Relationships, observation);
+            if (!definition.Private) CommunityKnowledgeSystem.Observe(observation);
         }
         public static void AfterMemories(NpcObservation observation)
         {

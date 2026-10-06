@@ -72,7 +72,7 @@ namespace djack.RogueSurvivor.Gameplay.Personality
         {
             if (source.Kind != "requested_food" || source.Other != owner || source.Subject == null ||
                 PersonalitySystem.Bias(owner, DecisionKind.Trade) < 15 || PersonalitySystem.Bias(owner, DecisionKind.Compassion) > 0 ||
-                owner.Personality.Reactions.Count >= 4 || game.Rules.AreEnemies(owner, source.Subject) || game.Rules.IsActorHungry(owner)) return false;
+                owner.Personality.Reactions.Count >= 4 || game.Rules.IsKnownEnemy(owner, source.Subject) || game.Rules.IsActorHungry(owner)) return false;
             bool available = false;
             foreach (Item item in owner.Inventory.Items)
                 if (item is ItemFood && item.Quantity >= 3 && !item.IsUnique && !item.IsEquipped && !game.Rules.IsFoodSpoiled((ItemFood)item, source.Turn)) available = true;

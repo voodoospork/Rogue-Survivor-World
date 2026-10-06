@@ -723,7 +723,7 @@ namespace djack.RogueSurvivor.Engine
             foreach (Point p in m_PlayerFOV)
             {
                 Actor other = player.Location.Map.GetActorAt(p);
-                if (other != null && m_Rules.AreEnemies(player, other))
+                if (other != null && m_Rules.IsKnownEnemy(player, other))
                     return false;
             }
 

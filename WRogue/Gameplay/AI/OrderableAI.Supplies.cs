@@ -25,7 +25,7 @@ namespace djack.RogueSurvivor.Gameplay.AI
         {
             if (!Session.Get.GamePreset.Bases || m_Actor.IsPlayer ||
                 m_Actor.Inventory == null ||
-                (m_Actor.Leader != null && m_Actor.Leader.IsPlayer)) return null;
+                m_Actor.InPlayerParty) return null;
             ItemTrap trap = m_Actor.Inventory.GetFirstByType(typeof(ItemTrap)) as ItemTrap;
             if (trap == null) return null;
             Map map = m_Actor.Location.Map;
@@ -94,7 +94,8 @@ namespace djack.RogueSurvivor.Gameplay.AI
                 foreach (Actor follower in m_Actor.Followers)
                 {
                     OrderableAI ai = follower.Controller as OrderableAI;
-                    if (ai == null || ai.Order != null || follower.IsDead ||
+                    if (ai == null || ai.Order != null || follower.IsDead || follower.InPlayerParty ||
+                        (follower.SocialGroup.Home != null && follower.SocialGroup.Home.Watcher == follower.PersonalityIdentity) ||
                         follower.Inventory == null || follower.Inventory.IsFull ||
                         follower.Location.Map != home.Map ||
                         home.Map.XpdBaseAt(follower.Location.Position) == null ||
@@ -124,9 +125,9 @@ namespace djack.RogueSurvivor.Gameplay.AI
             long nutrition = XpdInventoryNutrition(game, leader.Inventory,
                 leader.Location.Map.LocalTime.TurnCounter);
             if (leader.CountFollowers > 0)
-                foreach (Actor follower in leader.Followers)
+                foreach (Actor follower in leader.PartyTree())
                 {
-                    if (follower.IsDead) continue;
+                    if (follower == leader || follower.IsDead) continue;
                     needed += XpdFoodNeeded(game, follower, horizon);
                     nutrition += XpdInventoryNutrition(game, follower.Inventory,
                         follower.Location.Map.LocalTime.TurnCounter);

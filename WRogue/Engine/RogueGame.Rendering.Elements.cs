@@ -361,7 +361,7 @@ namespace djack.RogueSurvivor.Engine
             {
                 bool imSelfDefence = m_Player.IsSelfDefenceFrom(actor);
                 bool imTheAggressor = m_Player.IsAggressorOf(actor);
-                bool groupEnemies = !m_Player.Faction.IsEnemyOf(actor.Faction) && m_Rules.AreGroupEnemies(m_Player, actor); // alpha10
+                bool groupEnemies = !m_Player.Faction.IsEnemyOf(actor.Faction) && m_Rules.IsKnownEnemy(m_Player, actor); // alpha10
                 if (imSelfDefence)
                     m_UI.UI_DrawImage(GameImages.ICON_SELF_DEFENCE, gx, gy, tint);
                 else if (imTheAggressor)
@@ -523,7 +523,7 @@ namespace djack.RogueSurvivor.Engine
             // combat assitant helper.
             if (s_Options.IsCombatAssistantOn)
             {
-                if (actor != m_Player && m_Player != null && m_Rules.AreEnemies(actor, m_Player))
+                if (actor != m_Player && m_Player != null && m_Rules.IsKnownEnemy(m_Player, actor))
                 {
                     if (m_Rules.WillActorActAgainBefore(m_Player, actor))
                         m_UI.UI_DrawImage(GameImages.ICON_THREAT_SAFE, gx, gy, tint);
@@ -1207,7 +1207,7 @@ namespace djack.RogueSurvivor.Engine
 
             // Draw title.
             gy -= BOLD_LINE_SPACING;
-            m_UI.UI_DrawStringBold(Color.White, title, gx, gy);
+            m_UI.UI_DrawStringBold(title == "Claimed supplies" ? Color.OrangeRed : Color.White, title, gx, gy);
             gy += BOLD_LINE_SPACING;
 
             // Draw slots.

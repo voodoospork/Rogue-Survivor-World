@@ -15,7 +15,7 @@ namespace djack.RogueSurvivor.Gameplay.Personality
             string excludeTrait = null)
         {
             NpcKnownPerson known = owner.Personality.Knowledge.Person(subject);
-            return NpcRelationshipValue.Calculate(owner, subject, known == null ? Guid.Empty : known.GroupId,
+            return CommunityDiplomacySystem.KnownTrust(owner, subject) + NpcRelationshipValue.Calculate(owner, subject, known == null ? Guid.Empty : known.GroupId,
                 known == null ? -1 : known.FactionId, true, registry, excludeTrait);
         }
         public static string TraitInfluence(Actor owner, NpcGeneratedGoal goal, NpcContentCatalog catalog)

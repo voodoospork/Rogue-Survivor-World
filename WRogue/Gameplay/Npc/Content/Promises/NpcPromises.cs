@@ -28,7 +28,12 @@ namespace djack.RogueSurvivor.Gameplay.Personality
             owner.Personality.Knowledge.Learn(new NpcFact { EventId = id, Kind = kind, SubjectId = subject, SubjectName = name,
                 OtherId = owner.PersonalityIdentity, OtherName = owner.UnmodifiedName, EventTurn = turn, LearnedTurn = turn,
                 Confidence = 80, Source = NpcKnowledgeSource.Inferred, SourceId = owner.PersonalityIdentity, Place = owner.Location,
-                StoryId = story, NoSubjectLocation = true });
+                StoryId = story, NoSubjectLocation = true,
+                DiplomacyEvidence = new DiplomacyEvidence { Episode = cause, Kind = kind, Severity = 5, Turn = turn,
+                    Explanation = "broken promise", SubjectPerson = subject, OtherPerson = owner.PersonalityIdentity,
+                    Subject = promise.PoliticalAttribution ?? PoliticalIdentity.Unknown,
+                    Other = owner.SocialGroup == null ? PoliticalIdentity.Unknown : PoliticalIdentity.Of(owner.SocialGroup) } });
+            CommunityDiplomacySystem.Hear(owner, owner, owner.Personality.Knowledge.Facts.Find(f => f.EventId == id));
             NpcKnownPerson known = owner.Personality.Knowledge.Person(subject);
             if (known != null) { known.Violation = 100; known.ViolationTurn = turn; known.ViolationConfidence = 80; known.ViolationCause = id; known.SocialCause = id; }
             MemoryDefinition definition = catalog.Personalities.Memory(kind);
