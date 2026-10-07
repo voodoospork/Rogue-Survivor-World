@@ -5,3 +5,8 @@
 *.suo
 WRogue/Config/
 /working/
+
+# Local coding-agent instructions and settings
+/AGENTS.md
+/.agents/
+/.codex/

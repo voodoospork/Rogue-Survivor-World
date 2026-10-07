@@ -195,8 +195,7 @@ sh tests/scenario.sh storage/save-budget
 Gameplay scenarios and how to run one are documented in
 [docs/gameplay-scenarios.md](docs/gameplay-scenarios.md). See
 [optimizations.md](optimizations.md) for a summary of completed changes and
-[docs/performance.md](docs/performance.md) for their measurements,
-[AGENTS.md](AGENTS.md) for contributor guidance and
+[docs/performance.md](docs/performance.md) for their measurements and
 [docs/save-format.md](docs/save-format.md) for save compatibility. GitHub
 Actions runs the automated checks.
 

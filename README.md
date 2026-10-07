@@ -63,7 +63,7 @@ in the Windows development session.
 Starting source: **Expanded v0.4.1**, commit
 [`6da3d7b7dd21a8741826021ab86d6db14c3fe56c`](https://github.com/Qew7/Rogue-Survivor-Expanded/tree/6da3d7b7dd21a8741826021ab86d6db14c3fe56c),
 based on Rogue Survivor Alpha 10.1. Original notices, resources, manual and mod
-attribution remain in place. The unchanged starting README is preserved at
+attribution remain in place. The starting Expanded README is archived at
 [docs/upstream-expanded-readme.md](docs/upstream-expanded-readme.md).
 
 ## Inherited Expanded reference
@@ -268,8 +268,7 @@ sh tests/scenario.sh storage/save-budget
 Gameplay scenarios and how to run one are documented in
 [docs/gameplay-scenarios.md](docs/gameplay-scenarios.md). See
 [optimizations.md](optimizations.md) for a summary of completed changes and
-[docs/performance.md](docs/performance.md) for their measurements,
-[AGENTS.md](AGENTS.md) for contributor guidance and
+[docs/performance.md](docs/performance.md) for their measurements and
 [docs/save-format.md](docs/save-format.md) for save compatibility. GitHub
 Actions runs the automated checks.
 
