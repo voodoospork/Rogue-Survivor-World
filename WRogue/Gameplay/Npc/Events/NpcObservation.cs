@@ -29,6 +29,7 @@ namespace djack.RogueSurvivor.Gameplay.Personality
             if (definition == null) return;
             definition.Apply(NpcObservationPhase.Knowledge, observation);
             NpcKnowledgeSystem.RetainEvent(observation, definition);
+            CommunityCultureSystem.ObserveEvent(observation);
             CommunityDiplomacySystem.Observe(observation);
             definition.Apply(NpcObservationPhase.Relationships, observation);
             if (!definition.Private) CommunityKnowledgeSystem.Observe(observation);
@@ -41,7 +42,10 @@ namespace djack.RogueSurvivor.Gameplay.Personality
             state.LastIntentEventId = observation.Source.Id;
             NpcEventDefinition definition = observation.Game.NpcContent.Event(observation.Source.Kind);
             if (definition != null) definition.Apply(NpcObservationPhase.Goals, observation);
-            if (!observation.SkipGoals) NpcGoalGenerator.Refresh(observation.Game, observation.Owner);
+            var brain = observation.Owner.Controller as Gameplay.AI.BaseAI;
+            if (brain != null) brain.InvalidateRoutine(observation.Source.Kind != "chat" && observation.Source.Kind != "traded" && observation.Source.Kind != "bartered_food");
+            if (!observation.SkipGoals && observation.Game.Session.GamePreset.Simulation == SimulationMode.Classic)
+                NpcGoalGenerator.Refresh(observation.Game, observation.Owner);
             if (definition != null && !observation.SkipReplies)
             { definition.Apply(NpcObservationPhase.Responses, observation); definition.Apply(NpcObservationPhase.Replies, observation); }
         }

@@ -52,6 +52,7 @@ namespace djack.RogueSurvivor.Engine
             // Enemy of groups (symetrical)
             if (checkGroups && AreGroupEnemies(actorA, actorB))
                 return true;
+            if (checkGroups && Gameplay.Personality.CommunityCultureSystem.LocalEnemies(actorA,actorB)) return true;
 
             // Not enemies.
             return false;
@@ -119,8 +120,19 @@ namespace djack.RogueSurvivor.Engine
         }
         public bool IsKnownEnemy(Actor observer, Actor target)
         {
+            long start = SimulationPerformance.Start();
+            try {
+                bool cached;
+                if (Gameplay.Personality.NpcDecisionContext.TryEnemy(observer, target, out cached)) return cached;
+                return Gameplay.Personality.NpcDecisionContext.RememberEnemy(observer, target, IsKnownEnemyCore(observer, target));
+            }
+            finally { SimulationPerformance.End(SimulationPerformance.Part.Relations, start); }
+        }
+        bool IsKnownEnemyCore(Actor observer, Actor target)
+        {
             if (observer == null || target == null || observer == target) return false;
             if (AreEnemies(observer, target, false)) return true;
+            if (Gameplay.Personality.CommunityCultureSystem.LocalEnemies(observer,target)) return true;
             if (Gameplay.Personality.CommunityDiplomacySystem.PoliticalGroup(observer) || Gameplay.Personality.CommunityDiplomacySystem.PoliticalGroup(target))
                 return PersonalPartyEnemy(observer, target) || Gameplay.Personality.CommunityDiplomacySystem.KnowsFeud(observer, target);
             return AreGroupEnemies(observer, target);
@@ -145,6 +157,7 @@ namespace djack.RogueSurvivor.Engine
             // killing in self defence is not a murder.
             if (killer.IsSelfDefenceFrom(victim))
                 return false;
+            if (Gameplay.Personality.CommunityCultureSystem.LocalSelfDefense(killer,victim)) return false;
 
             // all other cases are murders!
             return true;
@@ -550,6 +563,12 @@ namespace djack.RogueSurvivor.Engine
             // done.
             FOV = Math.Max(MINIMAL_FOV, FOV);
             return FOV;
+        }
+        internal int EventViewBound(Actor actor)
+        {
+            // Weather, darkness and fatigue do not increase base vision. Include lamp and standing bonuses.
+            var light = actor.GetEquippedItem(DollPart.LEFT_HAND) as ItemLight;
+            return Math.Max(MINIMAL_FOV, actor.Sheet.BaseViewRange) + Math.Max(1, light == null ? 0 : light.FovBonus) + 1;
         }
 
         public float ActorSmell(Actor actor)

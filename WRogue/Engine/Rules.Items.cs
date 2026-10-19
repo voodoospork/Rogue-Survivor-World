@@ -482,19 +482,28 @@ namespace djack.RogueSurvivor.Engine
             if (gift == null)
                 throw new ArgumentNullException("gift");
 
+            if (gift.IsEntrustedCargo && (!actor.IsPlayer || actor.Inventory == null || !actor.Inventory.Contains(gift) ||
+                gift.TradeCargo.Courier != actor.PersonalityIdentity ||
+                target.PersonalityIdentity != gift.TradeCargo.Recipient && target.PersonalityIdentity != gift.TradeCargo.Sender))
+            { reason = "entrusted cargo: deliver, return, or explicitly divert through V / 6"; return false; }
+
             /////////////////////////////////
             // Can't if any is true:
             // 1. Target is enemy.
             // 2. Item is equipped.
             // 3. Target is sleeping.
             // 4. Target can't receive item.
+            if (gift.IsEntrustedCargo && target.PersonalityIdentity == gift.TradeCargo.Recipient && gift is ItemFood &&
+                IsFoodSpoiled((ItemFood)gift, Session.Get.WorldTime.TurnCounter))
+            { reason = "entrusted food has spoiled: return it or report the loss"; return false; }
             /////////////////////////////////
 
             // A voluntary gift can repair a community grievance. It grants no protection:
             // personal disputes and enemy factions still prevent the exchange.
             bool collectiveFeud = Gameplay.Personality.CommunityDiplomacySystem.KnowsFeud(actor, target) ||
                 Gameplay.Personality.CommunityDiplomacySystem.KnowsFeud(target, actor);
-            if (AreEnemies(actor, target) && (!collectiveFeud || AreEnemies(actor, target, false) ||
+            bool propertyReturn = Gameplay.Personality.CommunityCultureSystem.Repayment(actor,target,gift,this)!=null;
+            if (AreEnemies(actor, target) && ((!collectiveFeud&&!propertyReturn) || AreEnemies(actor, target, false) ||
                 PersonalPartyEnemy(actor, target) || PersonalPartyEnemy(target, actor)))
             {
                 reason = "enemy";
@@ -516,6 +525,12 @@ namespace djack.RogueSurvivor.Engine
             }
 
             // 4. Target can't receive item.
+            // A named cargo handoff releases custody only for the received units. It can fill an
+            // existing compatible ordinary stack even though still-entrusted lots may not merge.
+            if (gift.IsEntrustedCargo && (gift is ItemFood || gift is ItemMedicine) &&
+                target.Model.Abilities.HasInventory && target.Model.Abilities.CanUseMapObjects &&
+                target.Inventory != null && target.Inventory.ReleasedCargoCapacity(gift) > 0)
+            { reason = ""; return true; }
             if (!CanActorGetItem(target, gift, out reason))
             {
                 return false;

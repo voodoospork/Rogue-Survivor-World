@@ -23,7 +23,7 @@ namespace djack.RogueSurvivor.Data
                 InventoryStacks = actor.Inventory.CountItems;
                 foreach (Item item in actor.Inventory.Items) InventoryUnits += item.Quantity;
             }
-            Traits = actor.Personality == null ? 0 : actor.Personality.Traits.Count;
+            Traits = actor.Personality == null ? 0 : actor.Personality.TraitList.Count;
         }
     }
     sealed partial class ResidentRecords

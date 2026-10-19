@@ -186,8 +186,9 @@ namespace djack.RogueSurvivor.Engine
             attacker.TargetActor = defender;
 
             // if not already enemies, attacker is aggressor.
-            if (!m_Rules.AreEnemies(attacker, defender, false))
+            if (!m_Rules.AreEnemies(attacker, defender, false) && !Gameplay.Personality.CommunityCultureSystem.BoundaryOnly(attacker,defender))
                 DoMakeAggression(attacker, defender);
+            Gameplay.Personality.CommunityCultureSystem.Attack(this,attacker,defender);
 
             // get attack & defence.
             Attack attack = m_Rules.ActorMeleeAttack(attacker, attacker.CurrentMeleeAttack, defender);
@@ -406,8 +407,9 @@ namespace djack.RogueSurvivor.Engine
                 ((Gameplay.Personality.CommunityDiplomacySystem.PoliticalGroup(attacker) || Gameplay.Personality.CommunityDiplomacySystem.PoliticalGroup(defender)) && !m_Rules.AreEnemies(attacker, defender, false)))
                 ReportPersonalityEvent("attack", defender, attacker, defender.Location.Map, defender.Location.Position);
             // if not enemies, aggression.
-            if (!m_Rules.AreEnemies(attacker, defender, false))
+            if (!m_Rules.AreEnemies(attacker, defender, false) && !Gameplay.Personality.CommunityCultureSystem.BoundaryOnly(attacker,defender))
                 DoMakeAggression(attacker, defender);
+            Gameplay.Personality.CommunityCultureSystem.Attack(this,attacker,defender);
 
             // resolve, depending on mode.
             switch (mode)

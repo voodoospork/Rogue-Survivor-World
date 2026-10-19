@@ -39,11 +39,12 @@ namespace djack.RogueSurvivor.Gameplay.AI
             }
             return null;
         }
-        protected ActorAction BehaviorNpcKnownRoute(RogueGame game, Location destination)
+        protected ActorAction BehaviorNpcKnownRoute(RogueGame game, Location destination, bool safeWalking = false, int arrivalRadius = 0)
         {
             if (destination.Map == null) return null;
             Map current = m_Actor.Location.Map;
-            if (destination.Map == current) return BehaviorIntelligentBumpToward(game, destination.Position, false, false);
+            if (destination.Map == current) return safeWalking ? FollowerStep(game, destination.Position, arrivalRadius) :
+                BehaviorIntelligentBumpToward(game, destination.Position, false, false);
             var route = new Dictionary<Map, NpcKnownExit>(new NpcMapComparer()); var pending = new Queue<Map>();
             pending.Enqueue(current); route.Add(current, null);
             while (pending.Count > 0 && route.Count < 16)
@@ -64,7 +65,7 @@ namespace djack.RogueSurvivor.Gameplay.AI
                 if (actual == null || actual.ToMap != first.To.Map || actual.ToPosition != first.To.Position) return null;
                 var use = new ActionUseExit(m_Actor, first.From.Position, game); return use.IsLegal() ? use : null;
             }
-            return BehaviorIntelligentBumpToward(game, first.From.Position, false, false);
+            return safeWalking ? FollowerStep(game, first.From.Position, 0) : BehaviorIntelligentBumpToward(game, first.From.Position, false, false);
         }
     }
 }

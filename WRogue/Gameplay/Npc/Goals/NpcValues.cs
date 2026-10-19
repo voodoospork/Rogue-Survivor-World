@@ -9,7 +9,7 @@ namespace djack.RogueSurvivor.Gameplay.Personality
         public static int Importance(NpcContentCatalog catalog, Actor owner, NpcGoalValue value, Guid subject)
         {
             NpcValueDefinition definition = catalog.Value(value);
-            return definition == null ? 0 : definition.Importance(new NpcMotivation(catalog, owner, subject));
+            return definition == null ? 0 : definition.Importance(NpcDecisionContext.Motivation(catalog, owner, subject));
         }
         public static int KnownAttitude(Actor owner, Guid subject, PersonalityRegistry registry = null,
             string excludeTrait = null)
@@ -25,7 +25,7 @@ namespace djack.RogueSurvivor.Gameplay.Personality
             if (value == null) return null;
             string strongest = null;
             int largest = 0;
-            foreach (TraitInstance trait in owner.Personality.Traits)
+            foreach (TraitInstance trait in owner.Personality.TraitList)
             {
                 TraitDefinition definition = catalog.Personalities.Trait(trait.Id);
                 if (definition == null) continue;
@@ -40,7 +40,7 @@ namespace djack.RogueSurvivor.Gameplay.Personality
             NpcValueDefinition definition, Guid subject, int current, int desired, int deficit,
             int confidence, ulong result)
         {
-            int importance = Math.Max(0, Math.Min(200, definition.Importance(new NpcMotivation(catalog, owner, subject))));
+            int importance = Math.Max(0, Math.Min(200, definition.Importance(NpcDecisionContext.Motivation(catalog, owner, subject))));
             deficit = Math.Max(0, Math.Min(100, deficit)); confidence = Math.Max(0, Math.Min(100, confidence));
             return new NpcGeneratedGoal { Value = definition.LegacyValue ?? default(NpcGoalValue),
                 DefinitionId = definition.LegacyValue.HasValue ? null : definition.Id,

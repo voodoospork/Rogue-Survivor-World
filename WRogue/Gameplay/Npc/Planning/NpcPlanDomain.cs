@@ -23,10 +23,12 @@ namespace djack.RogueSurvivor.Gameplay.Personality
         public readonly int Turn;
         public readonly IList<Actor> Visible;
         public readonly NpcContentCatalog Catalog;
+        bool actionsBuilt;
         public NpcPlanningState Desired { get { return Catalog.Capability(Goal.DefinitionId).GetResult(Catalog, Goal.Generated); } }
         public string Resource { get { return Goal.Generated != null && Goal.Generated.Resource != null ? Goal.Generated.Resource : Catalog.Capability(Goal.DefinitionId).Resource; } }
-        public NpcPlanDomain(RogueGame game, Actor owner, NpcIntent goal, IList<Actor> visible, NpcContentCatalog catalog = null)
+        public NpcPlanDomain(RogueGame game, Actor owner, NpcIntent goal, IList<Actor> visible, NpcContentCatalog catalog = null, bool buildActions = true)
         {
+            long started = SimulationPerformance.Start();
             Game = game; Owner = owner; Goal = goal; Visible = visible; plan = goal.Plan;
             Turn = owner.Location.Map.LocalTime.TurnCounter; Catalog = catalog ?? game.NpcContent;
             foreach (DecisionKind kind in new[] { DecisionKind.Group, DecisionKind.Compassion, DecisionKind.Trade,
@@ -35,8 +37,15 @@ namespace djack.RogueSurvivor.Gameplay.Personality
             foreach (Action<NpcPlanDomain> seed in Catalog.PlanSeeds) seed(this);
             if (plan != null && plan.CompletedFacts != null) foreach (string name in plan.CompletedFacts)
             { NpcPlanningState mask; if (Catalog.Facts.TryMask(name, out mask)) InitialState |= mask; }
+            if (buildActions) BuildActions();
+            SimulationPerformance.End(SimulationPerformance.Part.PlanBuild, started);
+        }
+        public void BuildActions()
+        {
+            if (actionsBuilt) return;
+            actionsBuilt = true;
             NpcPlanComposition.Build(this);
-            NpcIntentDefinition capability = Catalog.Capability(goal.DefinitionId);
+            NpcIntentDefinition capability = Catalog.Capability(Goal.DefinitionId);
             if (capability != null && capability.BuildPlan != null) capability.BuildPlan(this);
         }
         public ulong At(Location place)

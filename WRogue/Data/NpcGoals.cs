@@ -26,6 +26,18 @@ namespace djack.RogueSurvivor.Data
         public long[] Causes;
         public string Key { get { return (DefinitionId ?? Value.ToString()) + ":" + SubjectId.ToString("N") + (Resource == null ? "" : ":" + Resource) +
             (ObligationId == 0 ? "" : ":" + ObligationId) + KeySuffix; } }
+        internal bool SameIdentity(NpcGeneratedGoal other)
+        {
+            if (other == null) return false;
+            bool definition = DefinitionId == null && other.DefinitionId == null ? Value == other.Value :
+                (DefinitionId ?? Value.ToString()) == (other.DefinitionId ?? other.Value.ToString());
+            if (!definition || SubjectId != other.SubjectId) {
+                if ((DefinitionId == null || DefinitionId.IndexOf(':') < 0) && (other.DefinitionId == null || other.DefinitionId.IndexOf(':') < 0)) return false;
+                return Key == other.Key;
+            }
+            // Preserve the legacy key's unescaped suffix/resource aliases for custom content.
+            return Resource == other.Resource && ObligationId == other.ObligationId && KeySuffix == other.KeySuffix || Key == other.Key;
+        }
         string KeySuffix
         {
             get

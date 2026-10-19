@@ -38,7 +38,7 @@ namespace djack.RogueSurvivor
 
             Logger.WriteLine(Logger.Stage.INIT_MAIN, "Form::InitializeComponent...");
             InitializeComponent();
-            this.Text = "Rogue Survivor - " + SetupConfig.GAME_VERSION;
+            this.Text = SetupConfig.GAME_TITLE;
             if (SetupConfig.Video == SetupConfig.eVideo.VIDEO_GDI_PLUS) this.Text += " (GDI+)";
             switch (SetupConfig.Sound)
             {

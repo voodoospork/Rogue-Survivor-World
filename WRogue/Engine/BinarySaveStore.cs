@@ -14,8 +14,8 @@ namespace djack.RogueSurvivor.Engine
         sealed class IncompatibleGameVersionException : IOException
         {
             public IncompatibleGameVersionException(string version) : base(
-                "Save requires Rogue Survivor Expanded " + version +
-                "; current game is " + SetupConfig.GAME_VERSION + ".") { }
+                "Save requires compatibility version " + version +
+                "; " + SetupConfig.GAME_TITLE + " supports " + SetupConfig.GAME_VERSION + ".") { }
         }
 
         public static void Save(string path, object value)

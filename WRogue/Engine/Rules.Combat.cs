@@ -376,6 +376,7 @@ namespace djack.RogueSurvivor.Engine
                 throw new ArgumentNullException("target");
 
 
+
             ///////////////////////////////////////
             // Cannot fire if:
             // 1. No ranged weapon or out of range.
@@ -653,6 +654,9 @@ namespace djack.RogueSurvivor.Engine
                 throw new ArgumentNullException("actor");
             if (target == null)
                 throw new ArgumentNullException("target");
+
+            if (target.Community != null && (target.CommunityChief == target || target.Community != actor.Community))
+            { reason = "is an independent resident of a community; admission is a separate agreement"; return false; }
 
             if (actor.IsPlayer && actor.CommunityMembership != null && target.SocialGroup == actor.SocialGroup && target.Leader != actor)
             { reason = "belongs to your NPC-led community"; return false; }

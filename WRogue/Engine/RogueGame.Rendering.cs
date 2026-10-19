@@ -45,6 +45,12 @@ namespace djack.RogueSurvivor.Engine
 
         public void RedrawPlayScreen()
         {
+            long start = SimulationPerformance.Start();
+            try { RedrawPlayScreenCore(); }
+            finally { SimulationPerformance.End(SimulationPerformance.Part.Render, start); }
+        }
+        void RedrawPlayScreenCore()
+        {
             // alpha10 dont display some infos
             bool canSeeSky = m_Rules.CanActorSeeSky(m_Player);
             bool canKnowTime = m_Rules.CanActorKnowTime(m_Player);

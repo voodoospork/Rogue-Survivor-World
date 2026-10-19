@@ -70,7 +70,8 @@ namespace djack.RogueSurvivor.Data
         internal bool HasIntentState { get { return m_Intents != null && m_Intents.Count > 0; } }
         internal bool HasPendingSocialState
         { get { return (m_Intents != null && m_Intents.Exists(i => !i.Finished)) || (m_Reactions != null && m_Reactions.Count > 0); } }
-        public IList<NpcIntent> Intents { get { return IntentList.AsReadOnly(); } }
+        [NonSerialized] IList<NpcIntent> intentView;
+        public IList<NpcIntent> Intents { get { return intentView ?? (intentView = IntentList.AsReadOnly()); } }
         internal List<NpcIntent> IntentList { get { return m_Intents ?? (m_Intents = new List<NpcIntent>()); } }
         internal List<NpcReaction> Reactions { get { return m_Reactions ?? (m_Reactions = new List<NpcReaction>()); } }
         internal bool CanStartIntent(string id, int turn)

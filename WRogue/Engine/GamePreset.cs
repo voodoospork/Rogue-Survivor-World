@@ -4,14 +4,28 @@ using System.IO;
 
 namespace djack.RogueSurvivor.Engine
 {
+    enum SimulationMode { Classic, ResponsiveNpcs, AdaptiveWorld }
     [Serializable]
     sealed class GamePreset
     {
+#if STAGE_ONE
+        internal const int SimulationModeCount = 2;
+#else
+        internal const int SimulationModeCount = 3;
+#endif
         public string Name;
+        [System.Runtime.Serialization.OptionalField] public SimulationMode Simulation;
+        [System.Runtime.Serialization.OptionalField] public bool AdaptivePauseBackground;
+        [System.Runtime.Serialization.OptionalField] public int AdaptiveWorkBudget;
+        internal int AdaptiveSliceMilliseconds { get { return AdaptiveWorkBudget == 1 ? 2 : AdaptiveWorkBudget == 2 ? 8 : 4; } }
+        internal string AdaptiveEffort { get { return AdaptiveWorkBudget == 1 ? "Light" : AdaptiveWorkBudget == 2 ? "Extra" : "Balanced"; } }
+        public static string SimulationName(SimulationMode mode)
+        { return mode == SimulationMode.ResponsiveNpcs ? "Responsive NPCs" : mode == SimulationMode.AdaptiveWorld ? "Adaptive World" : "Classic"; }
         public bool Bases;
         public bool NpcPersonalitiesEnabled;
         [System.Runtime.Serialization.OptionalField]
         public bool InitialCommunities;
+        [System.Runtime.Serialization.OptionalField] public bool OrganicCommunities;
         [System.Runtime.Serialization.OptionalField] public bool PatchySupplies;
         public bool ImmediateZombification;
         public bool Infection;
@@ -58,7 +72,8 @@ namespace djack.RogueSurvivor.Engine
         {
             GamePreset preset = BuiltIn(GameMode.GM_XPD);
             preset.Name = "World";
-            preset.InitialCommunities = true;
+            preset.InitialCommunities = false;
+            preset.OrganicCommunities = true;
             preset.PatchySupplies = true;
             return preset;
         }
@@ -101,10 +116,15 @@ namespace djack.RogueSurvivor.Engine
 
         public void Validate()
         {
+            if (AdaptiveWorkBudget < 0 || AdaptiveWorkBudget > 2) throw new ArgumentException("Unknown catch-up effort.");
+            if (Simulation < SimulationMode.Classic || (int)Simulation >= SimulationModeCount)
+                throw new ArgumentException("Unknown simulation mode.");
             if (String.IsNullOrWhiteSpace(Name) || Name.Length > 40)
                 throw new ArgumentException("Preset name must contain 1 to 40 characters.");
             if (InitialCommunities && (!Bases || !NpcPersonalitiesEnabled))
                 throw new ArgumentException("Initial communities require bases and NPC traits and memories.");
+            if (OrganicCommunities && (!Bases || !NpcPersonalitiesEnabled))
+                throw new ArgumentException("Organic communities require bases and NPC traits and memories.");
             if (!Skeletons && !Shamblers && !ZombieMasters && !Zombified && !RatZombies)
                 throw new ArgumentException("At least one zombie type must be enabled.");
             if (HasOptions && !Zombified && !RatZombies &&

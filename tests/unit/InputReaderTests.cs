@@ -25,10 +25,24 @@ static class InputReaderTests
     {
         FakeSource pending = new FakeSource();
         pending.Positions.Enqueue(new Point(4, 4));
+        pending.Positions.Enqueue(new Point(5, 4));
         PlayerInputEvent key = new PlayerInputReader(pending).Read(new KeyEventArgs(Keys.M));
         Check.Equal(Keys.M, key.Key.KeyCode, "pending key delivered");
-        Check.Equal(new Point(-1, -1), key.MousePosition, "key has no mouse target");
+        Check.Equal(new Point(5, 4), key.MousePosition, "pending key retains current mouse target");
+        Check.Equal(null, key.MouseButtons, "keyboard input does not invent a click");
         Check.Equal(0, pending.KeyReads, "pending key is not discarded");
+
+        FakeSource give = new FakeSource();
+        give.Keys.Enqueue(null);
+        give.Keys.Enqueue(new KeyEventArgs(Keys.G));
+        give.Positions.Enqueue(new Point(4, 4));
+        give.Positions.Enqueue(new Point(8, 9));
+        give.Buttons.Enqueue(MouseButtons.Left);
+        PlayerInputEvent gift = new PlayerInputReader(give).Read(null);
+        Check.Equal(Keys.G, gift.Key.KeyCode, "give key delivered");
+        Check.Equal(new Point(8, 9), gift.MousePosition, "give uses current hover even after mouse moves");
+        Check.Equal(null, gift.MouseButtons, "key takes priority over click");
+        Check.Equal(1, give.Buttons.Count, "key leaves mouse button input untouched");
 
         FakeSource move = new FakeSource();
         move.Positions.Enqueue(new Point(4, 4));
@@ -47,6 +61,7 @@ static class InputReaderTests
         FakeSource repeated = new FakeSource();
         repeated.Keys.Enqueue(new KeyEventArgs(Keys.M));
         repeated.Keys.Enqueue(new KeyEventArgs(Keys.NumPad6));
+        repeated.Positions.Enqueue(new Point(4, 4));
         repeated.Positions.Enqueue(new Point(4, 4));
         PlayerInputEvent next = new PlayerInputReader(repeated).Read(null);
         Check.Equal(Keys.NumPad6, next.Key.KeyCode,

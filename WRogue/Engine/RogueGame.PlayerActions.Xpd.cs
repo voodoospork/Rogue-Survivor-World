@@ -16,8 +16,11 @@ namespace djack.RogueSurvivor.Engine
                 reason = "Bases are disabled in this game preset.";
                 return false;
             }
+            if (actor != null && !actor.IsPlayer && actor.Community != null && actor.CommunityChief != actor)
+            { reason = "Only the chief may secure a replacement community home."; return false; }
             if (actor == null || (!actor.IsPlayer &&
-                (actor.HasLeader || actor.CountFollowers == 0)))
+                (actor.HasLeader || actor.CountFollowers == 0) && actor.CommunityChief != actor &&
+                !(actor.ResidentCommunity.Proposal != null && actor.ResidentCommunity.Proposal.Accepted)))
             {
                 reason = "Only a player or a group leader with followers may claim a base.";
                 return false;
@@ -40,6 +43,8 @@ namespace djack.RogueSurvivor.Engine
                 List<XpdBase> released = new List<XpdBase>();
                 foreach (XpdBase baseClaim in map.XpdBases)
                     if (baseClaim.GroupLeader == leader &&
+                        !(leader.IsDead && baseClaim.CommunityIdentity != Guid.Empty &&
+                            baseClaim.CommunityGroup != null && baseClaim.CommunityGroup.Tribe != null && !baseClaim.CommunityGroup.Tribe.Dissolved) &&
                         (except == null || !baseClaim.IsPartOf(except)))
                         released.Add(baseClaim);
                 foreach (XpdBase baseClaim in released)
@@ -120,7 +125,7 @@ namespace djack.RogueSurvivor.Engine
 
         static IEnumerable<Point> XpdBaseBoundary(XpdBase baseClaim)
         {
-            HashSet<Point> cells = new HashSet<Point>(baseClaim.Cells);
+            HashSet<Point> cells = new HashSet<Point>(baseClaim.Cells, djack.RogueSurvivor.Data.PointComparer.Instance);
             foreach (Point point in cells)
                 if (!cells.Contains(new Point(point.X - 1, point.Y)) ||
                     !cells.Contains(new Point(point.X + 1, point.Y)) ||
@@ -205,7 +210,7 @@ namespace djack.RogueSurvivor.Engine
 
         void DrawXpdBoundary(IEnumerable<Point> cells, Color color)
         {
-            HashSet<Point> area = new HashSet<Point>(cells);
+            HashSet<Point> area = new HashSet<Point>(cells, djack.RogueSurvivor.Data.PointComparer.Instance);
             foreach (Point point in area)
             {
                 if (!IsInViewRect(point)) continue;

@@ -16,7 +16,7 @@ namespace djack.RogueSurvivor.Engine.Actions
     {
         public ActionLeaveCommunity(Actor player, RogueGame game) : base(player, game) { }
         public override bool IsLegal() { return m_Actor.IsPlayer && !m_Actor.IsDead && !m_Actor.IsSleeping &&
-            m_Actor.CommunityMembership != null && m_Actor.Leader != null; }
+            m_Actor.CommunityMembership != null && (m_Actor.Leader != null || m_Actor.Community != null); }
         public override void Perform() { if (IsLegal()) CommunityMembershipSystem.Leave(m_Game, m_Actor); }
     }
 }

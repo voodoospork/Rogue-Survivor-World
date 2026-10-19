@@ -46,13 +46,15 @@ namespace djack.RogueSurvivor.Gameplay.Personality
                 (c.Food == null || NpcFoodSupply.SpareFood(c.Game, c.Owner, c.Target) == c.Food), () => {
                 ItemFood food = c.Food ?? NpcFoodSupply.SpareFood(c.Game, c.Owner, c.Target);
                 bool needed = c.Game.Rules.IsActorHungry(c.Target);
+                var restitution = CommunityCultureSystem.Repayment(c.Owner,c.Target,food,c.Game);
                 if (!c.Target.Inventory.AddAll(NpcFoodSupply.OneFood(food))) return;
                 c.Owner.Inventory.Consume(food); c.Game.SpendActorActionPoints(c.Owner, Rules.BASE_ACTION_COST);
-                if (needed) NpcPlanExecution.Publish(c.Game, "helped", c.Target, c.Owner, c.Goal);
+                int repaid=CommunityCultureSystem.CompleteGift(c.Game,c.Owner,c.Target,food,1,restitution);
+                if (needed && repaid==0) NpcPlanExecution.Publish(c.Game, "helped", c.Target, c.Owner, c.Goal);
                 c.Game.DoSay(c.Owner, c.Target, c.Capability.DeliveryText ?? "Here, I can spare some food.", RogueGame.Sayflags.IS_FREE_ACTION);
-                c.Publish("shared_food", c.Target);
+                if(repaid==0)c.Publish("shared_food", c.Target);
                 NpcValueDefinition value = c.Goal.Generated == null ? null : c.Game.NpcContent.Value(c.Goal.Generated);
-                bool repeat = value != null && value.AfterDelivery != null && value.AfterDelivery(c);
+                bool repeat = repaid==0 && value != null && value.AfterDelivery != null && value.AfterDelivery(c);
                 if (c.Capability.ReportAfterDelivery) { c.Goal.Progress = 2; if (c.Step != null) c.Done((ulong)NpcPlanFact.Delivered); return; }
                 c.Done((ulong)NpcPlanFact.Delivered, repeat);
             });

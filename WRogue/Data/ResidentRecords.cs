@@ -79,7 +79,7 @@ namespace djack.RogueSurvivor.Data
                     (actor.Faction == null ? "." : " as " + actor.Faction.MemberName + "."));
                 if (actor.Personality != null)
                 {
-                    foreach (TraitInstance trait in actor.Personality.Traits)
+                    foreach (TraitInstance trait in actor.Personality.TraitList)
                         record.Add("initial-trait:" + trait.Id, IsPartial ? RecoveryTurn : actor.SpawnTime,
                             (IsPartial ? "Trait in saved snapshot: " : "Starting trait: ") + TraitLabel(trait) + ".");
                     foreach (MemoryInstance memory in actor.Personality.Memories)

@@ -56,7 +56,7 @@ namespace djack.RogueSurvivor.Gameplay.Personality
                     owner.SocialGroup.Members.Contains(person.Id) && person.Violation >= 80 && person.ViolationConfidence >= 80)
                 {
                     NpcKnownPerson responsible = person;
-                    foreach (Actor member in owner.PartyTree())
+                    foreach (Actor member in owner.CommunityResidents)
                     {
                         if (member.PersonalityIdentity != person.Id || !member.InPlayerParty) continue;
                         Actor personalLeader = member;

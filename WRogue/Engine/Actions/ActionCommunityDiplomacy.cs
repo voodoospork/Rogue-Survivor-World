@@ -31,6 +31,8 @@ namespace djack.RogueSurvivor.Engine.Actions
             string text = report.DiplomacyMessage != null ? report.DiplomacyMessage.Name + " reports " + report.DiplomacyMessage.Stance +
                 " with " + report.DiplomacyMessage.Target.Name + ". " + report.DiplomacyMessage.Reason +
                 "; report turn " + report.DiplomacyMessage.Turn + (report.DiplomacyMessage.PeaceTurn > 0 ? "; peace ratified turn " + report.DiplomacyMessage.PeaceTurn : "") + "." :
+                report.DiplomacyEvidence==null&&report.CultureCase!=null ? report.CultureCase.Name+": "+(report.CultureCase.Case.PersonName??"An unidentified offender")+", "+
+                (report.CultureCase.Case.Resolved?"the recorded property loss was replaced.":"an unresolved property dispute; "+CommunityCultureSystem.DebtText(report.CultureCase.Case))+" Report turn "+report.EventTurn+"." :
                 (report.Source == NpcKnowledgeSource.Told ? "I was told: " : "I witnessed: ") + report.DiplomacyEvidence.Explanation +
                 "; " + (report.SubjectName ?? "someone") + " (" + (report.DiplomacyEvidence.Subject.Name ?? "unknown affiliation") + "), " +
                 (report.OtherName ?? "someone") + " (" + (report.DiplomacyEvidence.Other.Name ?? "unknown affiliation") + "), turn " + report.EventTurn + ".";

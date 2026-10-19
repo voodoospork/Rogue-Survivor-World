@@ -47,6 +47,13 @@ static class ScenarioRunner
             if (scenario.Name == name) return true;
         return false;
     }
+    internal static void ApplyRequestedMode(ScenarioWorld world)
+    {
+        int mode;
+        var field = typeof(djack.RogueSurvivor.Engine.GamePreset).GetField("Simulation");
+        if (field != null && Int32.TryParse(Environment.GetEnvironmentVariable("ROGUE_SCENARIO_MODE"), out mode))
+            field.SetValue(world.Game.Session.GamePreset, Enum.ToObject(field.FieldType, mode));
+    }
 
     public static int Run(string name)
     {
@@ -59,7 +66,13 @@ static class ScenarioRunner
             try
             {
                 world = scenario.Create();
+                int simulation = 0;
+                var modeField = typeof(djack.RogueSurvivor.Engine.GamePreset).GetField("Simulation");
+                bool forcedMode = modeField != null && Int32.TryParse(Environment.GetEnvironmentVariable("ROGUE_SCENARIO_MODE"), out simulation);
+                if (forcedMode) modeField.SetValue(world.Game.Session.GamePreset, Enum.ToObject(modeField.FieldType, simulation));
                 scenario.Run(world);
+                if (forcedMode && Convert.ToInt32(modeField.GetValue(world.Game.Session.GamePreset)) != simulation)
+                    throw new Exception("Scenario replaced the requested simulation mode; it does not validate that mode.");
                 Console.WriteLine("PASS " + scenario.Name + " (seed " + world.Seed + ")");
             }
             catch (Exception error)

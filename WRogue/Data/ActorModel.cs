@@ -133,7 +133,7 @@ namespace djack.RogueSurvivor.Data
         public Actor CreateNumberedName(Faction faction, int spawnTime)
         {
             Actor actor = Create(faction, spawnTime);
-            String number = m_CreatedCount.ToString();
+            String number = SimulationClock.ModelCount(ID, m_CreatedCount).ToString();
             actor.Name += number;
             actor.IsProperName = true;
             return actor;

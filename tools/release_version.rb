@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby
-# Update and check every published copy of the game's version.
+# Update World releases without changing the save/mod compatibility version.
 
 require 'optparse'
 
@@ -7,21 +7,27 @@ ROOT = File.expand_path('..', __dir__)
 VERSION_RE = /\A\d+\.\d+\.\d+\z/
 COPIES = {
   'WRogue/SetupConfig.cs' => [
-    /public const string GAME_VERSION = "(?<version>\d+\.\d+\.\d+)";/
+    /public const string WORLD_VERSION = "(?<version>\d+\.\d+\.\d+)";/
   ],
+  'WRogue/RogueSurvivor.csproj' => [
+    /<ApplicationVersion>(?<version>\d+\.\d+\.\d+)\.0<\/ApplicationVersion>/
+  ],
+  'README.md' => [
+    /Current World version: \*\*(?<version>\d+\.\d+\.\d+)\*\*/
+  ]
+}.freeze
+COMPATIBILITY_COPIES = {
   'WRogue/Properties/AssemblyInfo.cs' => [
-    /\[assembly: AssemblyVersion\("(?<version>\d+\.\d+\.\d+)\.0"\)\]/,
-    /\[assembly: AssemblyFileVersion\("(?<version>\d+\.\d+\.\d+)\.0"\)\]/
+    /\[assembly: AssemblyVersion\("(?<version>\d+\.\d+\.\d+)\.0"\)\]/
   ],
   'WRogue/mods/Deonapocalypse/authors.json' => [
     /"game_version": "(?<version>\d+\.\d+\.\d+)"/
   ],
   'README.md' => [
-    /Current Expanded version: \*\*(?<version>\d+\.\d+\.\d+)\*\*/,
     /The `game_version` value must name this version \(`(?<version>\d+\.\d+\.\d+)`\)/
   ],
   'docs/save-format.md' => [
-    /Saves record the Rogue Survivor Expanded version \(`(?<version>\d+\.\d+\.\d+)` at/
+    /Saves record compatibility version `(?<version>\d+\.\d+\.\d+)`/
   ]
 }.freeze
 
@@ -66,6 +72,13 @@ def main
     path = File.join(ROOT, relative)
     [path, updated_copy(path, patterns, version, check)]
   end
+  setup = File.read(File.join(ROOT, 'WRogue/SetupConfig.cs'), encoding: 'UTF-8')
+  compatibility = setup.match(/public const string GAME_VERSION = "(?<version>\d+\.\d+\.\d+)";/)
+  raise ArgumentError, 'save/mod compatibility version is missing' unless compatibility
+  valid_version(compatibility[:version])
+  COMPATIBILITY_COPIES.each do |relative, patterns|
+    updated_copy(File.join(ROOT, relative), patterns, compatibility[:version], true)
+  end
   unless check
     updates.each do |path, content|
       File.write(path, content, encoding: 'UTF-8') if File.read(path, encoding: 'UTF-8') != content
@@ -74,10 +87,10 @@ def main
   end
 
   tag = ENV['GITHUB_REF_TYPE'] == 'tag' ? ENV.fetch('GITHUB_REF_NAME', '') : ''
-  if check && tag.start_with?('v') && tag != "v#{version}"
+  if check && tag.start_with?('world-v') && tag != "world-v#{version}"
     raise ArgumentError, "release tag #{tag} does not match VERSION #{version}"
   end
-  puts "Version #{version}: #{check ? 'all copies match' : 'release files updated'}"
+  puts "World #{version}: #{check ? 'all copies match' : 'release files updated'}; compatibility #{compatibility[:version]}"
 end
 
 begin

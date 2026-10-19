@@ -72,6 +72,8 @@ namespace djack.RogueSurvivor.Gameplay.AI
         {
             if (!Session.Get.GamePreset.Bases || m_Actor.IsPlayer ||
                 m_Actor.HasLeader || m_Actor.Inventory == null) return null;
+            // A chief requests help from independent residents through the collective plan system.
+            if (m_Actor.Community != null) return null;
             Location home = m_Actor.Location;
             if ((home.Map.LocalTime.TurnCounter + home.Position.X + home.Position.Y) % 30 != 0)
                 return null;

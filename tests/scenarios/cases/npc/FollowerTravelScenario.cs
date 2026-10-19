@@ -28,7 +28,17 @@ static class FollowerTravelScenario
         actor.ActionPoints = Rules.BASE_ACTION_COST;
         Check.Equal(true, w.NpcTurn(actor), "real follower decision performs a legal action");
         Check.Equal(true, actor.ActionPoints < Rules.BASE_ACTION_COST, "follower action is charged");
-        CommunityMembershipScenario.Time(w, Session.Get.WorldTime.TurnCounter + 1);
+            int next = Session.Get.WorldTime.TurnCounter + 1;
+            var mode = typeof(GamePreset).GetField("Simulation");
+            if (mode != null && Convert.ToInt32(mode.GetValue(Session.Get.GamePreset)) == 2 && w.Game.Player.Location.Map != w.Map) {
+                var current = new ScenarioWorld(w.Seed, w.Game.Player.Location.Map, w.Game);
+                while (current.Map.LocalTime.TurnCounter < next) {
+                    w.Game.Player.ActionPoints = Rules.BASE_ACTION_COST;
+                    new ActionWait(w.Game.Player,w.Game).Perform();
+                    CommunityClarityScenario.AmbientTurn(current);
+                }
+            }
+            CommunityMembershipScenario.Time(w, next);
     }
     internal static Map Floor(ScenarioWorld w)
     {
@@ -66,9 +76,9 @@ static class FollowerTravelScenario
         {
             Actor p = NpcIntentSupport.Player(w, 2, 3), f = Follower(w, p, "Sam", 8, 3);
             w.SetTile(5, 3, '#'); CommunityMembershipScenario.Fov(w);
-            Check.Equal(PlayerCommand.RECALL_FOLLOWERS, RogueGame.KeyBindings.Get(Keys.S | Keys.Shift), "Shift+S is a separate rebindable command");
-            RogueGame.KeyBindings.Set(PlayerCommand.RECALL_FOLLOWERS, Keys.R | Keys.Control);
-            Check.Equal(PlayerCommand.RECALL_FOLLOWERS, RogueGame.KeyBindings.Get(Keys.R | Keys.Control), "recall rebinds normally");
+            Check.Equal(PlayerCommand.RECALL_FOLLOWERS, RogueGame.KeyBindings.Get(Keys.R | Keys.Control), "Ctrl+R is a separate rebindable command");
+            RogueGame.KeyBindings.Set(PlayerCommand.RECALL_FOLLOWERS, Keys.F10);
+            Check.Equal(PlayerCommand.RECALL_FOLLOWERS, RogueGame.KeyBindings.Get(Keys.F10), "recall rebinds normally");
             p.ActionPoints = 100; Check.Equal(true, Check.Call(w.Game, "HandlePlayerRecall", p), "production recall input");
             Check.Equal(0, p.ActionPoints, "recall costs one player action");
             Tick(w, f); Check.Equal(true, Display(w).Contains("Coming back!"), "actual reply acknowledges recall");

@@ -113,12 +113,19 @@ namespace djack.RogueSurvivor.Gameplay.AI
 
         public override void SetOrder(ActorOrder newOrder)
         {
+            InvalidateRoutine();
             m_Order = newOrder;
             if (newOrder != null) ResetFollowerTravel();
         }
 
         public override ActorAction GetAction(RogueGame game)
         {
+            using (Gameplay.Personality.NpcDecisionContext.Evaluation(game, m_Actor))
+                return GetActionCore(game);
+        }
+        ActorAction GetActionCore(RogueGame game)
+        {
+            directedAction = null;
             /////////////////////////
             // 1. Update sensors.
             // 2. Issue action.
@@ -132,8 +139,19 @@ namespace djack.RogueSurvivor.Gameplay.AI
             if (m_prevLocation.Map == null)
                 m_prevLocation = m_Actor.Location;
             m_Actor.TargetActor = null;
-            ActorAction bestAction = SelectFollowerReply(game, percepts) ?? SelectPersonalTravel(game, percepts) ?? SelectAction(game, percepts);
+            ActorAction bestAction = SelectFollowerReply(game, percepts) ?? SelectPersonalTravel(game, percepts);
+            if (bestAction == null) bestAction = ContinueRoutine(game, percepts);
+            if (bestAction == null)
+            {
+                long started = SimulationPerformance.Start();
+                try { bestAction = SelectAction(game, percepts); }
+                finally { SimulationPerformance.End(SimulationPerformance.Part.Routine, started); }
+                RememberRoutine(game, bestAction, percepts);
+            }
+            else if (!(bestAction is ActionWait) && !(bestAction is ActionMoveStep)) InvalidateRoutine();
+            ActorAction unconstrained = bestAction;
             bestAction = ConstrainFollowerRoutine(game, bestAction);
+            if (bestAction != unconstrained) InvalidateRoutine();
             m_prevLocation = m_Actor.Location;
             if (bestAction == null)
             {

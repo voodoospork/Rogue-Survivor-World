@@ -12,6 +12,7 @@
     <AssemblyName>RogueSurvivor</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <LangVersion>7.3</LangVersion>
+    <StageOneConstants Condition="'$(StageOneOnly)' == 'true'">;STAGE_ONE</StageOneConstants>
     <FileAlignment>512</FileAlignment>
     <StartupObject>djack.RogueSurvivor.Program</StartupObject>
     <ManifestCertificateThumbprint>FEE48166C5B004BB2E5F7DA54BA8BF0CA148007C</ManifestCertificateThumbprint>
@@ -37,11 +38,11 @@
     <UpdateRequired>false</UpdateRequired>
     <MapFileExtensions>true</MapFileExtensions>
     <TargetCulture>en</TargetCulture>
-    <ProductName>Rogue Survivor</ProductName>
+    <ProductName>Rogue Survivor World</ProductName>
     <PublisherName>roguedjack</PublisherName>
     <OpenBrowserOnPublish>false</OpenBrowserOnPublish>
     <ApplicationRevision>0</ApplicationRevision>
-    <ApplicationVersion>0.3.1.0</ApplicationVersion>
+    <ApplicationVersion>0.1.0.0</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <CreateDesktopShortcut>true</CreateDesktopShortcut>
     <PublishWizardCompleted>true</PublishWizardCompleted>
@@ -52,7 +53,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;PORTABLE</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;PORTABLE$(StageOneConstants)</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <UseVSHostingProcess>false</UseVSHostingProcess>
@@ -61,7 +62,7 @@
     <DebugType>none</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE;PORTABLE</DefineConstants>
+    <DefineConstants>TRACE;PORTABLE$(StageOneConstants)</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <UseVSHostingProcess>false</UseVSHostingProcess>
@@ -106,6 +107,12 @@
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
     <Compile Include="Engine\RogueGame.NpcContent.cs" />
+    <Compile Include="Gameplay\Npc\Goals\NpcDecisionContext.cs" />
+    <Compile Include="Gameplay\AI\BaseAI.Routines.cs" />
+    <Compile Include="Data\PointComparer.cs" />
+    <Compile Include="Engine\RogueGame.AdaptiveSimulation.cs" />
+    <Compile Include="Engine\SimulationClock.cs" />
+    <Compile Include="Data\AdaptiveSimulationState.cs" />
     <Compile Include="Gameplay\Npc\Contracts\NpcOperatorSource.cs" />
     <Compile Include="Gameplay\Npc\Planning\NpcPlanComposition.cs" />
     <Compile Include="Engine\Actions\ActionNpcReaction.cs" />
@@ -425,6 +432,7 @@
     <Compile Include="Engine\RogueGame.Flow.Records.Browse.cs" />
     <Compile Include="Data\ResidentRecord.Metrics.cs" />
     <Compile Include="Engine\DistrictSimulationWorker.cs" />
+    <Compile Include="Engine\SimulationPerformance.cs" />
     <Compile Include="Engine\OverlayCollection.cs" />
     <Compile Include="Engine\Overlays.cs" />
     <Compile Include="Engine\ManualNavigator.cs" />
@@ -492,6 +500,10 @@
     <Compile Include="Data\NpcKnowledge.cs" />
     <Compile Include="Data\NpcStories.cs" />
     <Compile Include="Data\CommunityDiplomacy.cs" />
+    <Compile Include="Data\CommunityCulture.cs" />
+    <Compile Include="Gameplay\Npc\Knowledge\CommunityCultureSystem.cs" />
+    <Compile Include="Gameplay\Npc\Knowledge\CommunityCultureSystem.Restitution.cs" />
+    <Compile Include="Engine\Actions\ActionCommunityCulture.cs" />
     <Compile Include="Engine\Actions\ActionCommunityDiplomacy.cs" />
     <Compile Include="Engine\RogueGame.CommunityDiplomacy.cs" />
     <Compile Include="Engine\RogueGame.PlayerActions.Diplomacy.cs" />
@@ -500,10 +512,19 @@
     <Compile Include="Data\SocialGroup.cs" />
     <Compile Include="Data\CommunityKnowledge.cs" />
     <Compile Include="Data\ScavengingState.cs" />
+    <Compile Include="Data\TradeRouteState.cs" />
+    <Compile Include="Data\CommunityRaid.cs" />
+    <Compile Include="Gameplay\Npc\Knowledge\CommunityRaidSystem.cs" />
+    <Compile Include="Gameplay\AI\OrderableAI.CommunityRaids.cs" />
+    <Compile Include="Engine\Actions\ActionCommunityRaid.cs" />
+    <Compile Include="Engine\RogueGame.TradeRoutes.cs" />
     <Compile Include="Gameplay\Npc\Knowledge\ScavengingSystem.cs" />
     <Compile Include="Engine\RogueGame.Scavenging.cs" />
     <Compile Include="Gameplay\Generators\ScavengingStock.cs" />
     <Compile Include="Data\CommunityHomeState.cs" />
+    <Compile Include="Data\TribeState.cs" />
+    <Compile Include="Gameplay\Npc\Knowledge\CommunityAdaptationSystem.cs" />
+    <Compile Include="Engine\Actions\ActionCommunityDecision.cs" />
     <Compile Include="Gameplay\Npc\Knowledge\CommunityMembershipSystem.cs" />
     <Compile Include="Engine\Actions\ActionCommunityMembership.cs" />
     <Compile Include="Engine\RogueGame.CommunityHome.cs" />

@@ -100,7 +100,7 @@ namespace djack.RogueSurvivor.Engine
         List<Actor> UnreadyTravellers(Actor leader, Map fromMap, Point fromPos, Map destination, Point landing)
         {
             var unready = new List<Actor>(); var oldPoints = new Dictionary<Actor, Point> { { leader, fromPos } };
-            var landings = new Dictionary<Actor, Point> { { leader, landing } }; var reserved = new HashSet<Point> { landing };
+            var landings = new Dictionary<Actor, Point> { { leader, landing } }; var reserved = new HashSet<Point>(djack.RogueSurvivor.Data.PointComparer.Instance) { landing };
             foreach (Actor actor in BaseAI.TravelParty(leader).Skip(1))
             {
                 if (!BaseAI.Travelling(actor)) continue;
@@ -128,7 +128,7 @@ namespace djack.RogueSurvivor.Engine
         {
             if (m_Rules.IsWalkableFor(actor, exit.ToMap, exit.ToPosition.X, exit.ToPosition.Y)) return exit.ToPosition;
             Actor occupant = exit.ToMap.GetActorAt(exit.ToPosition);
-            return occupant != null && occupant.InPlayerParty ? FreeFollowerLanding(actor, exit.ToMap, exit.ToPosition, new HashSet<Point>()) : null;
+            return occupant != null && occupant.InPlayerParty ? FreeFollowerLanding(actor, exit.ToMap, exit.ToPosition, new HashSet<Point>(djack.RogueSurvivor.Data.PointComparer.Instance)) : null;
         }
         bool ConfirmFollowerDeparture(Actor player, Map fromMap, Point fromPos, Exit exit, out bool prompted)
         {
@@ -170,7 +170,7 @@ namespace djack.RogueSurvivor.Engine
         void TransferPersonalFollowers(Actor leader, Map fromMap, Point fromPos, Point exitPoint, Map toMap, Point toPos)
         {
             var original = BaseAI.TravelParty(leader).ToDictionary(a => a, a => a == leader ? new Location(fromMap, fromPos) : a.Location);
-            var crossed = new HashSet<Actor> { leader }; var reserved = new HashSet<Point> { toPos };
+            var crossed = new HashSet<Actor> { leader }; var reserved = new HashSet<Point>(djack.RogueSurvivor.Data.PointComparer.Instance) { toPos };
             foreach (Actor actor in original.Keys.Where(a => a != leader).ToArray())
             {
                 if (!BaseAI.Travelling(actor) || actor.IsSleeping || actor.Location.Map != fromMap || !crossed.Contains(actor.Leader) ||

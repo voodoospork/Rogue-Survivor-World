@@ -9,9 +9,11 @@ Unmarked BinaryFormatter settings are no longer accepted.
 
 ## Envelope and archive
 
-Saves record the Rogue Survivor Expanded version (`0.4.1` at the current release)
-separately from the envelope format number. Saves from `0.1.0`, `0.1.1`, and
-the current release series are accepted;
+Saves record compatibility version `0.4.1` separately from the World release
+version and the envelope format number. This inherited value also selects the
+existing save/settings folder and mod compatibility; World release bumps do not
+change it. Saves from compatibility versions `0.1.0`, `0.1.1`, and the `0.4.x`
+series through `0.4.1` are accepted;
 other versions are rejected before loading their mod list or object graph. The
 error shows the saved and running versions. Older settings formats have no game
 version and remain readable for migration.

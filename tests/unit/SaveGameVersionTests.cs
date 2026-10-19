@@ -10,11 +10,19 @@ static class SaveGameVersionTests
         Assembly gameAssembly = typeof(djack.RogueSurvivor.SetupConfig).Assembly;
         string executableVersion = djack.RogueSurvivor.SetupConfig.GAME_VERSION + ".0";
         Check.Equal(executableVersion, gameAssembly.GetName().Version.ToString(),
-            "executable assembly version matches game version");
+            "assembly identity retains the save compatibility version");
         AssemblyFileVersionAttribute fileVersion = (AssemblyFileVersionAttribute)
             Attribute.GetCustomAttribute(gameAssembly, typeof(AssemblyFileVersionAttribute));
-        Check.Equal(executableVersion, fileVersion.Version,
-            "executable file version matches game version");
+        FieldInfo worldVersionField = typeof(djack.RogueSurvivor.SetupConfig).GetField("WORLD_VERSION");
+        string worldVersion = worldVersionField == null ? djack.RogueSurvivor.SetupConfig.GAME_VERSION :
+            (string)worldVersionField.GetRawConstantValue();
+        Check.Equal(worldVersion + ".0", fileVersion.Version,
+            "Windows file version identifies the World release");
+        AssemblyInformationalVersionAttribute productVersion = (AssemblyInformationalVersionAttribute)
+            Attribute.GetCustomAttribute(gameAssembly, typeof(AssemblyInformationalVersionAttribute));
+        if (worldVersionField != null)
+            Check.Equal(worldVersion, productVersion.InformationalVersion,
+                "Windows product version identifies the World release");
 
         string path = Path.Combine(Path.GetTempPath(),
             "rogue-game-version-" + Guid.NewGuid().ToString("N"));

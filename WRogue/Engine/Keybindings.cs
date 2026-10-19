@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,6 +12,8 @@ namespace djack.RogueSurvivor.Engine
         #region Fields
         Dictionary<PlayerCommand, Keys> m_CommandToKeyData;
         Dictionary<Keys, PlayerCommand> m_KeyToCommand;
+        [System.Runtime.Serialization.OptionalField] int m_DefaultsRevision;
+        const int CURRENT_DEFAULTS_REVISION = 1;
         #endregion
 
         #region Init
@@ -26,69 +28,111 @@ namespace djack.RogueSurvivor.Engine
         {
             m_CommandToKeyData.Clear();
             m_KeyToCommand.Clear();
+            m_DefaultsRevision = CURRENT_DEFAULTS_REVISION;
 
-            Set(PlayerCommand.BARRICADE_MODE, Keys.B);
-            Set(PlayerCommand.BREAK_MODE, Keys.K);
-            Set(PlayerCommand.CLOSE_DOOR, Keys.C);
-            Set(PlayerCommand.DISARM_TRAP, Keys.D);
-            Set(PlayerCommand.FIRE_MODE, Keys.F);
-            Set(PlayerCommand.HELP_MODE, Keys.H);
-            Set(PlayerCommand.KEYBINDING_MODE, Keys.K | Keys.Shift);
+            SetDefault(PlayerCommand.BARRICADE_MODE, Keys.B);
+            SetDefault(PlayerCommand.BREAK_MODE, Keys.K);
+            SetDefault(PlayerCommand.CLOSE_DOOR, Keys.C);
+            SetDefault(PlayerCommand.DISARM_TRAP, Keys.D);
+            SetDefault(PlayerCommand.FIRE_MODE, Keys.F);
+            SetDefault(PlayerCommand.HELP_MODE, Keys.H);
+            SetDefault(PlayerCommand.KEYBINDING_MODE, Keys.K | Keys.Shift);
 
-            Set(PlayerCommand.ITEM_SLOT_0, Keys.D1);
-            Set(PlayerCommand.ITEM_SLOT_1, Keys.D2);
-            Set(PlayerCommand.ITEM_SLOT_2, Keys.D3);
-            Set(PlayerCommand.ITEM_SLOT_3, Keys.D4);
-            Set(PlayerCommand.ITEM_SLOT_4, Keys.D5);
-            Set(PlayerCommand.ITEM_SLOT_5, Keys.D6);
-            Set(PlayerCommand.ITEM_SLOT_6, Keys.D7);
-            Set(PlayerCommand.ITEM_SLOT_7, Keys.D8);
-            Set(PlayerCommand.ITEM_SLOT_8, Keys.D9);
-            Set(PlayerCommand.ITEM_SLOT_9, Keys.D0);
+            SetDefault(PlayerCommand.ITEM_SLOT_0, Keys.D1);
+            SetDefault(PlayerCommand.ITEM_SLOT_1, Keys.D2);
+            SetDefault(PlayerCommand.ITEM_SLOT_2, Keys.D3);
+            SetDefault(PlayerCommand.ITEM_SLOT_3, Keys.D4);
+            SetDefault(PlayerCommand.ITEM_SLOT_4, Keys.D5);
+            SetDefault(PlayerCommand.ITEM_SLOT_5, Keys.D6);
+            SetDefault(PlayerCommand.ITEM_SLOT_6, Keys.D7);
+            SetDefault(PlayerCommand.ITEM_SLOT_7, Keys.D8);
+            SetDefault(PlayerCommand.ITEM_SLOT_8, Keys.D9);
+            SetDefault(PlayerCommand.ITEM_SLOT_9, Keys.D0);
 
-            Set(PlayerCommand.ABANDON_GAME, Keys.A | Keys.Shift);
-            Set(PlayerCommand.ADVISOR, Keys.H | Keys.Shift);
-            Set(PlayerCommand.BUILD_LARGE_FORTIFICATION, Keys.N | Keys.Control);
-            Set(PlayerCommand.BUILD_SMALL_FORTIFICATION, Keys.N);
-            Set(PlayerCommand.CITY_INFO, Keys.I);
-            Set(PlayerCommand.RELATIONSHIPS, Keys.I | Keys.Shift);
-            Set(PlayerCommand.EAT_CORPSE, Keys.E | Keys.Shift);
-            Set(PlayerCommand.GIVE_ITEM, Keys.G);
-            Set(PlayerCommand.HINTS_SCREEN_MODE, Keys.H | Keys.Control);
-            Set(PlayerCommand.NEGOCIATE_TRADE, Keys.E);
-            Set(PlayerCommand.TALK, Keys.V);
-            Set(PlayerCommand.HEARD_JOURNAL, Keys.J);
-            Set(PlayerCommand.LOAD_GAME, Keys.L | Keys.Shift);
-            Set(PlayerCommand.MARK_ENEMIES_MODE, Keys.E | Keys.Control);
-            Set(PlayerCommand.MESSAGE_LOG, Keys.M | Keys.Shift);
-            Set(PlayerCommand.MOUSE_MOVE_MODE, Keys.M);
-            Set(PlayerCommand.XPD_BASE, Keys.B | Keys.Control);
-            Set(PlayerCommand.MOVE_E, Keys.NumPad6);
-            Set(PlayerCommand.MOVE_N, Keys.NumPad8);
-            Set(PlayerCommand.MOVE_NE, Keys.NumPad9);
-            Set(PlayerCommand.MOVE_NW, Keys.NumPad7);
-            Set(PlayerCommand.MOVE_S, Keys.NumPad2);
-            Set(PlayerCommand.MOVE_SE, Keys.NumPad3);
-            Set(PlayerCommand.MOVE_SW, Keys.NumPad1);
-            Set(PlayerCommand.MOVE_W, Keys.NumPad4);
-            Set(PlayerCommand.OPTIONS_MODE, Keys.O | Keys.Shift);
-            Set(PlayerCommand.ORDER_MODE, Keys.O);
-            Set(PlayerCommand.PULL_MODE, Keys.P | Keys.Control); // alpha10
-            Set(PlayerCommand.PUSH_MODE, Keys.P);
-            Set(PlayerCommand.QUIT_GAME, Keys.Q | Keys.Shift);
-            Set(PlayerCommand.REVIVE_CORPSE, Keys.R | Keys.Shift);
-            Set(PlayerCommand.RUN_TOGGLE, Keys.R);
-            Set(PlayerCommand.SAVE_GAME, Keys.S | Keys.Control | Keys.Shift);
-            Set(PlayerCommand.SCREENSHOT, Keys.N | Keys.Shift);
-            Set(PlayerCommand.SHOUT, Keys.S);
-            Set(PlayerCommand.RECALL_FOLLOWERS, Keys.S | Keys.Shift);
-            Set(PlayerCommand.SLEEP, Keys.Z);
-            Set(PlayerCommand.SWITCH_PLACE, Keys.S | Keys.Control);
-            Set(PlayerCommand.LEAD_MODE, Keys.T);
-            Set(PlayerCommand.USE_SPRAY, Keys.A);
-            Set(PlayerCommand.USE_EXIT, Keys.X);
-            Set(PlayerCommand.WAIT_OR_SELF, Keys.NumPad5);
-            Set(PlayerCommand.WAIT_LONG, Keys.W);
+            SetDefault(PlayerCommand.ABANDON_GAME, Keys.A | Keys.Shift);
+            SetDefault(PlayerCommand.ADVISOR, Keys.H | Keys.Shift);
+            SetDefault(PlayerCommand.BUILD_LARGE_FORTIFICATION, Keys.N | Keys.Control);
+            SetDefault(PlayerCommand.BUILD_SMALL_FORTIFICATION, Keys.N);
+            SetDefault(PlayerCommand.CITY_INFO, Keys.I);
+            SetDefault(PlayerCommand.RELATIONSHIPS, Keys.I | Keys.Shift);
+            SetDefault(PlayerCommand.EAT_CORPSE, Keys.E | Keys.Shift);
+            SetDefault(PlayerCommand.GIVE_ITEM, Keys.G);
+            SetDefault(PlayerCommand.HINTS_SCREEN_MODE, Keys.H | Keys.Control);
+            SetDefault(PlayerCommand.NEGOCIATE_TRADE, Keys.E);
+            SetDefault(PlayerCommand.TALK, Keys.V);
+            SetDefault(PlayerCommand.HEARD_JOURNAL, Keys.J);
+            SetDefault(PlayerCommand.LOAD_GAME, Keys.L | Keys.Shift);
+            SetDefault(PlayerCommand.MARK_ENEMIES_MODE, Keys.E | Keys.Control);
+            SetDefault(PlayerCommand.MESSAGE_LOG, Keys.M | Keys.Shift);
+            SetDefault(PlayerCommand.MOUSE_MOVE_MODE, Keys.M);
+            SetDefault(PlayerCommand.XPD_BASE, Keys.B | Keys.Control);
+            SetDefault(PlayerCommand.MOVE_E, Keys.NumPad6);
+            SetDefault(PlayerCommand.MOVE_N, Keys.NumPad8);
+            SetDefault(PlayerCommand.MOVE_NE, Keys.NumPad9);
+            SetDefault(PlayerCommand.MOVE_NW, Keys.NumPad7);
+            SetDefault(PlayerCommand.MOVE_S, Keys.NumPad2);
+            SetDefault(PlayerCommand.MOVE_SE, Keys.NumPad3);
+            SetDefault(PlayerCommand.MOVE_SW, Keys.NumPad1);
+            SetDefault(PlayerCommand.MOVE_W, Keys.NumPad4);
+            SetDefault(PlayerCommand.OPTIONS_MODE, Keys.O | Keys.Shift);
+            SetDefault(PlayerCommand.ORDER_MODE, Keys.O);
+            SetDefault(PlayerCommand.PULL_MODE, Keys.P | Keys.Control); // alpha10
+            SetDefault(PlayerCommand.PUSH_MODE, Keys.P);
+            SetDefault(PlayerCommand.QUIT_GAME, Keys.Q | Keys.Shift);
+            SetDefault(PlayerCommand.REVIVE_CORPSE, Keys.R | Keys.Shift);
+            SetDefault(PlayerCommand.RUN_TOGGLE, Keys.R);
+            SetDefault(PlayerCommand.SAVE_GAME, Keys.S | Keys.Shift);
+            SetDefault(PlayerCommand.SCREENSHOT, Keys.N | Keys.Shift);
+            SetDefault(PlayerCommand.SHOUT, Keys.S);
+            SetDefault(PlayerCommand.RECALL_FOLLOWERS, Keys.R | Keys.Control);
+            SetDefault(PlayerCommand.SLEEP, Keys.Z);
+            SetDefault(PlayerCommand.SWITCH_PLACE, Keys.S | Keys.Control);
+            SetDefault(PlayerCommand.LEAD_MODE, Keys.T);
+            SetDefault(PlayerCommand.USE_SPRAY, Keys.A);
+            SetDefault(PlayerCommand.USE_EXIT, Keys.X);
+            SetDefault(PlayerCommand.WAIT_OR_SELF, Keys.NumPad5);
+            SetDefault(PlayerCommand.WAIT_LONG, Keys.W);
+        }
+        void SetDefault(PlayerCommand command, Keys key)
+        {
+            // New defaults must never silently evict an existing command.
+            if (key == Keys.None || Get(key) != PlayerCommand.NONE || IsInventoryShortcut(key))
+                throw new InvalidOperationException("Conflicting default key: " + key + " for " + command);
+            Set(command, key);
+        }
+
+        internal bool IsInventoryShortcut(Keys key)
+        {
+            if ((key & Keys.Modifiers) == Keys.None) return false;
+            Keys code = key & Keys.KeyCode;
+            for (PlayerCommand slot = PlayerCommand.ITEM_SLOT_0; slot <= PlayerCommand.ITEM_SLOT_9; slot++)
+                if (Get(slot) == code) return true;
+            return false;
+        }
+
+        void AssignMissing(PlayerCommand command, params Keys[] candidates)
+        {
+            if (Get(command) != Keys.None) return;
+            foreach (Keys key in candidates)
+                if (Get(key) == PlayerCommand.NONE && !IsInventoryShortcut(key)) { Set(command, key); return; }
+        }
+
+        void RepairRecallDefaults()
+        {
+            // Only the exact pair shipped by the earlier World build is repaired.
+            // A versioned file can intentionally use that pair without being changed.
+            if (m_DefaultsRevision < CURRENT_DEFAULTS_REVISION &&
+                Get(PlayerCommand.SAVE_GAME) == (Keys.S | Keys.Control | Keys.Shift) &&
+                Get(PlayerCommand.RECALL_FOLLOWERS) == (Keys.S | Keys.Shift) &&
+                !IsInventoryShortcut(Keys.S | Keys.Shift))
+            {
+                Set(PlayerCommand.RECALL_FOLLOWERS, Keys.None);
+                Set(PlayerCommand.SAVE_GAME, Keys.S | Keys.Shift);
+                Logger.WriteLine(Logger.Stage.RUN_MAIN, "Restored Shift+S save; moving old default recall to a free key.");
+            }
+            AssignMissing(PlayerCommand.RECALL_FOLLOWERS, Keys.R | Keys.Control,
+                Keys.R | Keys.Control | Keys.Shift, Keys.S | Keys.Control | Keys.Shift);
+            m_DefaultsRevision = CURRENT_DEFAULTS_REVISION;
         }
         #endregion
 
@@ -114,6 +158,7 @@ namespace djack.RogueSurvivor.Engine
         /// <returns></returns>
         public PlayerCommand Get(Keys key)
         {
+            if (key == Keys.None) return PlayerCommand.NONE;
             PlayerCommand cmd;
             if (m_KeyToCommand.TryGetValue(key, out cmd))
                 return cmd;
@@ -127,16 +172,17 @@ namespace djack.RogueSurvivor.Engine
         /// <param name="key">KeyData</param>
         public void Set(PlayerCommand command, Keys key)
         {
+            if (command == PlayerCommand.NONE) throw new ArgumentException("Cannot bind the empty command.", "command");
+            Keys prevKey = Get(command);
+            if (prevKey != Keys.None) m_KeyToCommand.Remove(prevKey);
+            m_CommandToKeyData.Remove(command);
+            m_KeyToCommand.Remove(Keys.None);
+            if (key == Keys.None) return;
             // remove previous bind.
             PlayerCommand prevCommand = Get(key);
             if (prevCommand != PlayerCommand.NONE)
             {
                 m_CommandToKeyData.Remove(prevCommand);
-            }
-            Keys prevKey = Get(command);
-            if (prevKey != Keys.None)
-            {
-                m_KeyToCommand.Remove(prevKey);
             }
                      
             // rebind.
@@ -148,13 +194,15 @@ namespace djack.RogueSurvivor.Engine
         #region Checking for keys conflict
         public bool CheckForConflict()
         {
-            foreach (Keys key1 in m_CommandToKeyData.Values)
+            var seen = new HashSet<Keys>();
+            foreach (var binding in m_CommandToKeyData)
             {
-                int bound = m_KeyToCommand.Keys.Count((k) => k == key1);
-                if (bound > 1)
-                    return true;
+                if (binding.Value == Keys.None) continue;
+                if (!seen.Add(binding.Value) || Get(binding.Value) != binding.Key ||
+                    IsInventoryShortcut(binding.Value)) return true;
             }
-
+            foreach (var binding in m_KeyToCommand)
+                if (binding.Key != Keys.None && Get(binding.Value) != binding.Key) return true;
             return false;
         }
         #endregion
@@ -185,49 +233,20 @@ namespace djack.RogueSurvivor.Engine
             try
             {
                 kb = BinarySaveStore.Load<Keybindings>(filepath);
-                if (kb.Get(PlayerCommand.DISARM_TRAP) == Keys.None)
-                {
-                    if (kb.Get(Keys.D) == PlayerCommand.NONE)
-                        kb.Set(PlayerCommand.DISARM_TRAP, Keys.D);
-                    else if (kb.Get(Keys.D | Keys.Control) == PlayerCommand.NONE)
-                        kb.Set(PlayerCommand.DISARM_TRAP, Keys.D | Keys.Control);
-                }
-                if (kb.Get(PlayerCommand.RECALL_FOLLOWERS) == Keys.None)
-                {
-                    if (kb.Get(Keys.S | Keys.Shift) == PlayerCommand.SAVE_GAME && kb.Get(Keys.S | Keys.Control | Keys.Shift) == PlayerCommand.NONE)
-                        kb.Set(PlayerCommand.SAVE_GAME, Keys.S | Keys.Control | Keys.Shift);
-                    if (kb.Get(Keys.S | Keys.Shift) == PlayerCommand.NONE)
-                        kb.Set(PlayerCommand.RECALL_FOLLOWERS, Keys.S | Keys.Shift);
-                    else if (kb.Get(Keys.S | Keys.Control | Keys.Shift) == PlayerCommand.NONE)
-                        kb.Set(PlayerCommand.RECALL_FOLLOWERS, Keys.S | Keys.Control | Keys.Shift);
-                }
-                if (kb.Get(PlayerCommand.MOUSE_MOVE_MODE) == Keys.None && kb.Get(Keys.M) == PlayerCommand.NONE)
-                    kb.Set(PlayerCommand.MOUSE_MOVE_MODE, Keys.M);
-                if (kb.Get(PlayerCommand.XPD_BASE) == Keys.None &&
-                    kb.Get(Keys.B | Keys.Control) == PlayerCommand.NONE)
-                    kb.Set(PlayerCommand.XPD_BASE, Keys.B | Keys.Control);
-                if (kb.Get(PlayerCommand.RELATIONSHIPS) == Keys.None &&
-                    kb.Get(Keys.I | Keys.Shift) == PlayerCommand.NONE)
-                    kb.Set(PlayerCommand.RELATIONSHIPS, Keys.I | Keys.Shift);
+                kb.AssignMissing(PlayerCommand.DISARM_TRAP, Keys.D, Keys.D | Keys.Control);
+                kb.RepairRecallDefaults();
+                kb.AssignMissing(PlayerCommand.MOUSE_MOVE_MODE, Keys.M);
+                kb.AssignMissing(PlayerCommand.XPD_BASE, Keys.B | Keys.Control);
+                kb.AssignMissing(PlayerCommand.RELATIONSHIPS, Keys.I | Keys.Shift);
                 if (kb.Get(PlayerCommand.TALK) == (Keys.T | Keys.Control))
                 {
-                    if (kb.Get(Keys.V) == PlayerCommand.NONE) kb.Set(PlayerCommand.TALK, Keys.V);
-                    else if (kb.Get(Keys.V | Keys.Shift) == PlayerCommand.NONE)
+                    if (kb.Get(Keys.V) == PlayerCommand.NONE && !kb.IsInventoryShortcut(Keys.V)) kb.Set(PlayerCommand.TALK, Keys.V);
+                    else if (kb.Get(Keys.V | Keys.Shift) == PlayerCommand.NONE && !kb.IsInventoryShortcut(Keys.V | Keys.Shift))
                         kb.Set(PlayerCommand.TALK, Keys.V | Keys.Shift);
-                    else kb.Set(PlayerCommand.TALK, Keys.None);
+                    // If both alternatives are occupied, retain the old binding.
                 }
-                else if (kb.Get(PlayerCommand.TALK) == Keys.None)
-                {
-                    if (kb.Get(Keys.V) == PlayerCommand.NONE) kb.Set(PlayerCommand.TALK, Keys.V);
-                    else if (kb.Get(Keys.V | Keys.Shift) == PlayerCommand.NONE)
-                        kb.Set(PlayerCommand.TALK, Keys.V | Keys.Shift);
-                }
-                if (kb.Get(PlayerCommand.HEARD_JOURNAL) == Keys.None)
-                {
-                    if (kb.Get(Keys.J) == PlayerCommand.NONE) kb.Set(PlayerCommand.HEARD_JOURNAL, Keys.J);
-                    else if (kb.Get(Keys.J | Keys.Shift) == PlayerCommand.NONE)
-                        kb.Set(PlayerCommand.HEARD_JOURNAL, Keys.J | Keys.Shift);
-                }
+                else kb.AssignMissing(PlayerCommand.TALK, Keys.V, Keys.V | Keys.Shift);
+                kb.AssignMissing(PlayerCommand.HEARD_JOURNAL, Keys.J, Keys.J | Keys.Shift);
             }
             catch (Exception e)
             {

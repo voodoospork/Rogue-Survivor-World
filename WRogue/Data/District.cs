@@ -26,6 +26,7 @@ namespace djack.RogueSurvivor.Data
         DistrictKind m_Kind;
         string m_Name;
         List<Map> m_Maps = new List<Map>(3);
+        [System.Runtime.Serialization.OptionalField] internal AdaptiveDistrictState Adaptive;
         Map m_EntryMap;
         Map m_SewersMap;
         Map m_SubwayMap;

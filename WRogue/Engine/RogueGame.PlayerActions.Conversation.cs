@@ -56,7 +56,7 @@ namespace djack.RogueSurvivor.Engine
                 AddCommunitySpeech("1: News / requests" + (CommunityMembershipSystem.IsLeader(this, target) ? "   2: Membership" : "") +
                     (player.CommunityMembership != null && player.SocialGroup == target.SocialGroup ? "   3: Leave" : "") +
                     (CommunityDiplomacySystem.IsLeader(target) ? "   4: Relations / peace" : "") +
-                    (m_Session.GamePreset.NpcPersonalitiesEnabled ? "   5: Supply leads" : "") + "   Esc: cancel",
+                    (m_Session.GamePreset.NpcPersonalitiesEnabled ? "   5: Supply leads   6: Trade / deliveries" : "") + "   Esc: cancel",
                     Color.LightSkyBlue);
                 RedrawPlayScreen();
                 while (true)
@@ -65,6 +65,7 @@ namespace djack.RogueSurvivor.Engine
                     if (choice == Keys.Escape) return false;
                     if ((choice == Keys.D4 || choice == Keys.NumPad4) && CommunityDiplomacySystem.IsLeader(target)) return HandleCommunityRelations(player, target);
                     if ((choice == Keys.D5 || choice == Keys.NumPad5) && m_Session.GamePreset.NpcPersonalitiesEnabled) return HandleSupplyConversation(player, target);
+                    if ((choice == Keys.D6 || choice == Keys.NumPad6) && m_Session.GamePreset.NpcPersonalitiesEnabled) return HandleTradeRoutes(player, target);
                     if (choice == Keys.D1 || choice == Keys.NumPad1 || choice == Keys.Enter) break;
                     if (choice == Keys.D3 || choice == Keys.NumPad3)
                     {
@@ -85,7 +86,7 @@ namespace djack.RogueSurvivor.Engine
                         "Share our shelter and communal ground supplies, including weapons.",
                         "Give or trade for personal inventories.",
                         "Help with real requests. Promises keep their deadlines; there is no quota.",
-                        "I remain community leader. You keep your personal follower orders.",
+                        target.Community != null ? "I remain chief. You keep your personal follower orders." : "I remain community leader. You keep your personal follower orders.",
                         "Leave with your party whenever you choose, through V or J / Tab / L.",
                         "Y: join together   N: decline   Esc: later"
                     }, MODE_TEXTCOLOR, MODE_BORDERCOLOR, MODE_FILLCOLOR, new Point(0, 0)));

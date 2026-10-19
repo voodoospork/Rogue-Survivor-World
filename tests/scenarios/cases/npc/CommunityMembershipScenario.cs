@@ -21,6 +21,9 @@ static class CommunityMembershipScenario
         var world = TownScenarioFactory.Arena(seed, "........................", "........................", "........................",
             "........................", "........................", "........................", "........................", "........................");
         Session.Get.GamePreset = GamePreset.World();
+        Session.Get.GamePreset.Name = "Legacy settlement comparison";
+        Session.Get.GamePreset.OrganicCommunities = false;
+        Session.Get.GamePreset.InitialCommunities = true;
         Session.Get.UniqueActors.TheSewersThing = new UniqueActor();
         RogueGame.KeyBindings.ResetToDefaults();
         return world;
@@ -56,7 +59,14 @@ static class CommunityMembershipScenario
     internal static void Fov(ScenarioWorld world)
     { Check.Call(world.Game, "UpdatePlayerFOV", world.Game.Player); world.Game.ComputeViewRect(world.Game.Player.Location.Position); }
     internal static void Time(ScenarioWorld world, int turn)
-    { world.Map.LocalTime.TurnCounter = turn; Session.Get.WorldTime.TurnCounter = turn; Fov(world); }
+    {
+        world.Map.LocalTime.TurnCounter = turn; Session.Get.WorldTime.TurnCounter = turn;
+        // This driver advances both clocks explicitly; retain that relationship in optional-mode fixtures.
+        var mode=typeof(GamePreset).GetField("Simulation");
+        if(mode!=null && Convert.ToInt32(mode.GetValue(Session.Get.GamePreset))==2)
+            Check.Call(world.Game,"AlignAdaptiveClock",world.Map,turn);
+        Fov(world);
+    }
     static void Aid(ScenarioWorld world, Actor player, Actor recipient)
     {
         recipient.FoodPoints = 100;
@@ -149,6 +159,8 @@ static class CommunityMembershipScenario
             string affiliation = String.Join("\n", (string[])Check.Call(world.Game, "DescribeActor", personal[2]));
             Check.Equal(true, affiliation.Contains("Last known community: " + original.CommunityName), "same-turn departure prefers the known restored affiliation");
             ItemFood foreign = new ItemFood(world.Game.GameItems.CANNED_FOOD); world.Map.DropItemAt(foreign, player.Location.Position);
+            CommunityCultureSystem.Ensure(world.Game,leader);leader.SocialGroup.Culture.Enforcement=80;
+            CommunityCultureSystem.SayPolicy(world.Game,leader,null,true);
             player.ActionPoints = Rules.BASE_ACTION_COST;
             Check.Equal(true, world.Try(new ActionTakeItem(player, world.Game, player.Location.Position, foreign)), "post-departure pickup uses production theft action");
             Check.Equal(true, world.Game.Rules.AreEnemies(player, leader), "later witnessed foreign pickup has normal theft consequences");

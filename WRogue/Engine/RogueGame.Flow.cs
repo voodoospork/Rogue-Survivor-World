@@ -501,6 +501,10 @@ namespace djack.RogueSurvivor.Engine
                 foreach (Map map in district.Maps)
                 {
                     int prevLocalTurn = map.LocalTime.TurnCounter;
+                    var adaptive = IsAdaptive ? AdaptiveState(map) : district.Adaptive?.Maps.Find(s => s.Map == map);
+                    if (adaptive != null && district == m_Session.CurrentMap.District) { adaptive.WorldTurn = m_Session.WorldTime.TurnCounter; adaptive.HasWorldTurn = true; }
+                    using (!IsAdaptive || adaptive == null ? null : new SimulationClock(m_Session, adaptive.WorldTurn, adaptive.Random, null, adaptive.Identities))
+                    {
                     do
                     {
                         // play this map.
@@ -513,6 +517,8 @@ namespace djack.RogueSurvivor.Engine
                             return;
                     }
                     while (map.LocalTime.TurnCounter == prevLocalTurn);
+                    if (adaptive != null) adaptive.DetailedInProgress = false;
+                    }
                 }
                 #endregion
 
@@ -556,6 +562,12 @@ namespace djack.RogueSurvivor.Engine
                 #endregion
 
                 // 2.2. Check for events.
+                if (IsAdaptive) { AdaptiveDistrictEvents(district); ResolveAdaptiveArrivals(district, m_Session.WorldTime.TurnCounter); }
+                else {
+                if (district.Adaptive != null) {
+                    int through = Int32.MaxValue; foreach (var state in district.Adaptive.Maps) through = Math.Min(through, state.WorldTurn);
+                    if (through != Int32.MaxValue) district.Adaptive.EventsThrough = through;
+                }
 
                 #region Entry/Surface map
                 // 1 Invasion?
@@ -622,10 +634,11 @@ namespace djack.RogueSurvivor.Engine
                 #endregion
                 #endregion
 
+                }
                 // 3. Simulate nearby districts?
                 #region
                 // if player is sleeping in this map and option enabled.
-                if (s_Options.IsSimON && m_Player != null && m_Player.IsSleeping && s_Options.SimulateWhenSleeping && m_Player.Location.Map.District == district)
+                if (!IsAdaptive && s_Options.IsSimON && m_Player != null && m_Player.IsSleeping && s_Options.SimulateWhenSleeping && m_Player.Location.Map.District == district)
                 {
                     SimulateNearbyDistricts(district);
                 }
@@ -664,7 +677,7 @@ namespace djack.RogueSurvivor.Engine
 
             // 0. Secret maps.
             #region
-            if (map.IsSecret)
+            if (map.IsSecret && !IsAdaptive)
             {
                 // don't play the map at all, jump in time.
                 ++map.LocalTime.TurnCounter;
@@ -741,6 +754,7 @@ namespace djack.RogueSurvivor.Engine
 
         internal void SpendActorActionPoints(Actor actor, int actionCost)
         {
+            if (actor.IsPlayer) SimulationPerformance.PlayerSpentAction();
             actor.ActionPoints -= actionCost;
             actor.LastActionTurn = actor.Location.Map.LocalTime.TurnCounter;
         }

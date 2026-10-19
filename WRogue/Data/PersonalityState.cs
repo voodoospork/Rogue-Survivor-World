@@ -143,6 +143,11 @@ namespace djack.RogueSurvivor.Data
         readonly List<MemoryInstance> m_Memories = new List<MemoryInstance>(2);
         readonly List<ObservedEvent> m_Events = new List<ObservedEvent>(8);
         [System.Runtime.Serialization.OptionalField] List<HeardJournalEntry> m_HeardJournal;
+        [NonSerialized] IList<TraitInstance> traitView;
+        [NonSerialized] IList<MemoryInstance> memoryView;
+        [NonSerialized] IList<ObservedEvent> eventView;
+        [NonSerialized] IList<HeardJournalEntry> journalView;
+        internal List<TraitInstance> TraitList { get { return m_Traits; } }
         // Lazily initialized so personalities from older saves also have an empty tree.
         Dictionary<Guid, RelationshipRecord> m_People;
         Dictionary<Guid, RelationshipRecord> m_Groups;
@@ -161,11 +166,11 @@ namespace djack.RogueSurvivor.Data
             get { return m_Factions ?? (m_Factions = new Dictionary<int, RelationshipRecord>()); }
         }
 
-        public IList<TraitInstance> Traits { get { return m_Traits.AsReadOnly(); } }
-        public IList<MemoryInstance> Memories { get { return m_Memories.AsReadOnly(); } }
-        public IList<ObservedEvent> Events { get { return m_Events.AsReadOnly(); } }
+        public IList<TraitInstance> Traits { get { return traitView ?? (traitView = m_Traits.AsReadOnly()); } }
+        public IList<MemoryInstance> Memories { get { return memoryView ?? (memoryView = m_Memories.AsReadOnly()); } }
+        public IList<ObservedEvent> Events { get { return eventView ?? (eventView = m_Events.AsReadOnly()); } }
         public IList<HeardJournalEntry> HeardJournal
-        { get { return (m_HeardJournal ?? (m_HeardJournal = new List<HeardJournalEntry>())).AsReadOnly(); } }
+        { get { return journalView ?? (journalView = (m_HeardJournal ?? (m_HeardJournal = new List<HeardJournalEntry>())).AsReadOnly()); } }
         public void HearSpeech(HeardJournalEntry entry)
         {
             if (entry == null) return;

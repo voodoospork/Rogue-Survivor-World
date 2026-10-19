@@ -1,17 +1,52 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using djack.RogueSurvivor.Data;
 using djack.RogueSurvivor.Engine;
 using djack.RogueSurvivor.Gameplay.Generators;
+using djack.RogueSurvivor.Gameplay.Personality;
 
 static class CommunityGenerationScenario
 {
     public static void Register()
     {
+        ScenarioRunner.Add("world/community-organic-police-conservation", () => TownScenarioFactory.Create(5231, false), world =>
+        {
+            Session.Get.GamePreset = GamePreset.World();
+            BaseTownGenerator generator = new BaseTownGenerator(world.Game, BaseTownGenerator.DEFAULT_PARAMS);
+            var officers = new List<Actor>();
+            for (int i = 0; i < 4; i++)
+            {
+                Actor cop = generator.CreateNewPoliceman(0); Point? free = world.Map.FindFirstInMap(p => world.Map.IsWalkable(p.X, p.Y) && world.Map.GetActorAt(p) == null);
+                world.Map.PlaceActorAt(cop, free.Value); officers.Add(cop);
+            }
+            var actors = world.Map.Actors.ToArray(); var positions = actors.ToDictionary(a => a, a => a.Location);
+            var skills = actors.ToDictionary(a => a, a => world.Game.Rules.ActorMaxFollowers(a));
+            var items = actors.ToDictionary(a => a, a => a.Inventory == null ? new Dictionary<Item, int>() : a.Inventory.Items.ToDictionary(i => i, i => i.Quantity));
+            Check.Equal(0, world.Game.EstablishInitialCommunities(world.Map), "organic generation seeds no civilian home");
+            foreach (Actor actor in actors)
+            {
+                Check.Equal(positions[actor], actor.Location, "organization preserves actor positions");
+                Check.Equal(skills[actor], world.Game.Rules.ActorMaxFollowers(actor), "organization grants no command capacity");
+                if (actor.Inventory != null) { Check.Equal(items[actor].Count, actor.Inventory.CountItems, "inventory stacks conserved");
+                    foreach (Item item in actor.Inventory.Items) Check.Equal(items[actor][item], item.Quantity, "inventory quantities conserved"); }
+            }
+            foreach (Actor cop in officers)
+            {
+                Check.Equal(true, cop.SocialGroup != null, "every existing officer gains a local identity");
+                Check.Equal(true, cop.GroupRoot.CountFollowers <= Math.Min(2, world.Game.Rules.ActorMaxFollowers(cop.GroupRoot)), "patrol respects real capacity and three-member limit");
+                Check.Equal(true, cop.SocialGroup.CommunityName.Contains("police patrol"), "patrol receives persistent district name");
+                CommunityAdaptationSystem.Upgrade(world.Game, cop);
+                Check.Equal(null, cop.Community, "ordinary processing never converts police command groups into tribes");
+            }
+            Check.Equal(actors.Length, world.Map.Actors.Count(), "organization creates or removes no actor");
+        });
         ScenarioRunner.Add("world/community-generation", () => TownScenarioFactory.Create(4911, false), world =>
         {
             Session.Get.GamePreset = GamePreset.World();
+            Session.Get.GamePreset.Name = "Legacy settlement comparison";
+            Session.Get.GamePreset.OrganicCommunities = false;
             Session.Get.GamePreset.Validate();
             BaseTownGenerator generator = new BaseTownGenerator(world.Game, BaseTownGenerator.DEFAULT_PARAMS);
             var before = new HashSet<Actor>();

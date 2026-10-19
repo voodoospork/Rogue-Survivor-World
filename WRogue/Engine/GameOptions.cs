@@ -52,7 +52,10 @@ namespace djack.RogueSurvivor.Engine
             GAME_RATS_UPGRADE,
             GAME_SKELETONS_UPGRADE,
             GAME_SHAMBLERS_UPGRADE,
-            GAME_AUTOSAVE_PERIOD  // alpha10.1
+            GAME_AUTOSAVE_PERIOD,  // alpha10.1
+            GAME_SIMULATION_MODE,
+            GAME_ADAPTIVE_BACKGROUND,
+            GAME_ADAPTIVE_EFFORT
         };
         #endregion
 
@@ -236,6 +239,20 @@ namespace djack.RogueSurvivor.Engine
                 if (value > 75) value = 75;
                 m_MaxCivilians = value;
             }
+        }
+
+        /// <summary>
+        /// Surface residents, including street police, at the configured density per
+        /// standard district. Use the actual entry map size for existing districts.
+        /// Fixed-size special interiors have their own populations.
+        /// </summary>
+        public int CivilianPopulationForMap(int width, int height)
+        {
+            if (width <= 0) throw new ArgumentOutOfRangeException("width");
+            if (height <= 0) throw new ArgumentOutOfRangeException("height");
+            const int referenceArea = DEFAULT_DISTRICT_SIZE * DEFAULT_DISTRICT_SIZE;
+            long area = (long)width * height;
+            return Math.Max(1, checked((int)((MaxCivilians * area + referenceArea / 2) / referenceArea)));
         }
 
         public int MaxDogs
@@ -578,7 +595,7 @@ namespace djack.RogueSurvivor.Engine
                 case IDs.GAME_DAY_ZERO_UNDEADS_PERCENT: return "(Undead) Day 0 Undeads";
                 case IDs.GAME_DEATH_SCREENSHOT: return " (Death) Death Screenshot";
                 case IDs.GAME_DISTRICT_SIZE: return "   (Map) District Map Size";
-                case IDs.GAME_MAX_CIVILIANS: return "(Living) Max Civilians";
+                case IDs.GAME_MAX_CIVILIANS: return "(Living) Civs + Police Density";
                 case IDs.GAME_MAX_DOGS: return "(Living) Max Dogs";
                 case IDs.GAME_MAX_REINCARNATIONS: return " (Reinc) Max Reincarnations";
                 case IDs.GAME_MAX_UNDEADS: return "(Undead) Max Undeads";
@@ -592,6 +609,9 @@ namespace djack.RogueSurvivor.Engine
                 case IDs.GAME_REINCARNATE_TO_SEWERS: return " (Reinc) Can Reincarnate to Sewers";
                 case IDs.GAME_SHAMBLERS_UPGRADE: return "(Undead) Shamblers Skill Upgrade";
                 case IDs.GAME_SKELETONS_UPGRADE: return "(Undead) Skeletons Skill Upgrade";
+                case IDs.GAME_SIMULATION_MODE: return "   (Sim) Saved Simulation Mode";
+                case IDs.GAME_ADAPTIVE_BACKGROUND: return "   (Sim) Catch Up While Waiting";
+                case IDs.GAME_ADAPTIVE_EFFORT: return "   (Sim) Catch-up Effort";
                 case IDs.GAME_SIMULATE_DISTRICTS: return "   (Sim) Districts Simulation";
                 case IDs.GAME_SIMULATE_SLEEP: return "   (Sim) Simulate when Sleeping";
                 case IDs.GAME_SIM_THREAD: return "   (Sim) Synchronous Simulation";
@@ -635,9 +655,9 @@ namespace djack.RogueSurvivor.Engine
                 case IDs.GAME_DEATH_SCREENSHOT:
                     return "Takes a screenshot when you die and save it to the game Config\\Screenshot folder.";
                 case IDs.GAME_DISTRICT_SIZE:
-                    return "How large are the maps in tiles. Larger maps are more fun but increase game saves size and loading time.";
+                    return "Map size in tiles. Civilian and street-police populations scale with map area.\nLarger maps increase simulation work, save size and loading time.";
                 case IDs.GAME_MAX_CIVILIANS:
-                    return "Maximum number of civilians on a map. More civilians makes the game easier for livings, but slows the game down.";
+                    return "Civilians and street police per 50x50 district (default 25); scales with map area.\nThe value shows the target for the selected district size. Refugees use the same target.\nExisting residents stay; fixed-size special interiors keep their own staffing.";
                 case IDs.GAME_MAX_DOGS:
                     return "OPTION IS UNUSED YOU SHOULDNT BE READING THIS :)";
                 case IDs.GAME_MAX_REINCARNATIONS:
@@ -664,6 +684,9 @@ namespace djack.RogueSurvivor.Engine
                     return "Can Shamblers type of undeads upgrade their skills like other undeads.";
                 case IDs.GAME_SKELETONS_UPGRADE:
                     return "Can Skeletons type of undeads upgrade their skills like other undeads.";
+                case IDs.GAME_SIMULATION_MODE: return "Choose the simulation behavior saved with this game. Classic is the default.";
+                case IDs.GAME_ADAPTIVE_BACKGROUND: return "Adaptive World can catch up distant activity while you choose your next action.\nEntering a map always finishes its required catch-up.";
+                case IDs.GAME_ADAPTIVE_EFFORT: return "Time spent on distant activity while awaiting your next action.\nLight favors prompt input; Extra reduces later catch-up. Saved with this game.";
                 case IDs.GAME_SIMULATE_DISTRICTS:
                     return "The game simulates what is happening in districts around you. You should keep this option maxed for better gameplay.\nWhen the simulation happens depends on other sim options.";
                 case IDs.GAME_SIMULATE_SLEEP:
@@ -798,6 +821,9 @@ namespace djack.RogueSurvivor.Engine
         {
             switch (option)
             {
+                case IDs.GAME_SIMULATION_MODE: return GamePreset.SimulationName(Session.Get.GamePreset.Simulation);
+                case IDs.GAME_ADAPTIVE_BACKGROUND: return Session.Get.GamePreset.AdaptivePauseBackground ? "OFF" : "ON";
+                case IDs.GAME_ADAPTIVE_EFFORT: return Session.Get.GamePreset.AdaptiveEffort;
                 case IDs.GAME_AGGRESSIVE_HUNGRY_CIVILIANS:
                     return IsAggressiveHungryCiviliansOn ? "ON    (default ON)" : "OFF   (default ON)";
                 case IDs.GAME_ALLOW_UNDEADS_EVOLUTION:
@@ -811,7 +837,7 @@ namespace djack.RogueSurvivor.Engine
                 case IDs.GAME_DISTRICT_SIZE:
                     return String.Format("{0:D2}*   (default {1:D2})", DistrictSize, GameOptions.DEFAULT_DISTRICT_SIZE);
                 case IDs.GAME_MAX_CIVILIANS:
-                    return String.Format("{0:D3}*  (default {1:D3})", MaxCivilians, GameOptions.DEFAULT_MAX_CIVILIANS);
+                    return String.Format("{0:D3}*/50x50 -> {1:D3}/map", MaxCivilians, CivilianPopulationForMap(DistrictSize, DistrictSize));
                 case IDs.GAME_MAX_DOGS:
                     return String.Format("{0:D3}*  (default {1:D3})", MaxDogs, GameOptions.DEFAULT_MAX_DOGS);
                 case IDs.GAME_MAX_REINCARNATIONS:

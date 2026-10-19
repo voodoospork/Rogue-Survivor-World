@@ -23,14 +23,14 @@ static class FollowerTravelEdgesScenario
             Actor p = NpcIntentSupport.Player(w, 2, 3), f = FollowerTravelScenario.Follower(w, p, "Sam", 4, 3);
             for (int n = 0; n < 3; n++) f.Sheet.SkillTable.AddOrIncreaseSkill((int)Skills.IDs.LIGHT_SLEEPER);
             f.IsSleeping = true; p.ActionPoints = 100;
-            ((ScenarioUI)w.Game.UI).QueueKey(Keys.S | Keys.Shift);
+            ((ScenarioUI)w.Game.UI).QueueKey(Keys.R | Keys.Control);
             Check.Call(w.Game, "HandlePlayerActor", p);
-            Check.Equal(0, p.ActionPoints, "real Shift+S dispatch charges once");
+            Check.Equal(0, p.ActionPoints, "real Ctrl+R dispatch charges once");
             Check.Equal(false, f.IsSleeping, "recall uses actual shout waking");
             Check.Equal(true, ((BaseAI)f.Controller).Travel.Recalling, "awakened listener understands recall");
             FollowerTravelScenario.Tick(w, f);
             Check.Equal(true, FollowerTravelScenario.Display(w).Contains("Coming back!"), "awakened travelling follower acknowledges");
-            Check.Equal(PlayerCommand.SAVE_GAME, RogueGame.KeyBindings.Get(Keys.S | Keys.Shift | Keys.Control), "save has a distinct default binding");
+            Check.Equal(PlayerCommand.SAVE_GAME, RogueGame.KeyBindings.Get(Keys.S | Keys.Shift), "original save binding is preserved");
             Check.Equal(PlayerCommand.SWITCH_PLACE, RogueGame.KeyBindings.Get(Keys.S | Keys.Control), "existing swap is preserved");
         });
         ScenarioRunner.Add("npc/follower-travel-old-bindings", () => FollowerTravelScenario.Arena(5121), w =>
@@ -38,8 +38,8 @@ static class FollowerTravelEdgesScenario
             var kb = new Keybindings(); kb.ResetToDefaults(); kb.Set(PlayerCommand.RECALL_FOLLOWERS, Keys.None); kb.Set(PlayerCommand.SAVE_GAME, Keys.S | Keys.Shift);
             string path = Path.Combine(Environment.GetEnvironmentVariable("ROGUE_COMMUNITY_ARTIFACTS"), "follower-old-keys.dat"); Keybindings.Save(kb, path);
             var loaded = Keybindings.Load(path);
-            Check.Equal(PlayerCommand.RECALL_FOLLOWERS, loaded.Get(Keys.S | Keys.Shift), "older default gains recall");
-            Check.Equal(PlayerCommand.SAVE_GAME, loaded.Get(Keys.S | Keys.Control | Keys.Shift), "older save default migrates");
+            Check.Equal(PlayerCommand.RECALL_FOLLOWERS, loaded.Get(Keys.R | Keys.Control), "older default gains recall on a free key");
+            Check.Equal(PlayerCommand.SAVE_GAME, loaded.Get(Keys.S | Keys.Shift), "older save default stays intact");
             kb.Set(PlayerCommand.SAVE_GAME, Keys.F9); kb.Set(PlayerCommand.SHOUT, Keys.S | Keys.Shift); Keybindings.Save(kb, path); loaded = Keybindings.Load(path);
             Check.Equal(PlayerCommand.SHOUT, loaded.Get(Keys.S | Keys.Shift), "custom existing binding stays intact");
             Check.Equal(Keys.F9, loaded.Get(PlayerCommand.SAVE_GAME), "custom save binding stays intact");

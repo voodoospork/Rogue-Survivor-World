@@ -31,7 +31,7 @@ namespace djack.RogueSurvivor.Engine
         readonly IPlayerInputSource m_Source;
         public PlayerInputReader(IPlayerInputSource source) { m_Source = source; }
 
-        public PlayerInputEvent Read(KeyEventArgs pendingKey)
+        public PlayerInputEvent Read(KeyEventArgs pendingKey, System.Action idle = null)
         {
             if (pendingKey == null)
                 m_Source.PeekKey(); // consume a repeated key after the previous action.
@@ -41,12 +41,14 @@ namespace djack.RogueSurvivor.Engine
                 KeyEventArgs key = pendingKey ?? m_Source.PeekKey();
                 pendingKey = null;
                 if (key != null)
-                    return new PlayerInputEvent { Key = key, MousePosition = new Point(-1, -1) };
+                    // Keyboard actions such as Give still target the hovered item.
+                    return new PlayerInputEvent { Key = key, MousePosition = m_Source.MousePosition() };
 
                 Point position = m_Source.MousePosition();
                 MouseButtons? buttons = m_Source.PeekMouseButtons();
                 if (position != previous || buttons != null)
                     return new PlayerInputEvent { MousePosition = position, MouseButtons = buttons };
+                if (idle != null) idle();
             }
         }
     }

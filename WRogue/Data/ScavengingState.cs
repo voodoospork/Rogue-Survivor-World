@@ -15,7 +15,7 @@ namespace djack.RogueSurvivor.Data
     }
     [Serializable] sealed class SupplyLead
     {
-        public Guid Id = Guid.NewGuid();
+        public Guid Id = djack.RogueSurvivor.Engine.SimulationClock.NewIdentity();
         public string Resource, Label;
         public bool SiteOnly;
         public CommunityShelterLocation Place;
@@ -30,7 +30,7 @@ namespace djack.RogueSurvivor.Data
     }
     [Serializable] sealed class ScavengingTrip
     {
-        public Guid Id = Guid.NewGuid();
+        public Guid Id = djack.RogueSurvivor.Engine.SimulationClock.NewIdentity();
         public string Resource, Beneficiary, Outcome;
         public long CommitmentId;
         public int DepartedTurn, ArrivedTurn = -1, CompletedTurn = -1, Deadline;

@@ -394,7 +394,7 @@ namespace djack.RogueSurvivor.Engine
         #endregion
 
         #region Properties
-        public DiceRoller DiceRoller { get { return m_DiceRoller; } }
+        public DiceRoller DiceRoller { get { return SimulationClock.RandomFor(Session.Get) ?? m_DiceRoller; } }
         #endregion
 
         #region Init
@@ -416,17 +416,17 @@ namespace djack.RogueSurvivor.Engine
         /// <returns></returns>
         public int Roll(int min, int max)
         {
-            return m_DiceRoller.Roll(min, max);
+            return DiceRoller.Roll(min, max);
         }
 
         public bool RollChance(int chance)
         {
-            return m_DiceRoller.RollChance(chance);
+            return DiceRoller.RollChance(chance);
         }
 
         public float RollFloat()
         {
-            return m_DiceRoller.RollFloat();
+            return DiceRoller.RollFloat();
         }
 
         /// <summary>
@@ -438,7 +438,7 @@ namespace djack.RogueSurvivor.Engine
         public float Randomize(float value, float deviation)
         {
             float halfDeviation = deviation/2f;
-            return value - halfDeviation * m_DiceRoller.RollFloat() + halfDeviation * m_DiceRoller.RollFloat();
+            return value - halfDeviation * DiceRoller.RollFloat() + halfDeviation * DiceRoller.RollFloat();
         }
 
         public int RollX(Map map)
@@ -446,7 +446,7 @@ namespace djack.RogueSurvivor.Engine
             if (map == null)
                 throw new ArgumentNullException("map");
 
-            return m_DiceRoller.Roll(0, map.Width);
+            return DiceRoller.Roll(0, map.Width);
         }
 
         public int RollY(Map map)
@@ -454,12 +454,12 @@ namespace djack.RogueSurvivor.Engine
             if (map == null)
                 throw new ArgumentNullException("map");
 
-            return m_DiceRoller.Roll(0, map.Height);
+            return DiceRoller.Roll(0, map.Height);
         }
 
         public Direction RollDirection()
         {
-            return Direction.COMPASS[m_DiceRoller.Roll(0, 8)];
+            return Direction.COMPASS[DiceRoller.Roll(0, 8)];
         }
 
         /// <summary>
@@ -472,7 +472,7 @@ namespace djack.RogueSurvivor.Engine
             if (skillValue <= 0)
                 return 0;
             // bell curve results = less extremes => favor higher skill vs lower skill
-            return (m_DiceRoller.Roll(0, skillValue + 1) + m_DiceRoller.Roll(0, skillValue + 1)) / 2;
+            return (DiceRoller.Roll(0, skillValue + 1) + DiceRoller.Roll(0, skillValue + 1)) / 2;
         }
 
         /// <summary>
@@ -484,7 +484,7 @@ namespace djack.RogueSurvivor.Engine
         {
             if (damageValue <= 0)
                 return 0;
-            return m_DiceRoller.Roll(damageValue / 2, damageValue + 1);
+            return DiceRoller.Roll(damageValue / 2, damageValue + 1);
         }
 
         public Location RollNeighbourInMap(Location from)

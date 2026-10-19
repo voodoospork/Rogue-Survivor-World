@@ -142,7 +142,8 @@ static class CommunityMembershipWorldScenario
             Check.Equal(true, CommunityMembershipSystem.CanJoin(world.Game, player, leader, out reason), "real aid earns generated-world invitation: " + reason);
             communityId=leader.SocialGroup.Identity; name=leader.SocialGroup.CommunityName;
             Walk(world, leader.Location.Position, 1);
-            Check.Equal(true, player.Personality.HeardJournal.Any(h => h.Text.Contains("Leave our supplies alone")), "full-scheduler encounter communicates home ownership");
+            string homeRule=CommunityCultureSystem.SpokenRules(leader);
+            Check.Equal(true, player.Personality.HeardJournal.Any(h => h.Text.Contains("Leave our supplies alone")||homeRule.Length>0&&h.Text.Contains(homeRule)), "full-scheduler encounter communicates its current home rule");
             Conversation(world, leader, Keys.D2, Keys.Y);
             Check.Equal(communityId, player.CommunityMembership.CommunityId, "actual V/2/Y joins generated community");
             ResolvedCommunityHome home = world.Game.ResolveCommunityHome(player);

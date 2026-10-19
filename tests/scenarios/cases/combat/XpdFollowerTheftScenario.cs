@@ -12,6 +12,7 @@ static class XpdFollowerTheftScenario
             ".......", ".......", "......."), world =>
         {
             Session.Get.GameMode = GameMode.GM_XPD;
+            ScenarioRunner.ApplyRequestedMode(world);
             Actor thief = SkillScenario.Actor(world);
             world.Place(thief, 1, 1);
             world.SetPlayer(thief);

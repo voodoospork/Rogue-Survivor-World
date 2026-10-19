@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Drawing;
@@ -70,9 +70,16 @@ namespace djack.RogueSurvivor.Engine
         }
 
         // alpha10 removed mention of mode and mentioned which options are always off in certain modes (vintage)
+        static bool ClassicSimulationControl(GameOptions.IDs id)
+        { return id == GameOptions.IDs.GAME_SIMULATE_DISTRICTS || id == GameOptions.IDs.GAME_SIM_THREAD || id == GameOptions.IDs.GAME_SIMULATE_SLEEP; }
+        static bool AdaptiveSimulationControl(GameOptions.IDs id)
+        { return id == GameOptions.IDs.GAME_ADAPTIVE_BACKGROUND || id == GameOptions.IDs.GAME_ADAPTIVE_EFFORT; }
         void HandleOptions(bool ingame, bool save = true)
         {
             GameOptions prevOptions = s_Options;
+            SimulationMode previousSimulation = m_Session.GamePreset.Simulation;
+            bool previousBackground = m_Session.GamePreset.AdaptivePauseBackground;
+            int previousEffort = m_Session.GamePreset.AdaptiveWorkBudget;
 
             #region
             GameOptions.IDs[] list = new GameOptions.IDs[]
@@ -91,6 +98,9 @@ namespace djack.RogueSurvivor.Engine
                    GameOptions.IDs.UI_SHOW_PLAYER_TARGETS,
                    GameOptions.IDs.UI_SHOW_TARGETS,
                    // sim
+                   GameOptions.IDs.GAME_SIMULATION_MODE,
+                   GameOptions.IDs.GAME_ADAPTIVE_BACKGROUND,
+                   GameOptions.IDs.GAME_ADAPTIVE_EFFORT,
                    GameOptions.IDs.GAME_SIMULATE_DISTRICTS,
                    GameOptions.IDs.GAME_SIM_THREAD,
                    GameOptions.IDs.GAME_SIMULATE_SLEEP,
@@ -128,6 +138,9 @@ namespace djack.RogueSurvivor.Engine
             };
             #endregion
 
+            list = Array.FindAll(list, id =>
+                (ingame || id != GameOptions.IDs.GAME_SIMULATION_MODE && id != GameOptions.IDs.GAME_ADAPTIVE_BACKGROUND && id != GameOptions.IDs.GAME_ADAPTIVE_EFFORT) &&
+                (GamePreset.SimulationModeCount > 2 || id != GameOptions.IDs.GAME_ADAPTIVE_BACKGROUND && id != GameOptions.IDs.GAME_ADAPTIVE_EFFORT));
             string[] menuEntries = new string[list.Length];
             string[] values = new string[list.Length];
             for (int i = 0; i < list.Length; i++)
@@ -142,7 +155,11 @@ namespace djack.RogueSurvivor.Engine
             do
             {
                 for (int i = 0; i < list.Length; i++)
-                    values[i] = s_Options.DescribeValue(list[i]);
+                    values[i] = list[i] == GameOptions.IDs.GAME_SIMULATION_MODE ? GamePreset.SimulationName(m_Session.GamePreset.Simulation) : s_Options.DescribeValue(list[i]);
+                for (int i = 0; i < list.Length; i++) {
+                    if (IsAdaptive && ClassicSimulationControl(list[i])) values[i] = "Managed by Adaptive World";
+                    if (!IsAdaptive && AdaptiveSimulationControl(list[i])) values[i] = "Adaptive World only";
+                }
 
                 int gx, gy;
                 gx = gy = 0;
@@ -158,7 +175,8 @@ namespace djack.RogueSurvivor.Engine
                 gy += BOLD_LINE_SPACING;
                 m_UI.UI_DrawStringBold(Color.White, menuEntries[selected].TrimStart(spaces), gx, gy);
                 gy += BOLD_LINE_SPACING;
-                string desc = GameOptions.Describe(list[selected]);
+                string desc = list[selected] == GameOptions.IDs.GAME_SIMULATION_MODE ? "Saved with this game. Classic preserves full decisions; Responsive NPCs continue safe activities.\nAdaptive World also advances distant activity between meaningful events." : GameOptions.Describe(list[selected]);
+                if (IsAdaptive && ClassicSimulationControl(list[selected])) desc = "Adaptive World accounts for all elapsed time.\nIts catch-up controls are saved with this game.";
                 string[] descLines = desc.Split(newlines);
                 foreach (string d in descLines)
                 {
@@ -199,6 +217,9 @@ namespace djack.RogueSurvivor.Engine
 
                     case Keys.R:        // restore previous.
                         s_Options = prevOptions;
+                        m_Session.GamePreset.AdaptivePauseBackground = previousBackground;
+                        m_Session.GamePreset.AdaptiveWorkBudget = previousEffort;
+                        if (ingame) ChangeSimulationMode(previousSimulation);
                         break;
 
                     case Keys.Escape:   // validate and leave
@@ -206,8 +227,12 @@ namespace djack.RogueSurvivor.Engine
                         break;
 
                     case Keys.Left:
+                        if (IsAdaptive && ClassicSimulationControl(list[selected]) || !IsAdaptive && AdaptiveSimulationControl(list[selected])) break;
                         switch ((GameOptions.IDs)list[selected])
                         {
+                            case GameOptions.IDs.GAME_ADAPTIVE_BACKGROUND: m_Session.GamePreset.AdaptivePauseBackground = !m_Session.GamePreset.AdaptivePauseBackground; break;
+                            case GameOptions.IDs.GAME_ADAPTIVE_EFFORT: m_Session.GamePreset.AdaptiveWorkBudget = (m_Session.GamePreset.AdaptiveWorkBudget + 2) % 3; break;
+                            case GameOptions.IDs.GAME_SIMULATION_MODE: ChangeSimulationMode((SimulationMode)(((int)m_Session.GamePreset.Simulation + GamePreset.SimulationModeCount - 1) % GamePreset.SimulationModeCount)); break;
                             case GameOptions.IDs.GAME_DISTRICT_SIZE: s_Options.DistrictSize -= 5; break;
                             case GameOptions.IDs.UI_MUSIC: s_Options.PlayMusic = !s_Options.PlayMusic; break;
                             case GameOptions.IDs.UI_MUSIC_VOLUME: s_Options.MusicVolume -= 5; break;
@@ -263,8 +288,12 @@ namespace djack.RogueSurvivor.Engine
                         }
                         break;
                     case Keys.Right:
+                        if (IsAdaptive && ClassicSimulationControl(list[selected]) || !IsAdaptive && AdaptiveSimulationControl(list[selected])) break;
                         switch ((GameOptions.IDs)list[selected])
                         {
+                            case GameOptions.IDs.GAME_ADAPTIVE_BACKGROUND: m_Session.GamePreset.AdaptivePauseBackground = !m_Session.GamePreset.AdaptivePauseBackground; break;
+                            case GameOptions.IDs.GAME_ADAPTIVE_EFFORT: m_Session.GamePreset.AdaptiveWorkBudget = (m_Session.GamePreset.AdaptiveWorkBudget + 1) % 3; break;
+                            case GameOptions.IDs.GAME_SIMULATION_MODE: ChangeSimulationMode((SimulationMode)(((int)m_Session.GamePreset.Simulation + 1) % GamePreset.SimulationModeCount)); break;
                             case GameOptions.IDs.GAME_DISTRICT_SIZE: s_Options.DistrictSize += 5; break;
                             case GameOptions.IDs.UI_MUSIC: s_Options.PlayMusic = !s_Options.PlayMusic; break;
                             case GameOptions.IDs.UI_MUSIC_VOLUME: s_Options.MusicVolume += 5; break;
@@ -406,6 +435,7 @@ namespace djack.RogueSurvivor.Engine
                             // ignore Shift and Control alone.
                             if (newKey.KeyCode == Keys.ShiftKey || newKey.KeyCode == Keys.ControlKey)
                                 continue;
+                            if (newKey.KeyCode == Keys.Escape) break;
                             // always ignore Alt.
                             if (newKey.Alt)
                                 continue;
@@ -419,7 +449,7 @@ namespace djack.RogueSurvivor.Engine
                         PlayerCommand command = entries[selected].Command;
 
                         // bind it.
-                        s_KeyBindings.Set(command, newKeyData);
+                        TryRebindPlayerCommand(command, newKeyData);
 
                         break;
 
@@ -429,6 +459,30 @@ namespace djack.RogueSurvivor.Engine
 
             // Save.
             SaveKeybindings();
+        }
+
+        bool TryRebindPlayerCommand(PlayerCommand command, Keys key)
+        {
+            if (key == Keys.None || (key & Keys.KeyCode) == Keys.Escape) return false;
+            if (s_KeyBindings.IsInventoryShortcut(key))
+            {
+                m_UI.UI_DrawPopup(new[] { "That key is used by inventory equip/drop/throw shortcuts.",
+                    "Choose a different key. Press any key to return." }, Color.White, Color.Yellow, Color.Black, 0, 0);
+                m_UI.UI_Repaint(); m_UI.UI_WaitMenuKey(); return false;
+            }
+            PlayerCommand existing = s_KeyBindings.Get(key);
+            if (existing != PlayerCommand.NONE && existing != command)
+            {
+                string oldLabel = Array.Find(PlayerCommandCatalog.Bindable, entry => entry.Command == existing).Label;
+                m_UI.UI_DrawPopup(new[] { key + " is already assigned to " + oldLabel + ".",
+                    "Y: replace it and leave " + oldLabel + " unbound. N or Esc: keep both bindings." },
+                    Color.White, Color.Yellow, Color.Black, 0, 0);
+                m_UI.UI_Repaint();
+                Keys answer;
+                do { answer = m_UI.UI_WaitMenuKey().KeyCode; } while (answer != Keys.Y && answer != Keys.N && answer != Keys.Escape);
+                if (answer != Keys.Y) return false;
+            }
+            s_KeyBindings.Set(command, key); return true;
         }
 
     }

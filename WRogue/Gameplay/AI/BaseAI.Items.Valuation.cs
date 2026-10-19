@@ -390,6 +390,7 @@ namespace djack.RogueSurvivor.Gameplay.AI
         /// <see cref="TRADE_RATING_MATRIX"/>
         public TradeRating RateTradeOffer(RogueGame game, Actor tradingWith, Item offered, Item asked)
         {
+            if (offered.IsEntrustedCargo || asked.IsEntrustedCargo) return TradeRating.REFUSE;
             // Accumulated leader trust takes precedence; memories affect how that trust changes.
             if (tradingWith == m_Actor.Leader && game.Rules.IsActorTrustingLeader(m_Actor))
                 return TradeRating.ACCEPT;

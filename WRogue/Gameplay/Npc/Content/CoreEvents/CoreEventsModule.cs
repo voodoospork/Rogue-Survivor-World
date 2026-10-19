@@ -17,6 +17,15 @@ namespace djack.RogueSurvivor.Gameplay.Personality
                 e => (e.Subject ?? "Someone") + " declared a community blood feud.", f => "A community declared a blood feud", isPrivate: true) { AudibleReport = true });
             catalog.Event(new NpcEventDefinition("community_peace", NpcRecordCategory.Encounters, true,
                 e => (e.Subject ?? "Someone") + " ratified community peace.", f => "A community ratified peace", isPrivate: true) { AudibleReport = true });
+            foreach (string kind in new[] { "community_defense_tampered", "community_trespass_defied", "community_restitution_failed", "community_restitution_paid" })
+                catalog.Event(new NpcEventDefinition(kind, NpcRecordCategory.Encounters, true,
+                    e => (e.Subject ?? "Someone") + " changed a recorded community property dispute.",
+                    f => (f.SubjectName ?? "Someone") + " changed a community property dispute"));
+            catalog.Event(new NpcEventDefinition("community_restitution_promised",NpcRecordCategory.Encounters,true));
+            catalog.Event(new NpcEventDefinition("community_restitution_refused",NpcRecordCategory.Encounters,true));
+            catalog.Event(new NpcEventDefinition("community_restitution_requested",NpcRecordCategory.Encounters,true) {
+                PlayerReply = new NpcPlayerReply("replacement of the recorded supplies within the original deadline", "community_restitution_promised", "community_restitution_refused",
+                    "Yes, I'll replace the recorded supplies.", "No, I won't replace them.") });
             foreach (var faction in PersonalityWorldContent.Factions) catalog.FactionPolicy((int)faction.Id, new NpcFactionPolicy(faction.Supply, faction.Shelter, faction.Care, faction.Security));
             catalog.Event(new NpcEventDefinition("craps", NpcRecordCategory.World));
             catalog.Event(new NpcEventDefinition("floods", NpcRecordCategory.World));

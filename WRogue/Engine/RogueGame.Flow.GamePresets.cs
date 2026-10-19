@@ -29,7 +29,8 @@ namespace djack.RogueSurvivor.Engine
         {
             GamePreset preset = BuiltInGamePreset(GameMode.GM_XPD);
             preset.Name = "World";
-            preset.InitialCommunities = true;
+            preset.InitialCommunities = false;
+            preset.OrganicCommunities = true;
             return preset;
         }
 
@@ -117,7 +118,7 @@ namespace djack.RogueSurvivor.Engine
                 if (key.KeyCode == Keys.Enter)
                 {
                     preset = presets[selected].Copy();
-                    origin = selected < 4 ? (GameMode)selected : selected == 4 || preset.InitialCommunities ? GameMode.GM_XPD : GameMode.GM_STANDARD;
+                    origin = selected < 4 ? (GameMode)selected : selected == 4 || preset.InitialCommunities || preset.OrganicCommunities ? GameMode.GM_XPD : GameMode.GM_STANDARD;
                     return true;
                 }
             }
@@ -133,7 +134,7 @@ namespace djack.RogueSurvivor.Engine
                 "Undead rot speed", "Skeleton spawn weight", "Shambler spawn weight",
                 "Master spawn weight", "Infection: weak at", "Infection: tired at",
                 "Infection: vomiting at", "Infection: bleeding at", "Infection: death at",
-                "Infection symptom rate", "NPC traits and memories", "Initial communities", "Other gameplay options"
+                "Infection symptom rate", "NPC traits and memories", "Initial communities", "Organic communities", "Simulation mode", "Catch up while waiting", "Catch-up effort", "Other gameplay options"
             };
 
         static readonly string[] GamePresetDescriptions = {
@@ -172,6 +173,10 @@ namespace djack.RogueSurvivor.Engine
             "Scale how often infection symptoms occur. 100% is the normal rate.",
             "Give living NPCs personality traits and evolving memories.",
             "Settle up to three civilian communities near your starting district in a new world.\nUses existing survivors, residential shelters and supplies; requires bases and NPC traits.",
+            "Allow independent residents to agree on shared homes, grow and respond to hardship.\nRequires bases and NPC traits. World uses this with initial settlements off.",
+            "Classic runs full decisions. Responsive NPCs continue safe activities between decisions.\nAdaptive World also catches up distant maps between meaningful events. Saved with this game.",
+            "Adaptive World can advance distant activity while you choose your next action.\nRequired catch-up always finishes before entering a map.",
+            "Adaptive World: Light favors prompt input; Extra reduces later catch-up.\nBalanced is the default.",
             "Open the full gameplay options, including population, events and other rules."
         };
 
@@ -191,7 +196,9 @@ namespace djack.RogueSurvivor.Engine
                     preset.InfectionWeakThreshold + "%", preset.InfectionTiredThreshold + "%",
                     preset.InfectionVomitThreshold + "%", preset.InfectionBleedThreshold + "%",
                     preset.InfectionDeathThreshold + "%", preset.InfectionEffectRatePercent + "%",
-                    OnOff(preset.NpcPersonalitiesEnabled), OnOff(preset.InitialCommunities), "ENTER"
+                    OnOff(preset.NpcPersonalitiesEnabled), OnOff(preset.InitialCommunities), OnOff(preset.OrganicCommunities), GamePreset.SimulationName(preset.Simulation),
+                    preset.Simulation == SimulationMode.AdaptiveWorld ? OnOff(!preset.AdaptivePauseBackground) : "Adaptive World only",
+                    preset.Simulation == SimulationMode.AdaptiveWorld ? preset.AdaptiveEffort : "Adaptive World only", "ENTER"
             };
         }
 
@@ -396,6 +403,10 @@ namespace djack.RogueSurvivor.Engine
                 case 31: preset.InfectionEffectRatePercent = BoundedStep(preset.InfectionEffectRatePercent, 10 * direction, 500); break;
                 case 32: preset.NpcPersonalitiesEnabled = !preset.NpcPersonalitiesEnabled; break;
                 case 33: preset.InitialCommunities = !preset.InitialCommunities; break;
+                case 34: preset.OrganicCommunities = !preset.OrganicCommunities; break;
+                case 35: preset.Simulation = (SimulationMode)(((int)preset.Simulation + direction + GamePreset.SimulationModeCount) % GamePreset.SimulationModeCount); break;
+                case 36: if (preset.Simulation == SimulationMode.AdaptiveWorld) preset.AdaptivePauseBackground = !preset.AdaptivePauseBackground; break;
+                case 37: if (preset.Simulation == SimulationMode.AdaptiveWorld) preset.AdaptiveWorkBudget = (preset.AdaptiveWorkBudget + direction + 3) % 3; break;
             }
         }
 

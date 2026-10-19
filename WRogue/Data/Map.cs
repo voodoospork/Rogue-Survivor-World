@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
@@ -83,6 +83,41 @@ namespace djack.RogueSurvivor.Data
         #endregion
 
         #region Auxiliary data : Don't serialize, Reconstruct at load time AFTER the Session has been deserialized.
+        [NonSerialized] long m_GeometryRevision;
+        [NonSerialized] long m_OccupancyRevision;
+        [NonSerialized] Dictionary<Point, List<Actor>> eventBuckets;
+        [NonSerialized] Dictionary<Actor, int> eventOrder;
+        [NonSerialized] long eventOccupancy = -1;
+        internal long GeometryRevision { get { return m_GeometryRevision; } }
+        internal long OccupancyRevision { get { return m_OccupancyRevision; } }
+        internal void GeometryChanged() { unchecked { ++m_GeometryRevision; } }
+        internal List<Actor> NearbyEventActors(Point position, int range, Actor first, Actor second)
+        {
+            if (range >= Math.Max(Width, Height)) return new List<Actor>(m_ActorsList);
+            if (eventBuckets == null || eventOccupancy != OccupancyRevision) {
+                eventBuckets = new Dictionary<Point, List<Actor>>(PointComparer.Instance);
+                eventOrder = new Dictionary<Actor, int>();
+                for (int i = 0; i < m_ActorsList.Count; i++) {
+                    Actor actor = m_ActorsList[i]; eventOrder.Add(actor, i);
+                    var cell = new Point(actor.Location.Position.X / 8, actor.Location.Position.Y / 8);
+                    List<Actor> bucket;
+                    if (!eventBuckets.TryGetValue(cell, out bucket)) eventBuckets.Add(cell, bucket = new List<Actor>());
+                    bucket.Add(actor);
+                }
+                eventOccupancy = OccupancyRevision;
+            }
+            var result = new List<Actor>();
+            for (int y = Math.Max(0, position.Y - range) / 8; y <= Math.Min(Height - 1, position.Y + range) / 8; y++)
+                for (int x = Math.Max(0, position.X - range) / 8; x <= Math.Min(Width - 1, position.X + range) / 8; x++) {
+                    List<Actor> bucket;
+                    if (eventBuckets.TryGetValue(new Point(x, y), out bucket)) foreach (Actor actor in bucket)
+                        if (Math.Abs(actor.Location.Position.X - position.X) <= range && Math.Abs(actor.Location.Position.Y - position.Y) <= range) result.Add(actor);
+                }
+            if (first != null && eventOrder.ContainsKey(first) && !result.Contains(first)) result.Add(first);
+            if (second != null && eventOrder.ContainsKey(second) && !result.Contains(second)) result.Add(second);
+            result.Sort((a, b) => eventOrder[a].CompareTo(eventOrder[b]));
+            return result;
+        }
         [NonSerialized]
         Dictionary<Point, Actor> m_aux_ActorsByPosition;
 
@@ -146,7 +181,7 @@ namespace djack.RogueSurvivor.Data
 
         public WorldTime LocalTime
         {
-            get { return m_LocalTime; }
+            get { return Engine.SimulationClock.LocalTime(this, m_LocalTime); }
         }
 
         public int Width
@@ -240,6 +275,7 @@ namespace djack.RogueSurvivor.Data
         {
             get { return m_aux_GroundItemsList; }
         }
+        internal int CountGroundInventories { get { return m_GroundItemsByPosition.Count; } }
 
         public IEnumerable<Corpse> Corpses
         {
@@ -290,29 +326,32 @@ namespace djack.RogueSurvivor.Data
             m_Tiles = new Tile[width, height];
             for (int x = 0; x < width; x++)
                 for (int y = 0; y < height; y++)
+                {
                     m_Tiles[x, y] = new Tile(TileModel.UNDEF);
+                    m_Tiles[x, y].BindGeometryOwner(this);
+                }
 
-            m_Exits = new Dictionary<Point, Exit>();
+            m_Exits = new Dictionary<Point, Exit>(djack.RogueSurvivor.Data.PointComparer.Instance);
 
             m_Zones = new List<Zone>(5);
             m_XpdBases = new List<XpdBase>();
 
-            m_aux_ActorsByPosition = new Dictionary<Point, Actor>(5);
+            m_aux_ActorsByPosition = new Dictionary<Point, Actor>(5, djack.RogueSurvivor.Data.PointComparer.Instance);
             m_ActorsList = new List<Actor>(5);
 
-            m_aux_MapObjectsByPosition = new Dictionary<Point, MapObject>(5);
+            m_aux_MapObjectsByPosition = new Dictionary<Point, MapObject>(5, djack.RogueSurvivor.Data.PointComparer.Instance);
             m_MapObjectsList = new List<MapObject>(5);
 
-            m_GroundItemsByPosition = new Dictionary<Point, Inventory>(5);
+            m_GroundItemsByPosition = new Dictionary<Point, Inventory>(5, djack.RogueSurvivor.Data.PointComparer.Instance);
             m_aux_GroundItemsList = new List<Inventory>(5);
             m_aux_GroundItemsPosition = new Dictionary<Inventory, Point>(5);
 
             m_CorpsesList = new List<Corpse>(5);
-            m_aux_CorpsesByPosition = new Dictionary<Point, List<Corpse>>(5);
+            m_aux_CorpsesByPosition = new Dictionary<Point, List<Corpse>>(5, djack.RogueSurvivor.Data.PointComparer.Instance);
             m_aux_CorpsesSet = new HashSet<Corpse>();
 
             m_Scents = new List<OdorScent>(128);
-            m_aux_ScentsByPosition = new Dictionary<Point, List<OdorScent>>(128);
+            m_aux_ScentsByPosition = new Dictionary<Point, List<OdorScent>>(128, djack.RogueSurvivor.Data.PointComparer.Instance);
 
             m_Timers = new List<TimedTask>(5);
         }
@@ -548,6 +587,7 @@ namespace djack.RogueSurvivor.Data
                 m_ActorsList.Add(actor);
             }
             m_aux_ActorsByPosition.Add(position, actor);
+            unchecked { ++m_OccupancyRevision; }
             actor.Location = new Location(this, position);
             if (actor.Personality != null && Engine.Session.Get.GamePreset.NpcPersonalitiesEnabled)
                 Engine.Session.Get.ResidentRecords.Register(actor);
@@ -566,6 +606,7 @@ namespace djack.RogueSurvivor.Data
                 m_ActorsList.Add(actor);
             else
                 m_ActorsList.Insert(0, actor);
+            unchecked { ++m_OccupancyRevision; }
 
             // reset check actor index, as it is now invalidated.
             m_iCheckNextActorIndex = 0;
@@ -578,6 +619,7 @@ namespace djack.RogueSurvivor.Data
 
             m_ActorsList.Remove(actor);
             m_aux_ActorsByPosition.Remove(actor.Location.Position);
+            unchecked { ++m_OccupancyRevision; }
 
             // reset check actor index, as it is now invalidated.
             m_iCheckNextActorIndex = 0;
@@ -639,6 +681,7 @@ namespace djack.RogueSurvivor.Data
 
             m_MapObjectsList.Remove(o);
             m_aux_MapObjectsByPosition.Remove(new Point(x, y));
+            GeometryChanged();
         }
         #endregion
 
@@ -1284,6 +1327,8 @@ namespace djack.RogueSurvivor.Data
             m_District = (District)info.GetValue("m_District", typeof(District));
             m_Name = (string)info.GetValue("m_Name", typeof(string));
             m_LocalTime = (WorldTime)info.GetValue("m_LocalTime", typeof(WorldTime));
+            try { m_iCheckNextActorIndex = info.GetInt32("m_iCheckNextActorIndex"); }
+            catch (SerializationException) { m_iCheckNextActorIndex = 0; }
             m_Width = (int)info.GetValue("m_Width", typeof(int));
             m_Height = (int)info.GetValue("m_Height", typeof(int));
             m_Rectangle = (Rectangle)info.GetValue("m_Rectangle", typeof(Rectangle));
@@ -1305,6 +1350,11 @@ namespace djack.RogueSurvivor.Data
 
         public void ReconstructAuxiliaryFields()
         {
+            m_Exits = new Dictionary<Point, Exit>(m_Exits, PointComparer.Instance);
+            m_GroundItemsByPosition = new Dictionary<Point, Inventory>(m_GroundItemsByPosition, PointComparer.Instance);
+            GeometryChanged(); unchecked { ++m_OccupancyRevision; }
+            for (int x = 0; x < m_Width; x++) for (int y = 0; y < m_Height; y++)
+                m_Tiles[x, y].BindGeometryOwner(this);
             // Earlier saves could contain leaderless faction claims. They no longer
             // have an owner and must not block the territory permanently.
             if (m_XpdBases != null)
@@ -1312,7 +1362,7 @@ namespace djack.RogueSurvivor.Data
             ///////////////////////////////
             // Reconstruct auxiliary fields
             ///////////////////////////////
-            m_aux_ActorsByPosition = new Dictionary<Point, Actor>();
+            m_aux_ActorsByPosition = new Dictionary<Point, Actor>(djack.RogueSurvivor.Data.PointComparer.Instance);
             foreach (Actor a in m_ActorsList)
                 m_aux_ActorsByPosition.Add(a.Location.Position, a);
 
@@ -1324,11 +1374,11 @@ namespace djack.RogueSurvivor.Data
                 m_aux_GroundItemsPosition.Add(pair.Value, pair.Key);
             }
 
-            m_aux_MapObjectsByPosition = new Dictionary<Point, MapObject>();
+            m_aux_MapObjectsByPosition = new Dictionary<Point, MapObject>(djack.RogueSurvivor.Data.PointComparer.Instance);
             foreach (MapObject obj in m_MapObjectsList)
                 m_aux_MapObjectsByPosition.Add(obj.Location.Position, obj);
 
-            m_aux_ScentsByPosition = new Dictionary<Point, List<OdorScent>>();
+            m_aux_ScentsByPosition = new Dictionary<Point, List<OdorScent>>(djack.RogueSurvivor.Data.PointComparer.Instance);
             foreach (OdorScent scent in m_Scents)
             {                
                 List<OdorScent> listHere;
@@ -1341,7 +1391,7 @@ namespace djack.RogueSurvivor.Data
                 }
             }
 
-            m_aux_CorpsesByPosition = new Dictionary<Point, List<Corpse>>();
+            m_aux_CorpsesByPosition = new Dictionary<Point, List<Corpse>>(djack.RogueSurvivor.Data.PointComparer.Instance);
             m_aux_CorpsesSet = new HashSet<Corpse>();
             foreach (Corpse corpse in m_CorpsesList)
             {
@@ -1363,6 +1413,7 @@ namespace djack.RogueSurvivor.Data
             info.AddValue("m_District", m_District);
             info.AddValue("m_Name", m_Name);
             info.AddValue("m_LocalTime", m_LocalTime);
+            info.AddValue("m_iCheckNextActorIndex", Engine.Session.Get.GamePreset.Simulation == Engine.SimulationMode.AdaptiveWorld ? m_iCheckNextActorIndex : 0);
             info.AddValue("m_Width", m_Width);
             info.AddValue("m_Height", m_Height);
             info.AddValue("m_Rectangle", m_Rectangle);

@@ -16,6 +16,7 @@ namespace djack.RogueSurvivor.Data
         public bool NoSubjectLocation;
         [System.Runtime.Serialization.OptionalField] public DiplomacyEvidence DiplomacyEvidence;
         [System.Runtime.Serialization.OptionalField] public DiplomacyMessage DiplomacyMessage;
+        [System.Runtime.Serialization.OptionalField] public KnownCommunityCase CultureCase;
         [System.Runtime.Serialization.OptionalField] public CommunityShelterLocation SupplyLocation;
         [System.Runtime.Serialization.OptionalField] public bool SupplyClaimed;
         public NpcFact SpeechSnapshot()
@@ -29,7 +30,7 @@ namespace djack.RogueSurvivor.Data
             return new NpcFact { EventId = EventId, Kind = Kind, SubjectName = SubjectName, OtherName = OtherName,
                 StoryId = StoryId, SubjectId = SubjectId, OtherId = OtherId, SourceId = speaker, EventTurn = EventTurn,
                 LearnedTurn = turn, Confidence = confidence, Hops = Hops + 1, Units = Units, Risk = Risk, Place = Place, Source = NpcKnowledgeSource.Told, NoSubjectLocation = NoSubjectLocation,
-                DiplomacyEvidence = DiplomacyEvidence, DiplomacyMessage = DiplomacyMessage, SupplyLocation = SupplyLocation == null ? null : SupplyLocation.Copy(), SupplyClaimed = SupplyClaimed };
+                DiplomacyEvidence = DiplomacyEvidence, DiplomacyMessage = DiplomacyMessage, CultureCase = CultureCase == null ? null : CultureCase.Copy(), SupplyLocation = SupplyLocation == null ? null : SupplyLocation.Copy(), SupplyClaimed = SupplyClaimed };
         }
     }
     [Serializable]

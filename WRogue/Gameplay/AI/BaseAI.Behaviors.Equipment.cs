@@ -415,6 +415,12 @@ namespace djack.RogueSurvivor.Gameplay.AI
         /// <see cref="IsEquipmentSlotTaboo(DollPart)"/>
         protected ActorAction BehaviorEquipBestItems(RogueGame game, bool allowCellPhones, bool allowStenchKiller)
         {
+            long start = SimulationPerformance.Start();
+            try { return BehaviorEquipBestItemsCore(game, allowCellPhones, allowStenchKiller); }
+            finally { SimulationPerformance.End(SimulationPerformance.Part.Equipment, start); }
+        }
+        ActorAction BehaviorEquipBestItemsCore(RogueGame game, bool allowCellPhones, bool allowStenchKiller)
+        {
             ActorAction action;
 
             // keep in mind which equipment slots are reserved by other behaviors and dont mess with them

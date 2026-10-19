@@ -7,9 +7,16 @@ namespace djack.RogueSurvivor.Gameplay.Personality
     {
         public static List<NpcGoalCandidate> Evaluate(RogueGame game, Actor owner, NpcContentCatalog catalog = null)
         {
+            long start = SimulationPerformance.Start();
+            using (NpcDecisionContext.Evaluation(game, owner))
+            try { return EvaluateCore(game, owner, catalog); }
+            finally { SimulationPerformance.End(SimulationPerformance.Part.Goals, start); }
+        }
+        static List<NpcGoalCandidate> EvaluateCore(RogueGame game, Actor owner, NpcContentCatalog catalog)
+        {
             if (!NpcIntentSystem.Enabled(owner)) return new List<NpcGoalCandidate>();
             catalog = catalog ?? game.NpcContent;
-            foreach (TraitInstance trait in owner.Personality.Traits)
+            foreach (TraitInstance trait in owner.Personality.TraitList)
             {
                 TraitDefinition definition = catalog.Personalities.Trait(trait.Id);
                 if (definition != null && definition.Interest != null) definition.Interest.Prepare(owner, trait);

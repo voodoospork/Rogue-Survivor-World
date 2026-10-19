@@ -20,8 +20,10 @@ sealed class ScenarioUI : IRogueUI
     public void QueueKey(Keys key) { keys.Enqueue(null); keys.Enqueue(new KeyEventArgs(key)); }
     public void QueueClick(MouseButtons button) { buttons.Enqueue(button); }
     public void QueueWaitKey(Keys key) { waitKeys.Enqueue(new KeyEventArgs(key)); }
+    internal void ClearQueuedInput() { keys.Clear();waitKeys.Clear(); }
     public KeyEventArgs UI_WaitKey()
     {
+        if (waitKeys.Count == 0 && ContinueImportantMessages) return new KeyEventArgs(Keys.Enter);
         if (waitKeys.Count == 0) throw new InvalidOperationException("Scenario requested keyboard input");
         return waitKeys.Dequeue();
     }
@@ -57,6 +59,7 @@ sealed class ScenarioUI : IRogueUI
     public float UI_GetCanvasScaleX() { return 1; }
     public float UI_GetCanvasScaleY() { return 1; }
     public string UI_SaveScreenshot(string path) { throw new InvalidOperationException("Scenario requested screenshot"); }
+    internal bool ContinueImportantMessages;
     public string UI_ScreenshotExtension() { return "png"; }
     public void UI_DoQuit() { throw new InvalidOperationException("Scenario requested quit"); }
 }

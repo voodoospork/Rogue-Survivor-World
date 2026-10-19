@@ -83,12 +83,22 @@ static class FollowerTravelWorldScenario
         Check.Same(w.Map, f.Location.Map, "regrouped on actual map"); Check.Equal(false, f.IsSleeping, "companion awake before crossing");
         Check.Equal(true, w.Game.Rules.GridDistance(f.Location.Position, w.Game.Player.Location.Position) <= range, "ordinary NPC decisions reunite party");
     }
-    static void Cross(ScenarioWorld w, KeyValuePair<Point, Exit> exit, bool deliberate)
+    static KeyValuePair<Point, Exit> Cross(ScenarioWorld w, KeyValuePair<Point, Exit> exit, bool deliberate)
     {
-        if (deliberate || !w.Map.IsInBounds(exit.Key)) ((ScenarioUI)w.Game.UI).QueueWaitKey(Keys.Y);
-        if (w.Map.IsInBounds(exit.Key)) Check.Equal(true, w.Game.DoUseExit(w.Game.Player, exit.Key), "production exit action");
-        else Check.Equal(true, w.Game.DoPlayerBump(w.Game.Player, Direction.FromVector(exit.Key.X - w.Game.Player.Location.Position.X, exit.Key.Y - w.Game.Player.Location.Position.Y)), "real boundary crossing input");
-        Check.Same(exit.Value.ToMap, w.Game.Player.Location.Map, "exit actually changes area"); Round(Current(w));
+        for(int attempt=0;attempt<6;attempt++) {
+            if (deliberate || !w.Map.IsInBounds(exit.Key)) ((ScenarioUI)w.Game.UI).QueueWaitKey(Keys.Y);
+            if (w.Map.IsInBounds(exit.Key)) Check.Equal(true, w.Game.DoUseExit(w.Game.Player, exit.Key), "production exit action");
+            else Check.Equal(true, w.Game.DoPlayerBump(w.Game.Player, Direction.FromVector(exit.Key.X - w.Game.Player.Location.Position.X, exit.Key.Y - w.Game.Player.Location.Position.Y)), "real boundary crossing input");
+            ((ScenarioUI)w.Game.UI).ClearQueuedInput();
+            if(w.Game.Player.Location.Map==exit.Value.ToMap) { Round(Current(w));return exit; }
+            Console.WriteLine("The attempted crossing remained blocked; automated driver uses ordinary waiting or another existing exit.");
+            w.Try(new ActionWait(w.Game.Player,w.Game));Round(w);
+            var alternatives=w.Map.ExitEntries.Where(e=>e.Value.ToMap==exit.Value.ToMap&&e.Key!=exit.Key&&
+                e.Value.ToMap.GetActorAt(e.Value.ToPosition)==null&&CommunityClarityScenario.TryWalkingPath(w,e.Key,w.Map.IsInBounds(e.Key)?0:1)!=null)
+                .OrderBy(e=>w.Game.Rules.GridDistance(w.Game.Player.Location.Position,e.Key)).ToArray();
+            if(alternatives.Length>0) { exit=alternatives[0];Walk(w,exit.Key,w.Map.IsInBounds(exit.Key)?0:1); }
+        }
+        Check.Same(exit.Value.ToMap, w.Game.Player.Location.Map, "crossing remains unavailable after ordinary retries; no destination actor is moved");return exit;
     }
     public static void Register()
     {
@@ -150,7 +160,7 @@ static class FollowerTravelWorldScenario
                 // Natural following stops at radius two; leave when not adjacent, without moving the NPC.
                 for (int n = 0; n < 40 && w.Game.Rules.GridDistance(p.Location.Position, follower.Location.Position) <= 1; n++) { w.Try(new ActionWait(p, w.Game)); Round(w); }
                 Check.Equal(true, w.Game.Rules.GridDistance(p.Location.Position, follower.Location.Position) > 1, "deliberate separation starts with an unready real follower");
-                Cross(w, stairs, true); w = Current(w); Check.Same(source, follower.Location.Map, "unready companion stays in its area"); Check.Same(p, follower.Leader, "separation does not dismiss");
+                stairs=Cross(w, stairs, true); w = Current(w); Check.Same(source, follower.Location.Map, "unready companion stays in its area"); Check.Same(p, follower.Leader, "separation does not dismiss");
                 Console.WriteLine("Deliberate departure to " + w.Map.Name + "; prior map advances only with existing simulation.");
                 var back = w.Map.ExitEntries.First(e => e.Value.ToMap == source && e.Value.ToPosition == stairs.Key && w.Map.IsInBounds(e.Key)); Walk(w, back.Key, 0); Cross(w, back, true); w = Current(w);
                 bool answered = false;
@@ -158,7 +168,7 @@ static class FollowerTravelWorldScenario
                 {
                     if (Survival(w)) continue;
                     Console.WriteLine("Recall: companion=" + follower.Location.Position + ", sleeping=" + follower.IsSleeping + ", stamina=" + follower.StaminaPoints + ", HP=" + follower.HitPoints + ", trust=" + follower.TrustInLeader);
-                    ((ScenarioUI)w.Game.UI).QueueKey(Keys.S | Keys.Shift); p.ActionPoints = 100; Check.Call(w.Game, "HandlePlayerActor", p); Round(w);
+                    ((ScenarioUI)w.Game.UI).QueueKey(Keys.R | Keys.Control); p.ActionPoints = 100; Check.Call(w.Game, "HandlePlayerActor", p); Round(w);
                     answered = FollowerTravelScenario.Display(w).Contains("Coming back!");
                     for (int wait = 0; wait < 4 && !answered; wait++)
                     {
@@ -176,12 +186,12 @@ static class FollowerTravelWorldScenario
                 var districtExit = w.Map.ExitEntries.Where(e => e.Value.ToMap.District != w.Map.District && e.Value.ToMap.GetActorAt(e.Value.ToPosition) == null && CommunityClarityScenario.TryWalkingPath(w, e.Key, 1) != null)
                     .OrderBy(e => w.Game.Rules.GridDistance(p.Location.Position, e.Key)).First();
                 Walk(w, districtExit.Key, 1); Point boundary = new Point(Math.Max(0, Math.Min(w.Map.Width - 1, districtExit.Key.X)), Math.Max(0, Math.Min(w.Map.Height - 1, districtExit.Key.Y))); Point meeting = lastSeen.Value;
-                Cross(w, districtExit, true); w = Current(w);
+                districtExit=Cross(w, districtExit, true);boundary=new Point(Math.Max(0,Math.Min(source.Width-1,districtExit.Key.X)),Math.Max(0,Math.Min(source.Height-1,districtExit.Key.Y)));w = Current(w);
                 Check.Same(p, follower.Leader, "district crossing cannot automatically dismiss personal follower");
                 Console.WriteLine("Boundary departure leaves dated last contact at " + meeting + "; return uses that observation.");
                 var districtBack = w.Map.ExitEntries.First(e => e.Value.ToMap == source && e.Value.ToPosition == boundary);
                 Walk(w, districtBack.Key, w.Map.IsInBounds(districtBack.Key) ? 0 : 1); Cross(w, districtBack, true); w = Current(w);
-                Walk(w, meeting, 1); ((ScenarioUI)w.Game.UI).QueueKey(Keys.S | Keys.Shift); p.ActionPoints = 100; Check.Call(w.Game, "HandlePlayerActor", p); Round(w);
+                Walk(w, meeting, 1); ((ScenarioUI)w.Game.UI).QueueKey(Keys.R | Keys.Control); p.ActionPoints = 100; Check.Call(w.Game, "HandlePlayerActor", p); Round(w);
                 Regroup(w, follower, 2); Check.Equal(false, follower.IsDead, "final real reunion retains a living companion");
                 BinarySaveStore.Save(Path.Combine(Environment.GetEnvironmentVariable("ROGUE_COMMUNITY_ARTIFACTS"), "follower-world-complete-format-5.dat"), Session.Get);
                 var ordered = times.OrderBy(t => t).ToArray();

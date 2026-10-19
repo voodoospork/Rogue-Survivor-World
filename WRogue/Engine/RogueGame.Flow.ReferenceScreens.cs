@@ -82,7 +82,7 @@ namespace djack.RogueSurvivor.Engine
             // text.
             if (saveToTextfile)
             {
-                file.Append(String.Format("ROGUE SURVIVOR {0}", SetupConfig.GAME_VERSION));
+                file.Append(SetupConfig.GAME_TITLE);
                 file.Append("Hi Scores");
                 file.Append("Rank | Name, Skills, Death       |  Score |Difficulty|Survival|  Kills |Achievm.|      Game Time | Playing time");
             }

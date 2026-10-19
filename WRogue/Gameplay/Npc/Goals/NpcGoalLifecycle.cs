@@ -11,7 +11,7 @@ namespace djack.RogueSurvivor.Gameplay.Personality
             foreach (NpcIntent intent in owner.Personality.Intents)
                 if (!intent.Finished && intent.Generated != null)
                 {
-                    NpcGoalCandidate fresh = candidates.Find(c => c.State.Key == intent.Generated.Key);
+                    NpcGoalCandidate fresh = candidates.Find(c => c.State.SameIdentity(intent.Generated));
                     if (fresh != null)
                     {
                         if (intent.Plan != null && intent.Generated.Current != fresh.State.Current)
@@ -56,7 +56,7 @@ namespace djack.RogueSurvivor.Gameplay.Personality
         static bool HasEquivalent(Actor owner, NpcGoalCandidate candidate, NpcContentCatalog catalog)
         {
             foreach (NpcIntent intent in owner.Personality.Intents)
-                if (!intent.Finished && ((intent.Generated != null && intent.Generated.Key == candidate.State.Key) ||
+                if (!intent.Finished && ((intent.Generated != null && intent.Generated.SameIdentity(candidate.State)) ||
                     (intent.DefinitionId == candidate.Capability.Id && intent.TargetId == candidate.Target.Id && (intent.Generated == null || candidate.State.Resource == null)) ||
                     (catalog.Value(candidate.State) != null && Array.IndexOf(catalog.Value(candidate.State).EquivalentCapabilities, intent.DefinitionId) >= 0))) return true;
             return false;

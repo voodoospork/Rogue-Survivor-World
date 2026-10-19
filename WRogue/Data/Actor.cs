@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -208,7 +208,7 @@ namespace djack.RogueSurvivor.Data
             get
             {
                 if (m_PersonalityIdentity == Guid.Empty)
-                    m_PersonalityIdentity = Guid.NewGuid();
+                    m_PersonalityIdentity = djack.RogueSurvivor.Engine.SimulationClock.NewIdentity();
                 return m_PersonalityIdentity;
             }
         }
@@ -521,6 +521,7 @@ namespace djack.RogueSurvivor.Data
                 throw new ArgumentNullException("faction");
             if (name == null)
                 throw new ArgumentNullException("name");
+            if (Engine.SimulationClock.HasIdentityStream) m_PersonalityIdentity = Engine.SimulationClock.NewIdentity();
 
             m_ModelID = model.ID;
             m_FactionID = faction.ID;
@@ -600,9 +601,11 @@ namespace djack.RogueSurvivor.Data
             if (m_Followers.Count == 0)
                 m_Followers = null;
 
+            bool personalCommunityFollower = !IsDead && other.InPlayerParty && other.Community != null && !other.IsPlayer;
             other.m_Leader = null;
             Gameplay.AI.BaseAI.ResetPartyTravel(other);
             LeaveSocialGroup(other);
+            if (personalCommunityFollower && !other.IsDead) other.SetCommunityHousehold(null);
 
             // reset directives & order.
             AIController ai = other.Controller as AIController;

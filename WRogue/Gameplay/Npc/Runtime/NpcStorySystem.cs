@@ -43,6 +43,7 @@ namespace djack.RogueSurvivor.Gameplay.Personality
         }
         public static void Succession(RogueGame game, Actor leader)
         {
+            if (leader.Community != null) { CommunityAdaptationSystem.Death(game, leader); return; }
             if (!Session.Get.GamePreset.NpcPersonalitiesEnabled || leader.IsPlayer || leader.CountFollowers == 0) return;
             Actor best = null; int score = Int32.MinValue;
             foreach (Actor follower in leader.Followers)

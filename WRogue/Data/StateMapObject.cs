@@ -34,6 +34,7 @@ namespace djack.RogueSurvivor.Data
         #region Changing state
         public virtual void SetState(int newState)
         {
+            if (m_State != newState) GeometryChanged();
             m_State = newState;
         }
         #endregion

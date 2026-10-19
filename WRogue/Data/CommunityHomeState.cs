@@ -43,6 +43,9 @@ namespace djack.RogueSurvivor.Data
         }
         public bool InPlayerParty { get { for (Actor a = this; a != null; a = a.Leader) if (a.IsPlayer) return true; return false; } }
         public SocialGroup EnsurePersonalGroup() { if (m_SocialGroup == null) InitializeSocialGroup(); return m_SocialGroup; }
+        internal void RestoreCommandGroupForMembership()
+        { if (CommunityMembership != null && CommunityMembership.PersonalGroup != null)
+            AssignSocialGroup(this, CommunityMembership.PersonalGroup); }
         internal void RestorePersonalParty()
         {
             PlayerCommunityMembership membership = CommunityMembership;

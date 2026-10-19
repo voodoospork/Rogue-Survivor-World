@@ -23,10 +23,7 @@ namespace djack.RogueSurvivor.Gameplay.Personality
         }
         public static bool CanSee(RogueGame game, Actor owner, Actor target)
         {
-            return owner != null && target != null && !target.IsDead && owner.Location.Map == target.Location.Map &&
-                game.Rules.GridDistance(owner.Location.Position, target.Location.Position) <=
-                    game.Rules.ActorFOV(owner, owner.Location.Map.LocalTime, game.Session.World.Weather) &&
-                LOS.CanTraceViewLine(owner.Location, target.Location.Position);
+            return owner != null && target != null && !target.IsDead && NpcDecisionContext.Visible(game, owner, target.Location);
         }
         public static Actor VisibleTarget(IList<Actor> visible, Guid id)
         { foreach (Actor actor in visible) if (actor.PersonalityIdentity == id) return actor; return null; }
@@ -34,7 +31,8 @@ namespace djack.RogueSurvivor.Gameplay.Personality
         {
             if (!Enabled(owner)) return;
             game.NpcContent.Advance(NpcClockPhase.BeforeDecision, new NpcClockContext(game, owner));
-            NpcGoalGenerator.Refresh(game, owner, true);
+            var brain = owner.Controller as Gameplay.AI.BaseAI;
+            if (brain == null || brain.RefreshGoalsNow(game, danger || game.Rules.IsActorHungry(owner))) NpcGoalGenerator.Refresh(game, owner, true);
             if (!owner.Personality.HasPendingSocialState) return;
             int turn = owner.Location.Map.LocalTime.TurnCounter;
             owner.Personality.Reactions.RemoveAll(r => turn > r.Deadline);

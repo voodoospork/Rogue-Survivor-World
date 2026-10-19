@@ -6,11 +6,11 @@ using System.Resources;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Rogue Survivor Expanded")]
+[assembly: AssemblyTitle(djack.RogueSurvivor.SetupConfig.GAME_NAME)]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("roguedjack")]
-[assembly: AssemblyProduct("")]
+[assembly: AssemblyProduct(djack.RogueSurvivor.SetupConfig.GAME_NAME)]
 [assembly: AssemblyCopyright("Copyright ©  2018")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -34,6 +34,8 @@ using System.Resources;
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
 [assembly: AssemblyVersion("0.4.1.0")]
-[assembly: AssemblyFileVersion("0.4.1.0")]
+// Preserve the assembly identity used by existing serialized type names.
+[assembly: AssemblyFileVersion(djack.RogueSurvivor.SetupConfig.WORLD_FILE_VERSION)]
+[assembly: AssemblyInformationalVersion(djack.RogueSurvivor.SetupConfig.WORLD_VERSION)]
 [assembly: NeutralResourcesLanguageAttribute("en")]
 [assembly: InternalsVisibleTo("UnitTests")]

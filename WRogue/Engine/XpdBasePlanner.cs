@@ -36,7 +36,7 @@ namespace djack.RogueSurvivor.Engine
             }
 
             List<Point> cells = new List<Point>();
-            HashSet<Point> seen = new HashSet<Point>();
+            HashSet<Point> seen = new HashSet<Point>(djack.RogueSurvivor.Data.PointComparer.Instance);
             Queue<Point> queue = new Queue<Point>();
             queue.Enqueue(start);
             seen.Add(start);
@@ -55,7 +55,7 @@ namespace djack.RogueSurvivor.Engine
                 }
             }
 
-            HashSet<Point> blocked = new HashSet<Point>();
+            HashSet<Point> blocked = new HashSet<Point>(djack.RogueSurvivor.Data.PointComparer.Instance);
             foreach (Point cell in cells)
             {
                 XpdBase existing = map.XpdBaseAt(cell);
@@ -75,7 +75,7 @@ namespace djack.RogueSurvivor.Engine
                     "Clear hostile actors and undead from this room first.";
                 return null;
             }
-            HashSet<Point> available = new HashSet<Point>(cells);
+            HashSet<Point> available = new HashSet<Point>(cells, djack.RogueSurvivor.Data.PointComparer.Instance);
             available.ExceptWith(blocked);
             List<Point> claimable = new List<Point>();
             seen.Clear();
@@ -122,7 +122,7 @@ namespace djack.RogueSurvivor.Engine
         {
             if (baseClaim == null || !baseClaim.Contains(start) || !map.GetTileAt(start).IsInside)
                 throw new ArgumentException("Stand in an indoor room of your base");
-            HashSet<Point> seen = new HashSet<Point>();
+            HashSet<Point> seen = new HashSet<Point>(djack.RogueSurvivor.Data.PointComparer.Instance);
             Queue<Point> queue = new Queue<Point>();
             queue.Enqueue(start);
             seen.Add(start);
@@ -147,7 +147,7 @@ namespace djack.RogueSurvivor.Engine
 
         static HashSet<Point> Exterior(Map map)
         {
-            HashSet<Point> exterior = new HashSet<Point>();
+            HashSet<Point> exterior = new HashSet<Point>(djack.RogueSurvivor.Data.PointComparer.Instance);
             Queue<Point> queue = new Queue<Point>();
             for (int y = 0; y < map.Height; y++)
                 for (int x = 0; x < map.Width; x++)

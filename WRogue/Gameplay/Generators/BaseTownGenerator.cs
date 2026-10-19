@@ -310,7 +310,12 @@ namespace djack.RogueSurvivor.Gameplay.Generators
 
         #region Fields
         Parameters m_Params = DEFAULT_PARAMS;
-        protected DiceRoller m_DiceRoller;
+        DiceRoller generatorRandom;
+        protected DiceRoller m_DiceRoller
+        {
+            get { return SimulationClock.RandomFor(m_Game.Session) ?? generatorRandom; }
+            set { generatorRandom = value; }
+        }
 
         /// <summary>
         /// Blocks on surface map since during current generation.

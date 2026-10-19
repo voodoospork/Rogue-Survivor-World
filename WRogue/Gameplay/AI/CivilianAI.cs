@@ -163,6 +163,7 @@ namespace djack.RogueSurvivor.Gameplay.AI
         {
             List<Percept> mapPercepts = FilterSameMap(game, percepts);
             List<Actor> intentVisible = PrepareNpcIntents(game, mapPercepts);
+            CommunityRaidSystem.Update(game, m_Actor, intentVisible);
 
             // DEBUG BOT
 #if DEBUG
@@ -299,6 +300,8 @@ namespace djack.RogueSurvivor.Gameplay.AI
             }
             #endregion
 
+            ActorAction raidRetreat = BehaviorCommunityRaid(game, intentVisible, true);
+            if (raidRetreat != null) return raidRetreat;
             ActorAction hostileCall = CommunityEncounterSystem.Select(game, m_Actor, intentVisible, true);
             if (hostileCall != null) return hostileCall;
             ActorAction alarm = BehaviorCommunityAlarm(game, intentVisible);
@@ -506,10 +509,28 @@ namespace djack.RogueSurvivor.Gameplay.AI
             // 10 drop useless light/tracker/spray
             if (!hasEnemies)
             {
+                ActorAction raid = BehaviorCommunityRaid(game, intentVisible);
+                if (raid != null) return raid;
                 ActorAction intentAction = BehaviorNpcIntents(game, intentVisible);
                 if (intentAction != null) return intentAction;
                 ActorAction communityCall = CommunityEncounterSystem.Select(game, m_Actor, intentVisible, false);
                 if (communityCall != null) return communityCall;
+                ActorAction decision = CommunityAdaptationSystem.Select(game, m_Actor, intentVisible);
+                if (decision != null && decision.IsLegal()) return decision;
+                ActorAction relocation = BehaviorCommunityRelocation(game);
+                if (relocation != null) return relocation;
+                Actor partner = CommunityAdaptationSystem.RefugePartner(game, m_Actor, intentVisible);
+                if (partner != null)
+                {
+                    if (CommunityAdaptationSystem.ReadyToDiscuss(m_Actor, partner) &&
+                        game.Rules.GridDistance(m_Actor.Location.Position, partner.Location.Position) > 1)
+                    {
+                        ActorAction approach = BehaviorIntelligentBumpToward(game, partner.Location.Position, false, false);
+                        if (approach != null) return approach;
+                    }
+                    // A real pause in a shared refuge earns observed time, never automatic admission.
+                    if (m_Actor.ResidentCommunity.Proposal == null) return new ActionWait(m_Actor, game);
+                }
             }
             #region
             ActorAction dropUseless = BehaviorDropUselessItem(game);
@@ -595,7 +616,7 @@ namespace djack.RogueSurvivor.Gameplay.AI
 
                 #region Trade
                 int tradeBias = PersonalitySystem.Bias(m_Actor, DecisionKind.Trade);
-                if (Directives.CanTrade && (tradeBias == 0 ||
+                if (Directives.CanTrade && TradeScanNow(game) && (tradeBias == 0 ||
                     game.Rules.RollChance(Math.Max(0, Math.Min(100, 70 + tradeBias)))))
                 {
                     // get actors we want to trade with.
@@ -617,16 +638,20 @@ namespace djack.RogueSurvivor.Gameplay.AI
                             // dont bother if no interesting items.
                             if (!HasAnyInterestingItem(game, other.Inventory, ItemSource.ANOTHER_ACTOR)) return true;
                             if (!((other.Controller as BaseAI).HasAnyInterestingItem(game, m_Actor.Inventory, ItemSource.ANOTHER_ACTOR))) return true;
-                            // alpha10 reject if unreachable by baseai simple behaviours
-                            if (!CanReachSimple(game, other.Location.Position, Tools.RouteFinder.SpecialActions.DOORS | Tools.RouteFinder.SpecialActions.JUMP))
-                                return true;
                             // don't reject.
                             return false;
                         });
                     // trade with nearest.
-                    if (tradingActors != null)
+                    Percept reachableTrade = null;
+                    while (tradingActors != null && tradingActors.Count > 0)
                     {
-                        Actor tradeTarget = FilterNearest(game, tradingActors).Percepted as Actor;
+                        var nearest = FilterNearest(game, tradingActors);
+                        if (CanReachSimple(game, nearest.Location.Position, Tools.RouteFinder.SpecialActions.DOORS | Tools.RouteFinder.SpecialActions.JUMP)) { reachableTrade = nearest; break; }
+                        tradingActors.Remove(nearest);
+                    }
+                    if (reachableTrade != null)
+                    {
+                        Actor tradeTarget = reachableTrade.Percepted as Actor;
                         if (game.Rules.IsAdjacent(m_Actor.Location, tradeTarget.Location))
                         {
                             ActorAction tradeAction = new ActionTrade(m_Actor, game, tradeTarget);

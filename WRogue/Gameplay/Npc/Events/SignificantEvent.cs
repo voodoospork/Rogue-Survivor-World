@@ -27,6 +27,7 @@ namespace djack.RogueSurvivor.Gameplay.Personality
         public long CombatEpisode;
         public bool KnownMurder, KnownSelfDefense;
         public DiplomacyMessage DiplomacyMessage;
+        public KnownCommunityCase CultureCase;
 
         public SignificantEvent(string kind, Actor subject, Actor other, Map map,
             System.Drawing.Point position, int turn, bool otherIsDirect = true,

@@ -13,6 +13,9 @@ namespace djack.RogueSurvivor.Data
         int m_Size;
         Weather m_Weather;
         int m_NextWeatherCheckTurn;  // alpha10
+        [System.Runtime.Serialization.OptionalField] List<WeatherChange> weatherHistory;
+        [Serializable] sealed class WeatherChange
+        { internal int Turn; internal Weather Weather; }
         #endregion
 
         #region Properties
@@ -43,7 +46,7 @@ namespace djack.RogueSurvivor.Data
 
         public Weather Weather
         {
-            get { return m_Weather; }
+            get { return Engine.SimulationClock.WeatherAt(this, m_Weather); }
             set { m_Weather = value; }
         }
 
@@ -53,6 +56,33 @@ namespace djack.RogueSurvivor.Data
             set { m_NextWeatherCheckTurn = value; }
         }
         #endregion
+
+        internal void EnsureWeatherHistory()
+        {
+            if (weatherHistory == null) weatherHistory = new List<WeatherChange> {
+                new WeatherChange { Turn = 0, Weather = m_Weather } };
+        }
+        internal void RecordWeather(int turn)
+        {
+            EnsureWeatherHistory();
+            int last = weatherHistory.Count - 1;
+            if (turn < weatherHistory[last].Turn) throw new InvalidOperationException("Weather history cannot run backwards.");
+            if (weatherHistory[last].Weather != m_Weather)
+                weatherHistory.Add(new WeatherChange { Turn = turn, Weather = m_Weather });
+        }
+        internal Weather WeatherAt(int turn)
+        {
+            if (weatherHistory == null) return m_Weather;
+            for (int i = weatherHistory.Count - 1; i >= 0; i--)
+                if (weatherHistory[i].Turn <= turn) return weatherHistory[i].Weather;
+            return weatherHistory[0].Weather;
+        }
+        internal int NextWeatherChange(int turn)
+        {
+            if (weatherHistory != null) foreach (var change in weatherHistory)
+                if (change.Turn > turn) return change.Turn;
+            return Int32.MaxValue;
+        }
 
         #region Init
         public World(int size)

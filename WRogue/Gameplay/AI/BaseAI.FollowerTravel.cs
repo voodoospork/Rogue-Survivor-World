@@ -246,7 +246,8 @@ namespace djack.RogueSurvivor.Gameplay.AI
             }
             return null;
         }
-        ActorAction FollowerStep(RogueGame game, Point goal, int radius)
+        // Shared with independent residents: cached walking/open-door steps never authorize destruction.
+        protected ActorAction FollowerStep(RogueGame game, Point goal, int radius)
         {
             Map map = m_Actor.Location.Map; Point here = m_Actor.Location.Position;
             if (game.Rules.GridDistance(here, goal) <= radius) return null;

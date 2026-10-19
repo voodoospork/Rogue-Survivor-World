@@ -23,13 +23,19 @@ namespace djack.RogueSurvivor.Data
         int m_ModelID;
         Flags m_Flags;
         List<string> m_Decorations = null;
+        [NonSerialized] Map m_GeometryOwner;
+        internal void BindGeometryOwner(Map map) { m_GeometryOwner = map; }
         #endregion
 
         #region Properties
         public TileModel Model
         {
             get { return Models.Tiles[m_ModelID]; }
-            set { m_ModelID = value.ID; }
+            set {
+                if (m_ModelID == value.ID) return;
+                m_ModelID = value.ID;
+                if (m_GeometryOwner != null) m_GeometryOwner.GeometryChanged();
+            }
         }
 
         public bool IsInside

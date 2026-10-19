@@ -102,7 +102,7 @@ namespace djack.RogueSurvivor.Gameplay.Personality
             if (actor == null || actor.Personality == null || !Session.Get.GamePreset.NpcPersonalitiesEnabled)
                 return 0;
             int total = 0;
-            foreach (TraitInstance instance in actor.Personality.Traits)
+            foreach (TraitInstance instance in actor.Personality.TraitList)
             {
                 if (instance.Id == excludeTrait) continue;
                 TraitDefinition definition = (registry ?? s_Registry).Trait(instance.Id);
@@ -124,15 +124,31 @@ namespace djack.RogueSurvivor.Gameplay.Personality
 
         public static void Report(RogueGame game, SignificantEvent lifeEvent)
         {
+            NpcDecisionContext.InvalidateRelations();
+            long start = SimulationPerformance.Start();
+            try { ReportCore(game, lifeEvent); }
+            finally { NpcDecisionContext.InvalidateRelations(); SimulationPerformance.End(SimulationPerformance.Part.EventDelivery, start); }
+        }
+        static void ReportCore(RogueGame game, SignificantEvent lifeEvent)
+        {
             if (game == null || lifeEvent == null || lifeEvent.Map == null ||
                 !Session.Get.GamePreset.NpcPersonalitiesEnabled) return;
+            CommunityCultureSystem.NormalizeEvent(game,lifeEvent);
             NpcEventDefinition eventDefinition = game.NpcContent.Event(lifeEvent.Kind);
             if (eventDefinition != null) eventDefinition.Validate(lifeEvent);
             if (lifeEvent.Id == 0) lifeEvent.Id = Session.Get.NextPersonalityEventId();
             // Make a snapshot: resolving a death may remove actors from this map.
             Actor privateOwner = eventDefinition == null || !eventDefinition.Private ? null : eventDefinition.PrivateAudience == null ? lifeEvent.Subject : eventDefinition.PrivateAudience(lifeEvent);
             if (eventDefinition != null && eventDefinition.Private && privateOwner == null) return;
-            List<Actor> actors = privateOwner == null ? new List<Actor>(lifeEvent.Map.Actors) : new List<Actor> { privateOwner };
+            List<Actor> actors;
+            if (privateOwner != null) actors = new List<Actor> { privateOwner };
+            else {
+                // A conservative bound only selects buckets. Every recipient still passes the exact observer-specific predicate below.
+                int range = 0;
+                foreach (Actor candidate in lifeEvent.Map.Actors) range = Math.Max(range, game.Rules.EventViewBound(candidate));
+                actors = lifeEvent.Map.NearbyEventActors(lifeEvent.Position, range,
+                    lifeEvent.SubjectIsDirect ? lifeEvent.Subject : null, lifeEvent.OtherIsDirect ? lifeEvent.Other : null);
+            }
             Guid subjectId = lifeEvent.Subject == null ? Guid.Empty : lifeEvent.Subject.PersonalityIdentity;
             Guid otherId = lifeEvent.Other == null ? Guid.Empty : lifeEvent.Other.PersonalityIdentity;
             ObservedEvent directEvent = new ObservedEvent(lifeEvent.Kind, lifeEvent.Turn,

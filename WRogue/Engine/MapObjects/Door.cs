@@ -71,6 +71,7 @@ namespace djack.RogueSurvivor.Engine.MapObjects
             get { return m_BarricadePoints; }
             set 
             { 
+                if (Math.Max(0,value) != m_BarricadePoints) GeometryChanged();
                 // handle barricading-debarricading
                 if (value > 0 && m_BarricadePoints <= 0)
                 {

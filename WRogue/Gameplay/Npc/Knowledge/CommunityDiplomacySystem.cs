@@ -18,7 +18,7 @@ namespace djack.RogueSurvivor.Gameplay.Personality
         }
         public static bool PoliticalGroup(Actor actor)
         {
-            if (!Enabled || actor == null || actor.GroupRoot.IsPlayer || actor.SocialGroup == null) return false;
+            if (!Enabled || actor == null || (actor.GroupRoot.IsPlayer && actor.Community == null) || actor.SocialGroup == null) return false;
             return actor.SocialGroup.Diplomacy != null || actor.SocialGroup.Home != null || actor.Faction.ID == (int)GameFactions.IDs.ThePolice;
         }
         // Affiliation is a learned statement, not an inference from a live follower pointer.
@@ -49,11 +49,14 @@ namespace djack.RogueSurvivor.Gameplay.Personality
         {
             SignificantEvent e = o.Source;
             bool killing = e.Kind == "community_killing", assault = e.Kind == "community_injury";
-            bool harm = killing || assault || e.Kind == "base_theft" || e.Kind == "promise_broken" || e.Kind == "request_refused" || e.Kind == "restitution_refused";
+            bool property = e.Kind == "base_theft" || e.Kind == "community_defense_tampered";
+            bool boundary = e.Kind == "community_trespass_defied";
+            bool restitution = e.Kind == "community_restitution_failed" || e.Kind == "community_restitution_refused" || e.Kind == "restitution_refused";
+            bool harm = killing || assault || property || boundary || e.Kind == "promise_broken" || restitution;
             bool help = e.Kind == "helped" || e.Kind == "promise_kept" || e.Kind == "traded" || e.Kind == "bartered_food" || e.Kind == "restitution_given";
             if (!harm && !help) return null;
-            int severity = assault ? 25 : killing ? 40 : e.Kind == "base_theft" ? 15 : e.Kind == "promise_broken" ? 5 :
-                e.Kind == "request_refused" || e.Kind == "restitution_refused" ? 2 : e.Kind == "traded" || e.Kind == "bartered_food" ? 2 : 10;
+            int severity = assault ? 25 : killing ? 40 : property ? 15 : e.Kind == "promise_broken" ? 5 :
+                boundary || restitution ? 10 : e.Kind == "traded" || e.Kind == "bartered_food" ? 2 : 10;
             string explanation = e.Kind.Replace('_', ' ');
             if (killing)
             {
@@ -70,14 +73,16 @@ namespace djack.RogueSurvivor.Gameplay.Personality
             }
             PoliticalIdentity beneficiary = Endpoint(o, e.Other, o.SeesOther);
             // A resident recognizes theft from their own home even when its leader is away.
-            XpdBase stolenFrom = e.Kind == "base_theft" ? e.Map.XpdBaseAt(e.Position) : null;
+            XpdBase stolenFrom = property || boundary || restitution ? e.Map.XpdBaseAt(e.Position) : null;
             if (stolenFrom != null && o.Owner.SocialGroup != null && stolenFrom.Owns(o.Owner)) beneficiary = PoliticalIdentity.Of(o.Owner.SocialGroup);
+            var attribution = e.CultureCase == null ? null : e.CultureCase.Case.Attribution;
             return new DiplomacyEvidence { Episode = e.CombatEpisode == 0 ? e.Id : e.CombatEpisode, Kind = e.Kind,
-                Subject = Endpoint(o, e.Subject, o.SeesSubject), Other = beneficiary,
-                SubjectPerson = o.SeesSubject ? e.Subject.PersonalityIdentity : Guid.Empty,
-                OtherPerson = o.SeesOther ? e.Other.PersonalityIdentity : Guid.Empty,
+                Subject = attribution == null ? Endpoint(o, e.Subject, o.SeesSubject) : attribution.Subject,
+                Other = attribution == null ? beneficiary : attribution.Other,
+                SubjectPerson = attribution == null ? (o.SeesSubject ? e.Subject.PersonalityIdentity : Guid.Empty) : attribution.SubjectPerson,
+                OtherPerson = attribution == null ? (o.SeesOther ? e.Other.PersonalityIdentity : Guid.Empty) : attribution.OtherPerson,
                 Severity = severity, Explanation = explanation, Killing = killing, Assault = assault,
-                Violence = killing || assault, Positive = help, Turn = e.Turn };
+                Violence = killing || assault, Positive = help, Turn = e.Turn, Property = property || boundary, Nonviolent = property || boundary || restitution || e.Kind == "promise_broken" };
         }
         public static void Observe(NpcObservation observation)
         {
@@ -151,6 +156,8 @@ namespace djack.RogueSurvivor.Gameplay.Personality
             if (prior == null && relation.Incidents.Count >= 16 && evidence.Turn < relation.Incidents[0].Turn) return;
             if (prior != null && prior.EventId == fact.EventId && prior.Confidence >= fact.Confidence) return;
             int delta = severity - (prior == null ? 0 : prior.Severity);
+            if ((evidence.Kind == "community_restitution_failed" || evidence.Kind == "community_restitution_refused") && prior != null)
+            { severity = prior.Severity + (prior.Kind == "community_restitution_failed" || prior.Kind == "community_restitution_refused" ? 0 : 10); delta = severity-prior.Severity; }
             if (prior != null && delta < 0 && (!evidence.Killing || prior.Killing && prior.Confidence >= fact.Confidence)) return;
             if (prior == null)
             {
@@ -164,9 +171,12 @@ namespace djack.RogueSurvivor.Gameplay.Personality
             prior.Severity = severity; prior.Turn = evidence.Turn; prior.LearnedTurn = fact.LearnedTurn;
             prior.Source = source; prior.Confidence = fact.Confidence; prior.Killing = evidence.Killing && !ownViolence;
             prior.Assault = evidence.Assault && !ownViolence; prior.Violence = evidence.Violence;
+            prior.Property |= evidence.Property; prior.Nonviolent |= evidence.Nonviolent;
             relation.Trim();
             relation.Grievance = Math.Max(0, Math.Min(100, relation.Grievance + (evidence.Positive ? -delta : delta)));
+            int oldTrust=relation.Trust;
             relation.Trust = Math.Max(-100, Math.Min(100, relation.Trust + (evidence.Positive ? delta : -delta)));
+            if(!evidence.Positive&&evidence.Nonviolent)prior.TrustPenalty+=Math.Max(0,oldTrust-relation.Trust);
             if (evidence.Violence) relation.LastViolenceLearnedTurn = Math.Max(relation.LastViolenceLearnedTurn, fact.LearnedTurn);
             if (delta != 0 || newIncident || evidence.Violence) relation.Revision++;
             observer.Personality.LearnDiplomacy(ReportedMessage(observer, relation, fact.LearnedTurn), fact.LearnedTurn, source, fact.Confidence);
@@ -222,7 +232,7 @@ namespace djack.RogueSurvivor.Gameplay.Personality
             bias = Math.Max(-20, Math.Min(20, bias));
             foreach (var relation in leader.SocialGroup.Diplomacy.Relations)
             {
-                if (relation.Feud || relation.Target.Group == Guid.Empty || relation.Grievance + bias < 60) continue;
+                if (relation.Feud || relation.Target.Group == Guid.Empty) continue;
                 int assaults = 0; bool killing = false; DiplomacyIncident cause = null;
                 foreach (var incident in relation.Incidents)
                 {
@@ -231,7 +241,20 @@ namespace djack.RogueSurvivor.Gameplay.Personality
                     if (incident.Killing) killing = true;
                     if (incident.Killing || incident.Assault) cause = incident;
                 }
-                if (cause != null && (killing || assaults >= 2)) return relation;
+                if (cause != null && (killing || assaults >= 2) && relation.Grievance + bias >= 60) return relation;
+                var culture = leader.SocialGroup.Culture;
+                int grudge = culture == null ? 50 : culture.Grudge;
+                int required = grudge >= 70 ? 1 : grudge >= 35 ? 2 : 3;
+                int minor = 0; bool property = false;
+                foreach (var incident in relation.Incidents)
+                    if (incident.EventId > relation.ReviewedCause && incident.Nonviolent && !incident.Resolved)
+                    {
+                        var dispute=leader.Personality.CaseReports.Find(r=>r.Community==leader.SocialGroup.Identity&&r.Case.Episode==incident.Episode);
+                        // A peaceful first demand must have its actual response window before collective escalation.
+                        if(dispute!=null&&dispute.Case.HasLoss&&!dispute.Case.Enforce&&!dispute.Case.Refused&&!dispute.Case.Expired)continue;
+                        minor++; property |= incident.Property;
+                    }
+                if (minor >= required && property && relation.Grievance + bias >= 80 - 3 * grudge / 5) return relation;
             }
             return null;
         }
@@ -249,7 +272,7 @@ namespace djack.RogueSurvivor.Gameplay.Personality
                     game.Rules.StdDistance(owner.Location.Position, listener.Location.Position) > listener.AudioRange) continue;
                 foreach (NpcFact fact in owner.Personality.Knowledge.Facts)
                 {
-                    if (fact.DiplomacyEvidence == null && fact.DiplomacyMessage == null || fact.Confidence < 60 ||
+                    if (fact.DiplomacyEvidence == null && fact.DiplomacyMessage == null && fact.CultureCase == null || fact.Confidence < 60 ||
                         owner.Personality.Knowledge.WasTold(fact.EventId, listener.PersonalityIdentity)) continue;
                     bool has = listener.Personality != null && listener.Personality.Knowledge.Facts.Exists(f => f.EventId == fact.EventId && f.Confidence >= fact.Confidence - 20);
                     if (!has && (IsLeader(listener) || fact.DiplomacyMessage != null)) return new ActionCommunityDiplomacy(owner, game, listener, fact);
@@ -283,12 +306,14 @@ namespace djack.RogueSurvivor.Gameplay.Personality
             return message;
         }
         static string CauseDescription(DiplomacyIncident incident)
-        { return incident.Explanation + ": " + (incident.OtherName ?? "unknown perpetrator") + " against " + (incident.SubjectName ?? "unknown victim") + ", turn " + incident.Turn; }
+        { return incident.Explanation + ": " + (incident.Violence ? incident.OtherName : incident.SubjectName) + " against " +
+            (incident.Violence ? incident.SubjectName : incident.OtherName) + ", turn " + incident.Turn; }
         internal static void Declare(RogueGame game, Actor leader, CommunityRelation relation)
         {
             if (Declaration(leader) != relation) return;
             relation.Feud = true; relation.Revision++;
-            foreach (var incident in relation.Incidents) if (incident.Killing || incident.Assault) relation.FoundingCause = incident;
+            foreach (var incident in relation.Incidents) if (incident.EventId > relation.ReviewedCause &&
+                (incident.Killing || incident.Assault || incident.Nonviolent && !incident.Resolved)) relation.FoundingCause = incident.Copy();
             int turn = game.Session.WorldTime.TurnCounter;
             relation.DeclaredTurn = turn;
             game.DoSay(leader, null, "We, " + leader.SocialGroup.CommunityName + ", declare a blood feud with " + relation.Target.Name +

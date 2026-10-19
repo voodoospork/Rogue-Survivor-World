@@ -307,6 +307,7 @@ namespace djack.RogueSurvivor.Gameplay.AI
 
                     return distance;
                 });
+            RememberDirectedAction(bump, goal);
             return bump;
         }
 

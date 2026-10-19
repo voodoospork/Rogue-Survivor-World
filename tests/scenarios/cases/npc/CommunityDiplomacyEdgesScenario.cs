@@ -157,13 +157,13 @@ static class CommunityDiplomacyEdgesScenario
             Check.Call(w.Game,"SwapActorItems",player,traded,a,asked);
             Check.Equal(trust+2,Relation(a,player).Trust,"actual inventory exchange has smaller trade credit");
             Reply(w,player,a,false);
-            Check.Equal(2,Relation(a,player).Grievance,"refusal harms relations but cannot qualify for a feud");
+            Check.Equal(0,Relation(a,player).Grievance,"ordinary refusal remains personal and cannot create collective grievance");
             Reply(w,player,a,true);
             int due=a.Personality.Commitments.Last(c=>c.Status==NpcCommitmentStatus.Active).DueTurn;
             // Departure changes current affiliation; the overdue promise retains its original attribution.
             var original=player.SocialGroup; player.RemoveFollower(b);
             CommunityMembershipScenario.Time(w,due); NpcPromises.Expire(a,w.Game.NpcContent);
-            Check.Equal(7,original==player.SocialGroup ? Relation(a,player).Grievance : a.SocialGroup.Diplomacy.Find(PoliticalIdentity.Of(original)).Grievance,"broken promise adds five using saved attribution");
+            Check.Equal(5,original==player.SocialGroup ? Relation(a,player).Grievance : a.SocialGroup.Diplomacy.Find(PoliticalIdentity.Of(original)).Grievance,"broken promise adds five using saved attribution");
             Check.Equal(null,CommunityDiplomacySystem.Declaration(a),"aid/refusal/broken promises never qualify without violence");
         });
         ScenarioRunner.Add("npc/community-diplomacy-theft-and-reports",()=>CommunityMembershipScenario.Arena(4975),w=>{
@@ -271,7 +271,7 @@ static class CommunityDiplomacyEdgesScenario
             w.Map.PlaceActorAt(b.Followers.First(),new Point(20,6)); CommunityDiplomacyScenario.Declare(w,a);
             var relation=Relation(a,b); var old=a.Personality.Knowledge.Facts.Last(f=>f.Kind=="community_killing");
             w.Map.PlaceActorAt(b,new Point(3,2)); Introduce(w,b);
-            for(int i=0;i<20;i++) { CommunityMembershipScenario.Time(w,40+i); NpcEvents.Publish(w.Game,"request_refused",b,a); }
+            for(int i=0;i<20;i++) { CommunityMembershipScenario.Time(w,40+i); NpcEvents.Publish(w.Game,"promise_broken",b,a); }
             Check.Equal(16,relation.Incidents.Count,"history stays bounded"); Check.Equal(true,relation.FoundingCause!=null,"active founding cause remains pinned");
             int grievance=relation.Grievance; CommunityDiplomacySystem.Hear(a,a,old);
             Check.Equal(grievance,relation.Grievance,"trimmed incident cannot be charged a second time");

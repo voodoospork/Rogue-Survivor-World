@@ -17,7 +17,7 @@ namespace Setup
         {
             InitializeComponent();
 
-            this.l_GameVersion.Text = "Game version : " + SetupConfig.GAME_VERSION;
+            this.l_GameVersion.Text = SetupConfig.GAME_TITLE;
         }
 
         private void b_SaveExit_Click(object sender, EventArgs e)

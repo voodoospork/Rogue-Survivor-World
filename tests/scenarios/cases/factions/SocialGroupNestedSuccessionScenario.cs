@@ -9,6 +9,7 @@ static class SocialGroupNestedSuccessionScenario
             ".........", ".........", "........."), world =>
         {
             Session.Get.GamePreset = GamePreset.BuiltIn(GameMode.GM_STANDARD);
+            ScenarioRunner.ApplyRequestedMode(world);
             NpcIntentSupport.Player(world, 8, 2);
             Actor founder = NpcIntentSupport.Actor(world, "founder", 1, 1);
             Actor sibling = NpcIntentSupport.Actor(world, "sibling", 2, 1);

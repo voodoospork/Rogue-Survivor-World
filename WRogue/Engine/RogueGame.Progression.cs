@@ -739,7 +739,9 @@ namespace djack.RogueSurvivor.Engine
             }
 
             // change.
+            m_Session.World.EnsureWeatherHistory();
             m_Session.World.Weather = newWeather;
+            m_Session.World.RecordWeather(m_Session.WorldTime.TurnCounter);
 
             // message.
             if (canSeeWeather)

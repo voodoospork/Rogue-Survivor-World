@@ -25,6 +25,17 @@ namespace djack.RogueSurvivor.Engine
     {
         void NextMapTurn(Map map, SimFlags sim)
         {
+            long start = SimulationPerformance.Start();
+            int before = map.LocalTime.TurnCounter;
+            try { NextMapTurnCore(map, sim); }
+            finally {
+                var state = map.District?.Adaptive?.Maps.Find(s => s.Map == map);
+                if (state != null && state.HasWorldTurn) state.WorldTurn += map.LocalTime.TurnCounter - before;
+                SimulationPerformance.End(SimulationPerformance.Part.Maintenance, start);
+            }
+        }
+        void NextMapTurnCore(Map map, SimFlags sim)
+        {
             bool isLoDetail = (sim & SimFlags.LODETAIL_TURN) != 0;
 
             ////////////////////////////////////////

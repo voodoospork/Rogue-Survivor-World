@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Linq;
 using System.Drawing;
 using System.Threading;
 using System.Windows.Forms;
@@ -109,13 +110,15 @@ namespace djack.RogueSurvivor.Engine
                     // wants anything but junk.
                     // don't limit to things speaker needs because the target ai is more likely to value the same item
                     // as being needed for himself! also makes for more varied deals.
-                    return r != ItemRating.JUNK;
+                    return !it.IsEntrustedCargo && r != ItemRating.JUNK;
                 });
                 if (wants.Count == 0)
                 {
                     // no non-junk items, extend to all items...
-                    wants.AddRange(target.Inventory.Items);
+                    wants.AddRange(target.Inventory.Items.Where(it => !it.IsEntrustedCargo));
                 }
+
+                if (wants.Count == 0) { rating = ItemRating.JUNK; return null; }
 
                 // pick one from the wanted list.
                 Item wantIt = wants[m_Rules.Roll(0, wants.Count)];
@@ -127,6 +130,7 @@ namespace djack.RogueSurvivor.Engine
             // get an item the speaker is willing to exhange for the target item it wants.
             Item pickOfferedItem(Item askedItem, ItemRating askedItemRating)
             {
+                if (askedItem == null) return null;
                 List<Item> offerables;
 
                 // if target is npc:
@@ -140,7 +144,7 @@ namespace djack.RogueSurvivor.Engine
                 {
                     offerables = speaker.Inventory.Filter((it) =>
                     {
-                        return it.Model != askedItem.Model && speakerAI.RateItem(this, it, true) < askedItemRating;
+                        return !it.IsEntrustedCargo && it.Model != askedItem.Model && speakerAI.RateItem(this, it, true) < askedItemRating;
                     });
                 }
                 else
@@ -268,6 +272,8 @@ namespace djack.RogueSurvivor.Engine
         /// <param name="itB"></param>
         void SwapActorItems(Actor a, Item itA, Actor b, Item itB)
         {
+            if (itA.IsEntrustedCargo || itB.IsEntrustedCargo)
+            { AddMessage(MakeErrorMessage("Entrusted cargo must be delivered, returned, or explicitly diverted through V / 6.")); return; }
             if (itA.IsEquipped)
                 DoUnequipItem(a, itA);
             if (itB.IsEquipped)
@@ -276,9 +282,12 @@ namespace djack.RogueSurvivor.Engine
             a.Inventory.RemoveAllQuantity(itA);
             b.Inventory.RemoveAllQuantity(itB);
 
-            a.Inventory.AddAll(itB);
-            b.Inventory.AddAll(itA);
+            // Removing each offered stack leaves a slot. Preserve condition/expiry and identity.
+            a.Inventory.AddIntact(itB);
+            b.Inventory.AddIntact(itA);
             ReportPersonalityEvent("traded", a, b, a.Location.Map, a.Location.Position);
+            if (a.IsPlayer) TradeRemember(a, b, "Bartered " + itA.Model.SingleName + " for " + itB.Model.SingleName + ".");
+            if (b.IsPlayer) TradeRemember(b, a, "Bartered " + itB.Model.SingleName + " for " + itA.Model.SingleName + ".");
         }
 
         [Flags]
@@ -457,7 +466,7 @@ namespace djack.RogueSurvivor.Engine
             SpendActorActionPoints(actor, Rules.BASE_ACTION_COST);
             // Tampering with a claimed defense has the same witnessed consequences as taking it.
             if (claim != null && !claim.Owns(actor) && trap.LastDroppedBy != actor)
-                NoticeXpdBaseTheft(actor, claim, position, trap, units: trap.Quantity);
+                NoticeXpdBaseTheft(actor, claim, position, trap, units: trap.Quantity, tampered: true);
             trap.Desactivate();
             if (IsVisibleToPlayer(actor) || IsVisibleToPlayer(new Location(map, position)))
                 AddMessage(MakeMessage(actor, String.Format("disarm{0} {1}.", actor.IsPlayer ? "" : "s", trap.TheName)));
@@ -508,9 +517,18 @@ namespace djack.RogueSurvivor.Engine
                 DoEquipItem(actor, it);
         }
 
-        void NoticeXpdBaseTheft(Actor thief, XpdBase baseClaim, Point position, Item item, long causeId = 0, string storyId = null, int units = 1)
+        void NoticeXpdBaseTheft(Actor thief, XpdBase baseClaim, Point position, Item item, long causeId = 0, string storyId = null, int units = 1, bool tampered = false)
         {
             Map map = thief.Location.Map;
+            if (Gameplay.Personality.CommunityCultureSystem.HandlesTheft(this,baseClaim))
+            {
+                Gameplay.Personality.PersonalitySystem.Report(this,Gameplay.Personality.CommunityCultureSystem.Theft(this,thief,baseClaim,position,item,units,tampered,causeId,storyId));
+                if(!tampered&&((baseClaim.FoodRoom.HasValue&&baseClaim.FoodRoom.Value.Contains(position)&&item is ItemFood)||
+                    (baseClaim.WeaponRoom.HasValue&&baseClaim.WeaponRoom.Value.Contains(position)&&(item is ItemMeleeWeapon||item is ItemRangedWeapon||item is ItemAmmo))))
+                    Gameplay.Personality.PersonalitySystem.Report(this,new Gameplay.Personality.SignificantEvent("supplies_lost",baseClaim.GroupLeader,thief,
+                        map,position,map.LocalTime.TurnCounter,false,false,causeId,storyId) { Units=units,ModelId=item.Model.ID,Resource=item is ItemFood?"food":"item" });
+                return;
+            }
             Gameplay.Personality.PersonalitySystem.Report(this, new Gameplay.Personality.SignificantEvent("base_theft", thief, baseClaim.GroupLeader,
                 map, position, map.LocalTime.TurnCounter, false, causeId: causeId, storyId: storyId) { Units = units, ModelId = item.Model.ID, Resource = item is ItemFood ? "food" : item is ItemMedicine ? "medicine" : "item" });
             if ((baseClaim.FoodRoom.HasValue && baseClaim.FoodRoom.Value.Contains(position) && item is ItemFood) ||
@@ -531,6 +549,8 @@ namespace djack.RogueSurvivor.Engine
 
         public void DoGiveItemTo(Actor actor, Actor target, Item gift)
         {
+            if (HandleEntrustedGift(actor, target, gift)) return;
+            var restitution = Gameplay.Personality.CommunityCultureSystem.Repayment(actor,target,gift,this);
             // spend APs.
             SpendActorActionPoints(actor, Rules.BASE_ACTION_COST);
             bool neededFood = gift is ItemFood && m_Rules.IsActorHungry(target) && !m_Rules.IsFoodSpoiled((ItemFood)gift, actor.Location.Map.LocalTime.TurnCounter);
@@ -568,14 +588,16 @@ namespace djack.RogueSurvivor.Engine
             long receivedBefore = target.Inventory == null ? 0 : target.Inventory.TotalReceived;
             DropItem(actor, gift);
             DoTakeItem(target, actor.Location.Position, gift, false);
-            if ((neededFood || neededMedicine) && target.Inventory != null && target.Inventory.TotalReceived > receivedBefore)
+            int receivedUnits = target.Inventory == null ? 0 : (int)(target.Inventory.TotalReceived-receivedBefore);
+            int repaidUnits = Gameplay.Personality.CommunityCultureSystem.CompleteGift(this,actor,target,gift,receivedUnits,restitution);
+            if ((neededFood || neededMedicine) && receivedUnits > repaidUnits)
                 ReportPersonalityEvent("helped", target, actor, target.Location.Map, target.Location.Position);
-            if (target.Inventory != null && target.Inventory.TotalReceived > receivedBefore && m_Session.GamePreset.NpcPersonalitiesEnabled &&
+            if (receivedUnits > repaidUnits && m_Session.GamePreset.NpcPersonalitiesEnabled &&
                 (gift is ItemFood && !m_Rules.IsFoodSpoiled((ItemFood)gift, actor.Location.Map.LocalTime.TurnCounter) || gift is ItemMedicine && ((ItemMedicine)gift).Healing > 0))
             {
                 string resource = gift is ItemFood ? "food" : "medicine";
                 var shared = new Gameplay.Personality.SignificantEvent(gift is ItemFood ? "shared_food" : "shared_medicine", actor, target,
-                    actor.Location.Map, actor.Location.Position, actor.Location.Map.LocalTime.TurnCounter) { Units = (int)(target.Inventory.TotalReceived - receivedBefore), Resource = resource };
+                    actor.Location.Map, actor.Location.Position, actor.Location.Map.LocalTime.TurnCounter) { Units = receivedUnits-repaidUnits, Resource = resource };
                 Gameplay.Personality.PersonalitySystem.Report(this, shared);
             }
 
@@ -764,6 +786,7 @@ namespace djack.RogueSurvivor.Engine
                     DropItem(actor, it);
                 else
                     DropCloneItem(actor, it, dropIt);
+                Gameplay.Personality.CommunityCultureSystem.RepairDefense(this,actor,dropIt);
                 // message
                 if (IsVisibleToPlayer(actor))
                     AddMessage(MakeMessage(actor, Conjugate(actor, VERB_DROP), dropIt));
@@ -870,6 +893,8 @@ namespace djack.RogueSurvivor.Engine
 
         void DoUseFoodItem(Actor actor, ItemFood food)
         {
+            if (actor.IsPlayer && food.IsEntrustedCargo)
+                AddMessage(MakeErrorMessage("You are eating entrusted cargo. The missing quantity remains owed."));
             //////////////////////////////////////
             // If player, prevent wasteful usage.
             //////////////////////////////////////

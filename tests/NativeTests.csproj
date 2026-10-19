@@ -7,6 +7,8 @@
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <LangVersion>7.3</LangVersion>
     <Optimize>true</Optimize>
+    <ExcludedPerformanceCases Condition="'$(ExcludePerformanceRedesignScenarios)' == 'true'">scenarios\cases\npc\PerformanceRedesignScenario.cs;scenarios\cases\world\AdaptiveSimulationScenario.cs</ExcludedPerformanceCases>
+    <ExcludedAdaptiveCases Condition="'$(ExcludeAdaptiveScenarios)' == 'true'">scenarios\cases\world\AdaptiveSimulationScenario.cs</ExcludedAdaptiveCases>
     <DefineConstants>NATIVE_TESTS</DefineConstants>
     <OutputPath Condition="'$(OutputPath)' == ''">bin\Release\</OutputPath>
     <GameAssembly Condition="'$(GameAssembly)' == ''">..\WRogue\bin\Release\RogueSurvivor.exe</GameAssembly>
@@ -21,7 +23,7 @@
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Xml" />
     <Reference Include="RogueSurvivor"><HintPath>$(GameAssembly)</HintPath><Private>true</Private></Reference>
-    <Compile Include="**\*.cs" Exclude="bin\**;obj\**;$(ExcludedCommunityCases);$(ExcludedFollowerTravelCases)" />
+    <Compile Include="**\*.cs" Exclude="bin\**;obj\**;$(ExcludedCommunityCases);$(ExcludedFollowerTravelCases);$(ExcludedPerformanceCases);$(ExcludedAdaptiveCases)" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

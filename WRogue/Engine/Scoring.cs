@@ -512,8 +512,9 @@ namespace djack.RogueSurvivor.Engine
             ////////////////////
             #region
             // - Density            : f(mapsize, civs+undeads), +/- 99%   // alpha10.1 removed citysize from difficulty formula
+            int civilianPopulation = options.CivilianPopulationForMap(options.DistrictSize, options.DistrictSize);
             float kDefaultDensity = (float)(Math.Sqrt(GameOptions.DEFAULT_MAX_CIVILIANS + GameOptions.DEFAULT_MAX_UNDEADS)) / (float)(GameOptions.DEFAULT_DISTRICT_SIZE * GameOptions.DEFAULT_DISTRICT_SIZE);
-            float kDensity = (float)(Math.Sqrt(options.MaxCivilians + options.MaxUndeads)) / (float)(options.DistrictSize * options.DistrictSize);
+            float kDensity = (float)(Math.Sqrt(civilianPopulation + options.MaxUndeads)) / (float)(options.DistrictSize * options.DistrictSize);
             float rDensity = (kDensity - kDefaultDensity) / kDefaultDensity;
             if (side == DifficultySide.FOR_SURVIVOR)
                 rating += 0.99f * rDensity;
@@ -522,7 +523,7 @@ namespace djack.RogueSurvivor.Engine
 
             // - Undeads            : f(undeads/civs, day0, invasion%), +/- 50%
             float kDefaultUndeadsRatio = (float)GameOptions.DEFAULT_MAX_UNDEADS / (float)GameOptions.DEFAULT_MAX_CIVILIANS;
-            float kUndeadsRatio = (float)options.MaxUndeads / (float)options.MaxCivilians;
+            float kUndeadsRatio = (float)options.MaxUndeads / (float)civilianPopulation;
             float kUndeads_Nb = (kUndeadsRatio - kDefaultUndeadsRatio) / kDefaultUndeadsRatio;
             float kUndeads_Day0 = (float)(options.DayZeroUndeadsPercent - GameOptions.DEFAULT_DAY_ZERO_UNDEADS_PERCENT) / (float)GameOptions.DEFAULT_DAY_ZERO_UNDEADS_PERCENT;
             float kUndeads_Inv = (float)(options.ZombieInvasionDailyIncrease - GameOptions.DEFAULT_ZOMBIE_INVASION_DAILY_INCREASE) / (float)GameOptions.DEFAULT_ZOMBIE_INVASION_DAILY_INCREASE;
@@ -533,10 +534,10 @@ namespace djack.RogueSurvivor.Engine
 
             // - Civilians          : f(zombification%, canstarve&starvedzomb%), +/- 50%
             float kDefaultCivZombification = (float)GameOptions.DEFAULT_MAX_CIVILIANS * (float)GameOptions.DEFAULT_ZOMBIFICATION_CHANCE;
-            float kCivZombification = (float)(options.MaxCivilians * options.ZombificationChance - kDefaultCivZombification) / kDefaultCivZombification;
+            float kCivZombification = (float)(civilianPopulation * options.ZombificationChance - kDefaultCivZombification) / kDefaultCivZombification;
 
             float kDefaultCivStarvation = (float)GameOptions.DEFAULT_MAX_CIVILIANS * (float)GameOptions.DEFAULT_STARVED_ZOMBIFICATION_CHANCE;
-            float kCivStarvation = (float)(options.MaxCivilians * options.StarvedZombificationChance - kDefaultCivStarvation) / kDefaultCivStarvation;
+            float kCivStarvation = (float)(civilianPopulation * options.StarvedZombificationChance - kDefaultCivStarvation) / kDefaultCivStarvation;
             if (!options.NPCCanStarveToDeath)
                 kCivStarvation = -1;
             if (side == DifficultySide.FOR_SURVIVOR)

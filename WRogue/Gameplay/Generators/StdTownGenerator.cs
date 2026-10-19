@@ -31,7 +31,8 @@ namespace djack.RogueSurvivor.Gameplay.Generators
             int maxTries = 10 * map.Width * map.Height;
 #if true
             // civilians (includes police)
-            for (int i = 0; i < RogueGame.Options.MaxCivilians; i++)
+            int civilianPopulation = RogueGame.Options.CivilianPopulationForMap(map.Width, map.Height);
+            for (int i = 0; i < civilianPopulation; i++)
             {
                 // policeman, civilian?
                 if (m_DiceRoller.RollChance(this.Params.PolicemanChance))

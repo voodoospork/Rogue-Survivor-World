@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Drawing;
@@ -466,7 +466,7 @@ namespace djack.RogueSurvivor.Engine
         bool m_HasLoadedGame = false;
         readonly OverlayCollection m_Overlays = new OverlayCollection();
         Actor m_Player;
-        HashSet<Point> m_PlayerFOV = new HashSet<Point>();
+        HashSet<Point> m_PlayerFOV = new HashSet<Point>(djack.RogueSurvivor.Data.PointComparer.Instance);
         Rectangle m_MapViewRect;
 
         static GameOptions s_Options;
@@ -636,6 +636,7 @@ namespace djack.RogueSurvivor.Engine
             if (player == null)
                 return;
             m_PlayerFOV = LOS.ComputeFOVFor(m_Rules, player, m_Session.WorldTime, m_Session.World.Weather);
+            ObserveReportedHomes(player);
             player.Location.Map.SetViewAndMarkVisited(m_PlayerFOV);
             ObservePlayerSupplies(player);
             ObservePersonalFollowers();
@@ -770,13 +771,16 @@ namespace djack.RogueSurvivor.Engine
                 {
                     // sleeping actor?
                     Actor actor = map.GetActorAt(x, y);
-                    if (actor == null || !actor.IsSleeping)
+                    if (actor == null)
                         continue;
 
                     // ignore if too far.
                     int noiseDistance = m_Rules.GridDistance(noisePosition, x, y);
                     if (noiseDistance > Rules.LOUD_NOISE_RADIUS)
                         continue;
+                    if (m_Session.GamePreset.Simulation != SimulationMode.Classic)
+                        (actor.Controller as BaseAI)?.InvalidateRoutine();
+                    if (!actor.IsSleeping) continue;
 
                     // roll chance of waking up.
                     int wakeupChance = m_Rules.ActorLoudNoiseWakeupChance(actor, noiseDistance);
@@ -1022,7 +1026,7 @@ namespace djack.RogueSurvivor.Engine
         #region Drawing headers & footnotes
         void DrawHeader()
         {
-            m_UI.UI_DrawStringBold(Color.Red, "ROGUE SURVIVOR EXPANDED - " + SetupConfig.GAME_VERSION, 0, 0, Color.DarkRed);
+            m_UI.UI_DrawStringBold(Color.Red, SetupConfig.GAME_TITLE, 0, 0, Color.DarkRed);
         }
 
         void DrawFootnote(Color color, string text)

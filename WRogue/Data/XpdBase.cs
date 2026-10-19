@@ -9,6 +9,7 @@ namespace djack.RogueSurvivor.Data
     class XpdBase
     {
         Actor m_GroupLeader;
+        [System.Runtime.Serialization.OptionalField] SocialGroup m_CommunityGroup;
         [System.Runtime.Serialization.OptionalField] Guid m_CommunityIdentity;
         readonly Faction m_Faction;
         readonly List<Point> m_Cells;
@@ -56,12 +57,17 @@ namespace djack.RogueSurvivor.Data
         }
 
         public Guid CommunityIdentity { get { BindCommunity(); return m_CommunityIdentity; } }
+        public SocialGroup CommunityGroup { get { BindCommunity(); return m_CommunityGroup; } }
         void BindCommunity()
-        { if (m_CommunityIdentity == Guid.Empty && m_GroupLeader != null && !m_GroupLeader.IsPlayer && m_GroupLeader.SocialGroup != null)
-            m_CommunityIdentity = m_GroupLeader.SocialGroup.Identity; }
+        { if (m_GroupLeader != null && !m_GroupLeader.IsPlayer && m_GroupLeader.SocialGroup != null &&
+                (m_CommunityIdentity == Guid.Empty || m_CommunityIdentity == m_GroupLeader.SocialGroup.Identity)) {
+            m_CommunityGroup = m_GroupLeader.SocialGroup; m_CommunityIdentity = m_CommunityGroup.Identity; } }
         public bool CanManage(Actor actor) { return actor == m_GroupLeader; }
         public void TransferCommunity(Actor previous, Actor successor, Guid identity)
         { if (m_GroupLeader == previous && CommunityIdentity == identity) m_GroupLeader = successor; }
+        public void RebindCommunity(Actor chief, Guid identity) { if (CommunityIdentity == identity) m_GroupLeader = chief; }
+        internal void EstablishCommunity(Actor chief, SocialGroup group)
+        { m_GroupLeader = chief; m_CommunityGroup = group; m_CommunityIdentity = group.Identity; }
 
         public bool Contains(Point point) { return m_Cells.Contains(point); }
         public bool IsPartOf(XpdBase other) { return other != null && Root == other.Root; }

@@ -53,7 +53,8 @@ static class PersonalityWorldSourcesScenario
             foreach (System.Reflection.PropertyInfo property in typeof(UniqueActors).GetProperties())
                 property.SetValue(Session.Get.UniqueActors, new UniqueActor(), null);
             GameOptions refugeesOptions = RogueGame.Options;
-            refugeesOptions.MaxCivilians = 10;
+            // This 9x9 event arena needs room for a refugee alongside its witness at area-scaled density.
+            refugeesOptions.MaxCivilians = 75;
             typeof(RogueGame).GetField("s_Options", System.Reflection.BindingFlags.Static |
                 System.Reflection.BindingFlags.NonPublic).SetValue(null, refugeesOptions);
             Check.Call(world.Game, "FireEvent_RefugeesWave", new[] { typeof(District) }, world.Map.District);

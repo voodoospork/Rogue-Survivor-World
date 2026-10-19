@@ -23,7 +23,7 @@ namespace djack.RogueSurvivor.Gameplay.Personality
                 game.InitializeCommunityHome(leader);
                 if (game.ResolveCommunityHome(leader) == null) reason = "We need a valid home before inviting you.";
                 var ids = new HashSet<Guid>();
-                foreach (Actor member in leader.PartyTree())
+                foreach (Actor member in leader.CommunityResidents)
                 {
                     if (member.IsPlayer) reason = "A player party already belongs here.";
                     if (!ids.Add(member.PersonalityIdentity)) reason = "The community contains duplicate identities.";
@@ -31,7 +31,7 @@ namespace djack.RogueSurvivor.Gameplay.Personality
                 foreach (Actor personal in player.PartyTree())
                 {
                     if (personal.IsDead || personal.Model.Abilities.IsUndead || ids.Contains(personal.PersonalityIdentity)) reason = "Your party cannot safely join this group.";
-                    foreach (Actor member in leader.PartyTree())
+                    foreach (Actor member in leader.CommunityResidents)
                         if (!member.IsDead && (game.Rules.AreEnemies(personal, member, false) ||
                             game.Rules.IsKnownEnemy(personal, member) || game.Rules.IsKnownEnemy(member, personal))) reason = "We have an unresolved hostile dispute with your party.";
                 }
@@ -45,6 +45,7 @@ namespace djack.RogueSurvivor.Gameplay.Personality
                     if (fact.Confidence >= 40 && ((fact.Kind == "helped" && fact.OtherId == player.PersonalityIdentity && ids.Contains(fact.SubjectId)) ||
                         (fact.Kind == "promise_kept" && fact.SubjectId == player.PersonalityIdentity && ids.Contains(fact.OtherId)))) { aid = true; break; }
                 if (reason == null && !aid) reason = "Help one of us with a real need first. I must know about that aid.";
+                if (reason == null && leader.Community != null) CommunityAdaptationSystem.Admission(game, leader, player, out reason);
             }
             return reason == null;
         }
@@ -56,10 +57,13 @@ namespace djack.RogueSurvivor.Gameplay.Personality
             SocialGroup community = leader.SocialGroup;
             var membership = new PlayerCommunityMembership { CommunityId = community.Identity, Name = community.CommunityName,
                 AcceptedBy = leader.UnmodifiedName, JoinedTurn = player.Location.Map.LocalTime.TurnCounter, PersonalGroup = original };
-            leader.AddFollower(player);
+            if (leader.Community != null) { player.SetCommunityHousehold(community);
+                leader.ResidentCommunity.RememberResidents(player.PartyTree());
+                foreach (Actor personal in player.PartyTree()) personal.ResidentCommunity.KnownHome = community.Home.Place.Copy(); }
+            else leader.AddFollower(player);
             // Rebuild from the validated physical tree, discarding obsolete IDs from older group state.
-            community.Members.Clear();
-            foreach (Actor member in leader.PartyTree()) community.Members.Add(member.PersonalityIdentity);
+            if (leader.Community == null) { community.Members.Clear();
+                foreach (Actor member in leader.PartyTree()) community.Members.Add(member.PersonalityIdentity); }
             player.CommunityMembership = membership;
             if (player.Personality == null) player.Personality = new PersonalityState();
             KnownCommunity known = player.Personality.LearnCommunity(community.Identity, membership.Name, membership.JoinedTurn,
@@ -77,12 +81,13 @@ namespace djack.RogueSurvivor.Gameplay.Personality
         }
         public static bool Leave(RogueGame game, Actor player)
         {
-            if (player == null || player.IsDead || player.IsSleeping || player.CommunityMembership == null || player.Leader == null) return false;
-            Actor leader = player.Leader;
+            if (player == null || player.IsDead || player.IsSleeping || player.CommunityMembership == null || (player.Leader == null && player.Community == null)) return false;
+            Actor leader = player.CommunityChief ?? player.Leader;
             string name = player.CommunityMembership.Name;
             player.CommunityDepartureReason = "Your party voluntarily left " + name + ". Existing promises remain in force.";
-            leader.RemoveFollower(player);
-            NpcEvents.Publish(game, "community_left", player, leader);
+            if (player.Community != null) CommunityAdaptationSystem.LeaveHousehold(game, player, player.CommunityDepartureReason);
+            else leader.RemoveFollower(player);
+            if (leader != null) NpcEvents.Publish(game, "community_left", player, leader);
             game.SpendActorActionPoints(player, Rules.BASE_ACTION_COST);
             game.AddCommunitySpeech("Your party left " + name + ". Your followers, orders and carried supplies stay with you; promises still apply.",
                 System.Drawing.Color.LightSkyBlue);

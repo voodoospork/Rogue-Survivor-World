@@ -21,13 +21,18 @@ namespace djack.RogueSurvivor.Gameplay.Personality
                 };
             NpcPlan plan = goal.Plan;
             int turn = owner.Location.Map.LocalTime.TurnCounter;
-            var domain = new NpcPlanDomain(game, owner, goal, visible, catalog);
+            bool continueTravel = game.Session.GamePreset.Simulation != SimulationMode.Classic && plan.Current != null &&
+                plan.Current.OperatorId == null && plan.Current.Action == NpcPlanAction.Travel && plan.Current.Requires == 0 &&
+                plan.Current.Extension == null && plan.Revision == owner.Personality.Knowledge.Revision &&
+                plan.Current.Place.Map == owner.Location.Map && game.Rules.GridDistance(owner.Location.Position, plan.Current.Place.Position) > 1;
+            var domain = new NpcPlanDomain(game, owner, goal, visible, catalog, !continueTravel);
             if (plan.Traits != domain.Traits || plan.CatalogFingerprint != catalog.Fingerprint)
             {
                 plan.Invalidate();
                 plan.NextPlanningTurn = turn;
                 plan.CatalogFingerprint = catalog.Fingerprint;
                 plan.DesiredState = capability.GetResult(catalog, goal.Generated);
+                continueTravel = false;
             }
 
             for (int attempt = 0; attempt < 2; attempt++)
@@ -39,7 +44,9 @@ namespace djack.RogueSurvivor.Gameplay.Personality
                     return null;
                 }
                 NpcPlanStep step = plan.Current;
-                if (!HasCurrentBinding(domain, step))
+                bool continuing = continueTravel && step != null && step.Applies(domain.InitialState) && !plan.Blocked(step, turn);
+                if (!continuing) domain.BuildActions();
+                if (!continuing && !HasCurrentBinding(domain, step))
                 {
                     if (turn < plan.NextPlanningTurn && plan.Revision == owner.Personality.Knowledge.Revision)
                         return null;
@@ -78,6 +85,7 @@ namespace djack.RogueSurvivor.Gameplay.Personality
                 if (action != null && action.IsLegal()) return action;
                 if (allowed && definition.Unavailable != null) definition.Unavailable(context);
                 plan.Reject(step, turn);
+                continueTravel = false;
                 domain = new NpcPlanDomain(game, owner, goal, visible, catalog);
             }
             NpcIntentSystem.Block(catalog, owner, goal, "plan action is unavailable");

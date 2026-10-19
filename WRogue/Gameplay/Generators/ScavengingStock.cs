@@ -21,7 +21,7 @@ namespace djack.RogueSurvivor.Gameplay.Generators
             var reachable = Reachable(map);
             foreach (var kind in new[] { BuildingKind.Grocery, BuildingKind.Pharmacy })
             {
-                var bins = new List<Bin>(); var pool = new List<Stock>(); var capacity = new Dictionary<Point, int>();
+                var bins = new List<Bin>(); var pool = new List<Stock>(); var capacity = new Dictionary<Point, int>(djack.RogueSurvivor.Data.PointComparer.Instance);
                 var random = new Random(unchecked(map.Seed * 397 + (int)kind));
                 foreach (var zone in map.Zones.Where(z => z.BuildingKind == kind).OrderBy(z => z.Bounds.Y).ThenBy(z => z.Bounds.X))
                 {

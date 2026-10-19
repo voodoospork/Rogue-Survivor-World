@@ -1,4 +1,4 @@
-﻿using djack.RogueSurvivor.Data;
+using djack.RogueSurvivor.Data;
 using djack.RogueSurvivor.Engine;
 using djack.RogueSurvivor.Engine.MapObjects;
 using System;
@@ -80,6 +80,23 @@ namespace djack.RogueSurvivor.Gameplay.AI.Tools
         readonly BaseAI m_AI;
         LinkedList<Node> m_Nodes;
         readonly Dictionary<Point, Node> m_NodesByPosition;
+        readonly List<Node> nodePool = new List<Node>();
+        readonly List<LinkedListNode<Node>> linkPool = new List<LinkedListNode<Node>>();
+        int usedNodes, usedLinks;
+        Node ReuseNode(Point point, int distance)
+        {
+            Node result;
+            if (usedNodes < nodePool.Count) result = nodePool[usedNodes];
+            else { result = new Node(); if (usedNodes < 2048) nodePool.Add(result); }
+            usedNodes++; result.IsVisited = false; result.Pos = point; result.DistToGoal = distance; return result;
+        }
+        LinkedListNode<Node> ReuseLink(Node node)
+        {
+            LinkedListNode<Node> result;
+            if (usedLinks < linkPool.Count) { result = linkPool[usedLinks]; result.Value = node; }
+            else { result = new LinkedListNode<Node>(node); if (usedLinks < 2048) linkPool.Add(result); }
+            usedLinks++; return result;
+        }
         #endregion
 
         #region Properties
@@ -98,7 +115,7 @@ namespace djack.RogueSurvivor.Gameplay.AI.Tools
         {
             m_AI = ai;
             m_Nodes = new LinkedList<Node>();
-            m_NodesByPosition = new Dictionary<Point, Node>();
+            m_NodesByPosition = new Dictionary<Point, Node>(djack.RogueSurvivor.Data.PointComparer.Instance);
         }
         #endregion
 
@@ -122,6 +139,12 @@ namespace djack.RogueSurvivor.Gameplay.AI.Tools
         /// <see cref="BaseAI.BehaviorBumpToward(RogueGame, Point, Func{Point, Point, float})"/>
         public bool CanReachSimple(RogueGame game, Point dest, int maxDist, Func<Point,Point,int> distanceFn)
         {
+            long start = SimulationPerformance.Start();
+            try { return CanReachSimpleCore(game, dest, maxDist, distanceFn); }
+            finally { SimulationPerformance.End(SimulationPerformance.Part.Navigation, start); }
+        }
+        bool CanReachSimpleCore(RogueGame game, Point dest, int maxDist, Func<Point,Point,int> distanceFn)
+        {
             Actor a = m_AI.ControlledActor;
             Point start = a.Location.Position;
             Map map = a.Location.Map;
@@ -139,8 +162,9 @@ namespace djack.RogueSurvivor.Gameplay.AI.Tools
             // expect we don't care about accumulated path cost as we want only to check reachability
             m_Nodes.Clear();
             m_NodesByPosition.Clear();
-            Node startNode = new Node() { IsVisited = false, Pos = start, DistToGoal = distanceFn(start, dest) };
-            m_Nodes.AddFirst(startNode);
+            usedNodes = usedLinks = 0;
+            Node startNode = ReuseNode(start, distanceFn(start, dest));
+            m_Nodes.AddFirst(ReuseLink(startNode));
             m_NodesByPosition.Add(start, startNode);
             for (;;)
             {
@@ -188,7 +212,7 @@ namespace djack.RogueSurvivor.Gameplay.AI.Tools
                     if (adjNode == null)
                     {
                         // new one to explore
-                        adjNode = new Node() { IsVisited = false, Pos = adj, DistToGoal = adjDistToGoal };
+                        adjNode = ReuseNode(adj, adjDistToGoal);
                         m_NodesByPosition.Add(adj, adjNode);
                         exploreIt = true;
                     }
@@ -216,9 +240,9 @@ namespace djack.RogueSurvivor.Gameplay.AI.Tools
                 insertBefore = insertBefore.Next;
 
             if (insertBefore == null)
-                m_Nodes.AddLast(newNode);
+                m_Nodes.AddLast(ReuseLink(newNode));
             else
-                m_Nodes.AddBefore(insertBefore, newNode);
+                m_Nodes.AddBefore(insertBefore, ReuseLink(newNode));
             
         }
         #endregion

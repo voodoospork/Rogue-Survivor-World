@@ -466,6 +466,11 @@ namespace djack.RogueSurvivor.Engine
             }
 
             // alpha10.1 check autosave before player leaving map
+            if (!PrepareAdaptiveArrival(actor, exit))
+            {
+                if (!isPlayer) SpendActorActionPoints(actor, Rules.BASE_ACTION_COST);
+                return false;
+            }
             if (isPlayer)
                 CheckAutoSaveTime();
 

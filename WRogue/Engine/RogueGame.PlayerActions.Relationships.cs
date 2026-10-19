@@ -132,8 +132,9 @@ namespace djack.RogueSurvivor.Engine
                             AppendJournalLine(lines, "  Last reported relation: " + report.Message.Target.Name + " - " + report.Message.Stance +
                                 " | Turn " + report.Message.Turn + " | " + report.Source + " (heard turn " + report.LearnedTurn + ", confidence " + report.Confidence + "%) | " + report.Message.Reason +
                                 (report.Message.PeaceTurn == 0 ? "" : " | peace ratified turn " + report.Message.PeaceTurn + "; personal enemies remain"));
-                    AppendJournalLine(lines, community.Leader == null ? "  Leader: unknown" :
-                        "  Leader: " + community.Leader + " | Turn " + community.LeaderTurn + " | " + community.LeaderSource);
+                    string title = community.IsTribe ? "Chief" : "Leader";
+                    AppendJournalLine(lines, community.Leader == null ? "  " + title + ": unknown" :
+                        "  " + title + ": " + community.Leader + " | Turn " + community.LeaderTurn + " | " + community.LeaderSource);
                     AppendJournalLine(lines, community.Shelter == null ? "  Shelter: unknown" :
                         "  Shelter: " + community.Shelter + " | Turn " + community.ShelterTurn + " | " + community.ShelterSource);
                     if (community.Members.Count == 0) lines.Add("  Members: unknown");
@@ -164,7 +165,7 @@ namespace djack.RogueSurvivor.Engine
                 m_UI.UI_Clear(Color.Black);
                 DrawHeader();
                 int y = BOLD_LINE_SPACING;
-                m_UI.UI_DrawStringBold(Color.Yellow, view == 2 ? "Scavenging" : view == 1 ? "Communities" : "What you heard", 0, y);
+                m_UI.UI_DrawStringBold(Color.Yellow, view == 3 ? "Trade circuits" : view == 2 ? "Scavenging" : view == 1 ? "Communities" : "What you heard", 0, y);
                 y += 2 * BOLD_LINE_SPACING;
                 for (int i = page * linesPerPage; i < lines.Count && i < (page + 1) * linesPerPage; i++)
                 {
@@ -172,14 +173,15 @@ namespace djack.RogueSurvivor.Engine
                     y += BOLD_LINE_SPACING;
                 }
                 DrawFootnote(Color.White, view == 2 ? "Tab: next view | Up/Down: lead | Enter: details | F: filter | N: plan | E: finish | C: cancel | R: return here | Esc" :
-                    "Tab: heard / communities / scavenging, PgUp/PgDn: page, ESC: close" +
+                    "Tab: heard / communities / scavenging / trade, PgUp/PgDn: page, ESC: close" +
                     (view == 1 && m_Player.CommunityMembership != null ? ", L: leave community" : ""));
                 m_UI.UI_Repaint();
                 Keys key = m_UI.UI_WaitKey().KeyCode;
                 if (key == Keys.Escape) return false;
+                if (view == 3 && key == Keys.C && SuspendFreight(m_Player)) return true;
                 if (key == Keys.L && view == 1 && m_Player.CommunityMembership != null && ConfirmCommunityDeparture(m_Player)) return true;
-                if (key == Keys.Tab) { view = (view + 1) % 3; page = 0;
-                    lines = view == 2 ? ScavengingJournalLines(m_Player, filter, selected) : view == 1 ? CommunityJournalLines(m_Player) : HeardJournalLines(m_Player); }
+                if (key == Keys.Tab) { view = (view + 1) % 4; page = 0;
+                    lines = view == 3 ? TradeJournalLines(m_Player) : view == 2 ? ScavengingJournalLines(m_Player, filter, selected) : view == 1 ? CommunityJournalLines(m_Player) : HeardJournalLines(m_Player); }
                 if (view == 2 && key != Keys.Tab)
                 {
                     var leads = ScavengingLeads(m_Player, filter);

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using djack.RogueSurvivor.Data;
+using djack.RogueSurvivor.Engine;
 
 namespace djack.RogueSurvivor.Gameplay.Personality
 {
@@ -19,6 +20,12 @@ namespace djack.RogueSurvivor.Gameplay.Personality
             return Search((NpcPlanningState)initial, (NpcPlanningState)desired, actions, out expanded);
         }
         public static List<NpcPlanStep> Search(NpcPlanningState initial, NpcPlanningState desired, IList<NpcPlanStep> actions, out int expanded)
+        {
+            long start = SimulationPerformance.Start();
+            try { return SearchCore(initial, desired, actions, out expanded); }
+            finally { SimulationPerformance.End(SimulationPerformance.Part.PlanSearch, start); }
+        }
+        static List<NpcPlanStep> SearchCore(NpcPlanningState initial, NpcPlanningState desired, IList<NpcPlanStep> actions, out int expanded)
         {
             expanded = 0;
             if (desired.Empty) return null;

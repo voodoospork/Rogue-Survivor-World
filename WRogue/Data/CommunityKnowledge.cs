@@ -24,13 +24,15 @@ namespace djack.RogueSurvivor.Data
         public CommunityMember Copy() { return (CommunityMember)MemberwiseClone(); }
     }
     [Serializable]
-    sealed class KnownCommunity
+    sealed partial class KnownCommunity
     {
         public Guid Identity;
         public string Name, Leader, LeaderSource, Shelter, ShelterSource;
         public string NameSource;
         public int NameTurn;
         public int LeaderTurn, ShelterTurn;
+        [OptionalField] public bool IsTribe;
+        [OptionalField] public int LastHomeSurveyTurn;
         [OptionalField] public CommunityShelterLocation ShelterLocation;
         public readonly List<CommunityMember> Members = new List<CommunityMember>();
         public readonly List<CommunityNote> Notes = new List<CommunityNote>();

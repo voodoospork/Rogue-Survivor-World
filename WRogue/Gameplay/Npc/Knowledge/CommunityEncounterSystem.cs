@@ -41,6 +41,7 @@ namespace djack.RogueSurvivor.Gameplay.Personality
             int score = NpcValues.KnownAttitude(speaker, player.PersonalityIdentity, game.NpcContent.Personalities) +
                 PersonalitySystem.Bias(speaker, DecisionKind.Group, registry: game.NpcContent.Personalities) +
                 PersonalitySystem.Bias(speaker, DecisionKind.Compassion, registry: game.NpcContent.Personalities) / 2;
+            score += CommunityCultureSystem.GreetingModifier(speaker);
             return score >= 10 ? CommunityTone.Welcoming : score <= -10 ? CommunityTone.Wary : CommunityTone.Neutral;
         }
 
@@ -93,7 +94,9 @@ namespace djack.RogueSurvivor.Gameplay.Personality
                 tone == CommunityTone.Wary ? "We're " + name + ". Keep your distance." :
                 tone == CommunityTone.Hostile ? "Stay back! We're " + name + "!" : "We're " + name + ". Looking for someone?";
             XpdBase shelter = speaker.Location.Map.XpdBaseAt(speaker.Location.Position);
-            if (shelter != null && shelter.Owns(speaker)) text += " This is our shelter. Leave our supplies alone.";
+            string rule = CommunityCultureSystem.SpokenRules(speaker);
+            if (rule.Length > 0) text += " " + rule;
+            else if (shelter != null && shelter.Owns(speaker)) text += " This is our shelter. Leave our supplies alone.";
             DiplomacyMessage news = null;
             if (speaker.Personality != null) foreach (KnownDiplomacy known in speaker.Personality.KnownDiplomacy)
                 if (known.Message.Community == group.Identity && known.Message.Target.Group != System.Guid.Empty &&
@@ -109,6 +112,7 @@ namespace djack.RogueSurvivor.Gameplay.Personality
             RogueGame.Sayflags flags = RogueGame.Sayflags.IS_STORY | RogueGame.Sayflags.IS_COMMUNITY_CALL;
             if (tone == CommunityTone.Hostile) flags |= RogueGame.Sayflags.IS_SHOUT | RogueGame.Sayflags.IS_DANGER;
             game.DoSay(speaker, player, text, flags);
+            if(rule.Length>0)CommunityCultureSystem.HearCallRules(game,speaker);
             if (news != null) CommunityDiplomacySystem.Publish(game, speaker, news, news.Feud ? "community_feud" : "community_peace");
         }
     }

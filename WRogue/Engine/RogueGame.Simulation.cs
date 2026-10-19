@@ -37,11 +37,26 @@ namespace djack.RogueSurvivor.Engine
         void OnPlayerLeaveDistrict()
         {
             // remember when we left the district.
-            m_Session.CurrentMap.LocalTime.TurnCounter = m_Session.WorldTime.TurnCounter;
+            if (!IsAdaptive) {
+                m_Session.CurrentMap.LocalTime.TurnCounter = m_Session.WorldTime.TurnCounter;
+                AlignAdaptiveClock(m_Session.CurrentMap, m_Session.WorldTime.TurnCounter);
+            }
+        }
+        void AlignAdaptiveClock(Map map, int turn)
+        {
+            var state = map.District?.Adaptive?.Maps.Find(s => s.Map == map);
+            if (state != null) { state.WorldTurn = turn; state.HasWorldTurn = true; }
         }
 
         void BeforePlayerEnterDistrict(District district)
         {
+            long start = SimulationPerformance.Start();
+            try { BeforePlayerEnterDistrictCore(district); }
+            finally { SimulationPerformance.End(SimulationPerformance.Part.Catchup, start); }
+        }
+        void BeforePlayerEnterDistrictCore(District district)
+        {
+            if (IsAdaptive) return; // The actual destination map is synchronized before the transfer.
             // get entry map.
             Map entryMap = district.EntryMap;
 
@@ -134,8 +149,10 @@ namespace djack.RogueSurvivor.Engine
                         if (key != null && key.KeyCode == Keys.Escape)
                         {
                             // jump in time for each map.
-                            foreach (Map map in district.Maps)
+                            foreach (Map map in district.Maps) {
                                 map.LocalTime.TurnCounter = m_Session.WorldTime.TurnCounter;
+                                AlignAdaptiveClock(map, m_Session.WorldTime.TurnCounter);
+                            }
                             // abort!
                             aborted = true;
                         }
@@ -175,8 +192,10 @@ namespace djack.RogueSurvivor.Engine
             else
             {
                 // jump in time for each map.
-                foreach (Map map in district.Maps)
+                foreach (Map map in district.Maps) {
                     map.LocalTime.TurnCounter = m_Session.WorldTime.TurnCounter;
+                    AlignAdaptiveClock(map, m_Session.WorldTime.TurnCounter);
+                }
             }
             #endregion
         }
@@ -277,6 +296,7 @@ namespace djack.RogueSurvivor.Engine
         bool m_RestartSimulationAfterReincarnation;
         void StartSimThread()
         {
+            if (IsAdaptive) return;
             if (s_Options.IsSimON && s_Options.SimThread)
             {
                 if (m_SimWorker == null)

@@ -15,7 +15,7 @@ namespace djack.RogueSurvivor.Gameplay.Personality
             int feeling = person == null ? 0 : person.Feeling;
             if (social && person != null) feeling += (person.Trust - person.Fear - person.Grievance) / 4;
             feeling += (group == null ? 0 : group.Feeling) + (faction == null ? 0 : faction.Feeling);
-            if (factionId >= 0) foreach (TraitInstance trait in owner.Personality.Traits)
+            if (factionId >= 0) foreach (TraitInstance trait in owner.Personality.TraitList)
             {
                 if (trait.Id == excludeTrait) continue;
                 TraitDefinition definition = registry.Trait(trait.Id);

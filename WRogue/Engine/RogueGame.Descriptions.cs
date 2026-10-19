@@ -97,7 +97,7 @@ namespace djack.RogueSurvivor.Engine
             if (m_Session.GamePreset.NpcPersonalitiesEnabled && actor.Personality != null)
             {
                 List<string> traitNames = new List<string>();
-                foreach (TraitInstance trait in actor.Personality.Traits)
+                foreach (TraitInstance trait in actor.Personality.TraitList)
                 {
                     TraitDefinition definition = NpcContent.Personalities.Trait(trait.Id);
                     if (definition == null) continue;
@@ -561,6 +561,7 @@ namespace djack.RogueSurvivor.Engine
         string DescribeItemShort(Item it)
         {
             string name = it.Quantity > 1 ? it.Model.PluralName : it.AName;
+            if (it.IsEntrustedCargo) name += " (entrusted)";
 
             if (it is ItemFood)
             {
@@ -592,6 +593,11 @@ namespace djack.RogueSurvivor.Engine
         string[] DescribeItemLong(Item it, bool isPlayerInventory, int iSlot)
         {
             List<string> lines = new List<string>();
+            if (it.IsEntrustedCargo)
+            {
+                lines.Add("Entrusted by " + it.TradeCargo.SenderName + " for " + it.TradeCargo.RecipientName + ".");
+                lines.Add("G: deliver / return. Using it leaves a shortfall. V / 6: explicit diversion or reporting.");
+            }
             bool isDefaultUse = true; // alpha10
 
             // 1. Name & stacking.

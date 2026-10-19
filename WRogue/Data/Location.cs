@@ -8,7 +8,7 @@ using System.Drawing;
 namespace djack.RogueSurvivor.Data
 {
     [Serializable]
-    struct Location
+    struct Location : IEquatable<Location>
     {
         #region Fields
         Map m_Map;
@@ -72,6 +72,7 @@ namespace djack.RogueSurvivor.Data
             Location other = (Location)obj;
             return this == other;
         }
+        public bool Equals(Location other) { return this == other; }
 
         public override string ToString()
         {

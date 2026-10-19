@@ -32,9 +32,10 @@ namespace djack.RogueSurvivor.Engine
         // Called only by new-world generation, after the player's starting shelter is chosen.
         internal int EstablishInitialCommunities(Map startMap)
         {
+            if (m_Session.GamePreset.Bases && m_Session.GamePreset.NpcPersonalitiesEnabled && startMap != null &&
+                (m_Session.GamePreset.OrganicCommunities || m_Session.GamePreset.InitialCommunities)) EstablishLocalPoliceUnits();
             if (!m_Session.GamePreset.InitialCommunities || !m_Session.GamePreset.Bases ||
                 !m_Session.GamePreset.NpcPersonalitiesEnabled || startMap == null) return 0;
-            EstablishLocalPoliceUnits();
             List<Map> maps = new List<Map> { startMap };
             foreach (Map map in WorldMaps())
                 if (map != startMap && map.District != null && map == map.District.EntryMap &&
@@ -86,7 +87,7 @@ namespace djack.RogueSurvivor.Engine
                     map.AddXpdBase(shelter);
                     // Give existing storage/supply behavior a room; no supplies are created.
                     shelter.SetFoodRoom(XpdBasePlanner.RoomAt(map, shelter, places[0]));
-                    InitializeCommunityHome(leader);
+                    InitializeLegacySettlementHome(leader);
                     foreach (Actor member in new[] { leader, second, third })
                         CommunityKnowledgeSystem.RefreshKnownSurroundings(this, member);
                     available.RemoveRange(0, 3); established++;

@@ -10,7 +10,7 @@ namespace djack.RogueSurvivor.Gameplay.Personality
     {
         public static int PeaceScore(Actor leader, CommunityRelation relation)
         { return 30 + PersonalitySystem.Bias(leader, DecisionKind.Compassion) + PersonalitySystem.Bias(leader, DecisionKind.Law) / 2 -
-            PersonalitySystem.Bias(leader, DecisionKind.Group) / 2 - relation.Grievance / 2; }
+            PersonalitySystem.Bias(leader, DecisionKind.Group) / 2 - relation.Grievance / 2 + CommunityCultureSystem.PeaceModifier(leader); }
         public static bool WillTalk(RogueGame game, Actor player, Actor leader)
         {
             return IsLeader(leader) && player != null && !player.IsDead && !player.IsSleeping && !leader.IsSleeping &&
@@ -40,7 +40,7 @@ namespace djack.RogueSurvivor.Gameplay.Personality
             game.RememberDiplomacyGroup(leader.SocialGroup);
             if (player.SocialGroup != null && (player.SocialGroup.Identity == relation.Target.Group || player.SocialGroup.Identity == leader.SocialGroup.Identity))
             { reason = "We need a neutral messenger outside both communities."; return null; }
-            var offer = new CommunityPeaceOffer { Id = Guid.NewGuid(), Origin = leader.SocialGroup.Identity, Destination = relation.Target.Group,
+            var offer = new CommunityPeaceOffer { Id = djack.RogueSurvivor.Engine.SimulationClock.NewIdentity(), Origin = leader.SocialGroup.Identity, Destination = relation.Target.Group,
                 OriginName = leader.SocialGroup.CommunityName, DestinationName = relation.Target.Name, AuthorizedBy = leader.PersonalityIdentity,
                 CreatedTurn = game.Session.WorldTime.TurnCounter, ExpiresTurn = game.Session.WorldTime.TurnCounter + 2 * WorldTime.TURNS_PER_DAY,
                 OriginRevision = relation.Revision, OriginCause = LastCause(relation) };

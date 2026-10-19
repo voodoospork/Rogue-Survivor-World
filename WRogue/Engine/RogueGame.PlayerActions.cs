@@ -152,12 +152,14 @@ namespace djack.RogueSurvivor.Engine
                 RedrawPlayScreen();
 
                 // 2. Get input.
-                PlayerInputEvent input = m_InputReader.Read(m_MouseMoveInterruptedKey);
+                SimulationPerformance.PlayerReady();
+                PlayerInputEvent input = m_InputReader.Read(m_MouseMoveInterruptedKey, AdaptiveIdleSlice);
                 m_MouseMoveInterruptedKey = null;
                 bool hasKey = input.Key != null;
                 KeyEventArgs inKey = input.Key;
                 Point mousePos = input.MousePosition;
                 MouseButtons? mouseButtons = input.MouseButtons;
+                if (hasKey || mouseButtons.HasValue) SimulationPerformance.InputAccepted();
 
 
                 // 3. Handle input
@@ -1189,7 +1191,10 @@ namespace djack.RogueSurvivor.Engine
                 if (TryClaimXpdBase(aiActor, out claimReason)) return;
             }
             // Get and perform action from AI controler.
-            ActorAction desiredAction = aiActor.Controller.GetAction(this);
+            ActorAction desiredAction;
+            long decisionStart = SimulationPerformance.Start();
+            try { desiredAction = aiActor.Controller.GetAction(this); }
+            finally { SimulationPerformance.End(SimulationPerformance.Part.Decision, decisionStart); }
 
             // Insane effect?
             if (m_Rules.IsActorInsane(aiActor) && m_Rules.RollChance(Rules.SANITY_INSANE_ACTION_CHANCE))
@@ -1203,7 +1208,11 @@ namespace djack.RogueSurvivor.Engine
             if (desiredAction != null)
             {
                 if (desiredAction.IsLegal())
-                    desiredAction.Perform();
+                {
+                    long actionStart = SimulationPerformance.Start();
+                    try { desiredAction.Perform(); }
+                    finally { SimulationPerformance.End(SimulationPerformance.Part.Action, actionStart); }
+                }
                 else
                 {
                     // AI attempted illegal action.

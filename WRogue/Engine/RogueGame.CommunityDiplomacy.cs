@@ -32,7 +32,7 @@ namespace djack.RogueSurvivor.Engine
         }
         internal int EstablishLocalPoliceUnits()
         {
-            if (!m_Session.GamePreset.InitialCommunities || !m_Session.GamePreset.NpcPersonalitiesEnabled) return 0;
+            if (!(m_Session.GamePreset.InitialCommunities || m_Session.GamePreset.OrganicCommunities) || !m_Session.GamePreset.NpcPersonalitiesEnabled) return 0;
             var names = new Dictionary<string, int>(); int total = 0;
             foreach (Map map in WorldMaps())
             {
@@ -65,6 +65,7 @@ namespace djack.RogueSurvivor.Engine
                     int number; names.TryGetValue(prefix, out number); names[prefix] = ++number;
                     group.CommunityName = prefix + " " + number;
                     group.Diplomacy = new CommunityDiplomacyState(); total++;
+                    CommunityCultureSystem.Initialize(this,group,leader.PartyTree());
                     foreach (Actor member in leader.PartyTree()) CommunityKnowledgeSystem.RefreshKnownSurroundings(this, member);
                 }
             }
@@ -88,7 +89,7 @@ namespace djack.RogueSurvivor.Engine
             episode.InjuryReported = true;
             var source = new SignificantEvent(killing ? "community_killing" : "community_injury", victim, attacker,
                 victim.Location.Map, victim.Location.Position, turn) { CombatEpisode = episode.Id,
-                KnownMurder = killing && m_Rules.IsMurder(attacker, victim), KnownSelfDefense = attacker.IsSelfDefenceFrom(victim) };
+                KnownMurder = killing && m_Rules.IsMurder(attacker, victim), KnownSelfDefense = attacker.IsSelfDefenceFrom(victim)||CommunityCultureSystem.LocalSelfDefense(attacker,victim) };
             PersonalitySystem.Report(this, source);
         }
     }

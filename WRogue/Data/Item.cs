@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -15,7 +15,16 @@ namespace djack.RogueSurvivor.Data
         // Lets an actor reclaim an item it just left on somebody else's base.
         Actor m_LastDroppedBy;
         Guid m_StoryIdentity;
-        public Guid StoryIdentity { get { if (m_StoryIdentity == Guid.Empty) m_StoryIdentity = Guid.NewGuid(); return m_StoryIdentity; } }
+        [System.Runtime.Serialization.OptionalField] internal TradeCargoTag TradeCargo;
+        internal bool IsEntrustedCargo { get { return TradeCargo != null && !TradeCargo.Released; } }
+        // Splitting moves a real quantity; inherited condition/expiry and custody are retained.
+        internal Item SplitUnits(int units)
+        {
+            if (units <= 0 || units >= Quantity) throw new ArgumentOutOfRangeException("units");
+            var part = (Item)MemberwiseClone(); part.Quantity = units; part.m_StoryIdentity = djack.RogueSurvivor.Engine.SimulationClock.NewIdentity();
+            Quantity -= units; return part;
+        }
+        public Guid StoryIdentity { get { if (m_StoryIdentity == Guid.Empty) m_StoryIdentity = djack.RogueSurvivor.Engine.SimulationClock.NewIdentity(); return m_StoryIdentity; } }
         #endregion
 
         #region Properties
@@ -106,6 +115,7 @@ namespace djack.RogueSurvivor.Data
         #region Init
         public Item(ItemModel model)
         {
+            if (Engine.SimulationClock.HasIdentityStream) m_StoryIdentity = Engine.SimulationClock.NewIdentity();
             m_ModelID = model.ID;
             m_Quantity = 1;
             m_EquipedPart = DollPart.NONE;

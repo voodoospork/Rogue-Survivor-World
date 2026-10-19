@@ -163,7 +163,8 @@ static class CommunityClarityScenario
             if (game.Rules.GridDistance(player.Location.Position, leader.Location.Position) > 1) Walk(world, leader.Location.Position, 1);
         }
         Check.Equal(true, player.Personality != null && player.Personality.FindCommunity(leader.SocialGroup.Identity) != null, "generated community introduces itself naturally");
-        Check.Equal(true, Heard(player).Contains("Leave our supplies alone"), "fresh encounter communicates ownership");
+        string homeRule=CommunityCultureSystem.SpokenRules(leader);
+        Check.Equal(true, Heard(player).Contains("Leave our supplies alone")||homeRule.Length>0&&Heard(player).Contains(homeRule), "fresh encounter communicates its concrete home rule");
         SpeechFits(world);
         Check.Equal(true, Describe(world, "DescribeActor", leader).Contains("Last known community: " + name), "fresh encounter makes affiliation recognizable");
         ScenarioUI ui = (ScenarioUI)game.UI;
@@ -396,6 +397,35 @@ static class CommunityClarityScenario
             world.Map.PlaceActorAt(player, leader.Location.Position + Direction.W); Fov(world);
             Check.Equal(false, leader.Controller.GetAction(world.Game) is ActionCommunityCall, "adjacent combat takes priority over warning");
         });
+        string[] giveCases = { "keyboard-hover", "cancel-and-retry", "empty-direction" };
+        for (int i = 0; i < giveCases.Length; i++)
+        {
+            int variant = i;
+            ScenarioRunner.Add("npc/community-give-" + giveCases[i], () => Arena(4943 + variant), world =>
+            {
+                Actor player = NpcIntentSupport.Player(world, 3, 1); Actor leader = Group(world);
+                leader.FoodPoints = 0;
+                ItemFood gift = new ItemFood(world.Game.GameItems.CANNED_FOOD);
+                player.Inventory.AddAll(gift);
+                ScenarioUI ui = (ScenarioUI)world.Game.UI;
+                ui.MousePosition = InventorySlot(world, player.Inventory.CountItems - 1) + new Size(8, 8);
+                player.ActionPoints = Rules.BASE_ACTION_COST;
+                Point start = player.Location.Position;
+                ui.QueueKey(Keys.G);
+                if (variant == 1) { ui.QueueKey(Keys.Escape); ui.QueueKey(Keys.G); }
+                if (variant == 2) ui.QueueKey(Keys.NumPad8);
+                ui.QueueKey(Keys.NumPad6);
+                // Let the old broken path finish so failure reports the missing transfer.
+                ui.QueueWaitKey(Keys.Escape); ui.QueueKey(Keys.NumPad5);
+                Check.Call(world.Game, "HandlePlayerActor", player);
+                Check.Equal(false, player.Inventory.Contains(gift), "G transfers the hovered item through the real player input loop");
+                Check.Equal(true, leader.Inventory.Contains(gift), "chosen adjacent recipient receives the gift");
+                Check.Equal(start, player.Location.Position, "recipient direction is consumed by giving without movement");
+                Check.Equal(0, player.ActionPoints, "giving costs exactly one action");
+                Check.Equal(true, String.Join(" ", ui.DrawnStrings).Contains("Giving "), "give mode is displayed before choosing direction");
+                if (variant == 2) Check.Equal(true, Messages(world).Contains("Noone there."), "empty direction reports failure and stays in give mode");
+            });
+        }
         ScenarioRunner.Add("npc/community-clarity-input-and-labels", () => Arena(4937), world =>
         {
             Actor player = NpcIntentSupport.Player(world, 3, 1); Actor leader = Group(world);

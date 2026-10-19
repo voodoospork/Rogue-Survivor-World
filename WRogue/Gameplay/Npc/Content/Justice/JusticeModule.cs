@@ -93,7 +93,7 @@ namespace djack.RogueSurvivor.Gameplay.Personality
             NpcKnownPerson subject = !seesSubject ? null : knowledge.Person(source.Subject.PersonalityIdentity);
             NpcKnownPerson other = !seesOther ? null : knowledge.Person(source.Other.PersonalityIdentity);
             int confidence = direct ? 100 : 90;
-            if (source.Kind == "base_theft" && subject != null && subject.Id != owner.PersonalityIdentity)
+            if (source.Kind == "base_theft" && source.CultureCase==null && subject != null && subject.Id != owner.PersonalityIdentity)
             {
                 subject.Violation = 100; subject.ThreatTurn = source.Turn; subject.ThreatConfidence = confidence;
                 subject.ThreatCause = source.Id; knowledge.Revision++;

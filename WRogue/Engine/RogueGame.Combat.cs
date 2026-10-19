@@ -85,6 +85,7 @@ namespace djack.RogueSurvivor.Engine
 
             // Set dead flag.
             deadGuy.IsDead = true;
+            if (deadGuy.Community != null) Gameplay.Personality.CommunityAdaptationSystem.Death(this, deadGuy, killer, reason);
 
             // force to stop dragging corpses.
             DoStopDraggingCorpses(deadGuy);
@@ -653,7 +654,7 @@ namespace djack.RogueSurvivor.Engine
             ///////////////////////////////////
             TextFile graveyard = new TextFile();
 
-            graveyard.Append(String.Format("ROGUE SURVIVOR {0}", SetupConfig.GAME_VERSION));
+            graveyard.Append(SetupConfig.GAME_TITLE);
             graveyard.Append("POST MORTEM");
 
             #region Summary

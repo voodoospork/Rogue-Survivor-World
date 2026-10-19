@@ -24,6 +24,7 @@ namespace djack.RogueSurvivor.Data
         public Guid SubjectPerson, OtherPerson;
         public int Severity, Turn;
         public bool Killing, Assault, Violence, Positive;
+        [OptionalField] public bool Property, Nonviolent;
     }
     [Serializable] sealed class DiplomacyIncident
     {
@@ -33,6 +34,9 @@ namespace djack.RogueSurvivor.Data
         public Guid SubjectPerson, OtherPerson;
         public int Severity, Turn, LearnedTurn, Confidence;
         public bool Killing, Assault, Violence;
+        [OptionalField] public bool Property, Nonviolent, Resolved;
+        [OptionalField] public int RestitutionCredit;
+        [OptionalField] public int TrustPenalty, TrustRestored;
         public DiplomacyIncident Copy() { return (DiplomacyIncident)MemberwiseClone(); }
     }
     [Serializable] sealed class CommunityRelation

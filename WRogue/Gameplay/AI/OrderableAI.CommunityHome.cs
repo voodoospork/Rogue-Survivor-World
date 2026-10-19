@@ -34,6 +34,14 @@ namespace djack.RogueSurvivor.Gameplay.AI
         protected ActorAction BehaviorCommunityHome(RogueGame game, bool onlyReturn = false)
         {
             if (m_Actor.InPlayerParty || Order != null) return null;
+            if (m_Actor.Community != null)
+            {
+                if (m_Actor.ResidentCommunity.TravelHome != null) return BehaviorCommunityRelocation(game);
+                var known = m_Actor.ResidentCommunity.KnownHome;
+                // A shared state change is not a communicated destination.
+                if (known == null || m_Actor.Community.Home == null || !known.Matches(game.ResolveCommunityPlace(m_Actor, m_Actor.Community.Home.Place)?.Map,
+                    m_Actor.Community.Home.Place.Anchor)) return null;
+            }
             ResolvedCommunityHome resolved = game.ResolveCommunityHome(m_Actor);
             if (resolved == null) return null;
             CommunityHomeState home = m_Actor.SocialGroup.Home;
@@ -58,13 +66,34 @@ namespace djack.RogueSurvivor.Gameplay.AI
             }
             if (m_Actor.Location.Map == destination.Map && m_Actor.Location.Position == destination.Position)
                 return new ActionWait(m_Actor, game);
-            Point? routePoint = m_Actor.Location.Map == destination.Map ? (Point?)destination.Position :
-                m_Actor.Location.Map.GetExitPos(XpdSupplyRoutes.NextExit(m_Actor.Location.Map, destination.Map, null));
-            if (!routePoint.HasValue || !CanReachSimple(game, routePoint.Value, RouteFinder.SpecialActions.DOORS | RouteFinder.SpecialActions.JUMP))
-            { home.Retry(m_Actor.PersonalityIdentity, turn + 30); return null; }
-            ActorAction travel = GoTo(game, destination);
+            if (m_Actor.Community == null)
+            {
+                Point? routePoint = m_Actor.Location.Map == destination.Map ? (Point?)destination.Position :
+                    m_Actor.Location.Map.GetExitPos(XpdSupplyRoutes.NextExit(m_Actor.Location.Map, destination.Map, null));
+                if (!routePoint.HasValue || !CanReachSimple(game, routePoint.Value, RouteFinder.SpecialActions.DOORS | RouteFinder.SpecialActions.JUMP))
+                { home.Retry(m_Actor.PersonalityIdentity, turn + 30); return null; }
+            }
+            ActorAction travel = m_Actor.Community == null ? GoTo(game, destination) : BehaviorNpcKnownRoute(game, destination, true);
             if (travel == null) home.Retry(m_Actor.PersonalityIdentity, turn + 30);
             return travel;
+        }
+        protected ActorAction BehaviorCommunityRelocation(RogueGame game)
+        {
+            if (m_Actor.Community == null || m_Actor.InPlayerParty || Order != null || m_Actor.ResidentCommunity.TravelHome == null) return null;
+            var state = m_Actor.ResidentCommunity; int turn = CommunityAdaptationSystem.Turn(m_Actor);
+            if (turn < state.RelocationRetryTurn) return null;
+            Location? target = game.ResolveCommunityPlace(m_Actor, state.TravelHome);
+            if (!target.HasValue) { state.RelocationRetryTurn = turn + 30; return null; }
+            if (CommunityAdaptationSystem.Arrived(m_Actor, state.TravelHome))
+            {
+                XpdBase here = m_Actor.Location.Map.XpdBaseAt(m_Actor.Location.Position);
+                if (here != null && here.Owns(m_Actor) && m_Actor.Community.Home.Place.Matches(m_Actor.Location.Map, m_Actor.Location.Position))
+                { state.KnownHome = state.TravelHome.Copy(); state.TravelHome = null; return null; }
+                return m_Actor.CommunityChief == m_Actor ? null : new ActionWait(m_Actor, game);
+            }
+            ActorAction action = BehaviorNpcKnownRoute(game, target.Value, true);
+            if (action == null) state.RelocationRetryTurn = turn + 30;
+            return action;
         }
         Point? WatchPosition(RogueGame game, ResolvedCommunityHome home)
         {

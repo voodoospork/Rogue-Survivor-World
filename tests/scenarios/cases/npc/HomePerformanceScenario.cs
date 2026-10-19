@@ -11,7 +11,9 @@ static class HomePerformanceScenario
     public static void Register()
     {
         ScenarioRunner.Add("npc/home-responsiveness",()=>TownScenarioFactory.Arena(4985,new string('.',40),new string('.',40),new string('.',40),new string('.',40),new string('.',40),new string('.',40)),w=>{
-            Session.Get.GamePreset=GamePreset.World(); NpcIntentSupport.Player(w,35,5);
+            Session.Get.GamePreset=GamePreset.World(); Session.Get.GamePreset.InitialCommunities=true;
+            var organic=typeof(GamePreset).GetField("OrganicCommunities"); if(organic!=null) organic.SetValue(Session.Get.GamePreset,false);
+            NpcIntentSupport.Player(w,35,5);
             Actor leader=NpcIntentSupport.Actor(w,"Leader",4,2),member=NpcIntentSupport.Actor(w,"Resident",5,2);
             leader.AddFollower(member); leader.Sheet.SkillTable.AddOrIncreaseSkill((int)Skills.IDs.LEADERSHIP);
             var cells=new List<Point>(); for(int x=3;x<9;x++) for(int y=1;y<5;y++) { cells.Add(new Point(x,y)); w.Map.GetTileAt(x,y).IsInside=true; }

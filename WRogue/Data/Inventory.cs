@@ -14,6 +14,23 @@ namespace djack.RogueSurvivor.Data
 
         #region Properties
         public long TotalReceived { get { return m_TotalReceived; } }
+        internal void RecordTradeReceipt(int units) { m_TotalReceived += units; }
+        internal int ReleasedCargoCapacity(Item item)
+        {
+            if (!IsFull) return item.Quantity;
+            if (!item.Model.IsStackable) return 0;
+            int capacity = 0;
+            var food = item as Engine.Items.ItemFood;
+            foreach (var existing in m_Items)
+            {
+                if (existing.IsEntrustedCargo || existing.IsEquipped || existing.Model != item.Model) continue;
+                var other = existing as Engine.Items.ItemFood;
+                if (food != null && (other == null || food.IsPerishable != other.IsPerishable ||
+                    food.IsPerishable && food.BestBefore.TurnCounter != other.BestBefore.TurnCounter)) continue;
+                capacity += Math.Max(0, existing.Model.StackingLimit - existing.Quantity);
+            }
+            return capacity;
+        }
         public IEnumerable<Item> Items
         {
             get { return m_Items; }
@@ -288,7 +305,7 @@ namespace djack.RogueSurvivor.Data
             List<Item> stackList = null;
             foreach (Item other in m_Items)
             {
-                if (other.Model == it.Model &&  // other same model
+                if (!it.IsEntrustedCargo && !other.IsEntrustedCargo && other.Model == it.Model &&  // distinct custody lots never merge
                     other.CanStackMore &&       // other not full
                     !other.IsEquipped)          // other not equiped
                 {
@@ -323,6 +340,7 @@ namespace djack.RogueSurvivor.Data
             foreach (Item other in m_Items)
             {
                 if (other != it &&
+                    !it.IsEntrustedCargo && !other.IsEntrustedCargo &&
                     other.Model == it.Model &&
                     other.CanStackMore &&     
                     !other.IsEquipped)        
@@ -362,7 +380,7 @@ namespace djack.RogueSurvivor.Data
                     for (int j = i + 1; j < n && mergeWith.CanStackMore; j++)
                     {
                         Item stealFrom = m_Items[j];
-                        if (stealFrom.Model == mergeWith.Model && stealFrom.Quantity > 0)
+                        if (!stealFrom.IsEntrustedCargo && !mergeWith.IsEntrustedCargo && stealFrom.Model == mergeWith.Model && stealFrom.Quantity > 0)
                         {
                             int steal = Math.Min(mergeWith.Model.StackingLimit - mergeWith.Quantity, stealFrom.Quantity);
                             mergeWith.Quantity += steal;

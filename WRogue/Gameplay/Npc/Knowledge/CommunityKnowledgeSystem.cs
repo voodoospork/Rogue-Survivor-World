@@ -24,6 +24,7 @@ namespace djack.RogueSurvivor.Gameplay.Personality
             SocialGroup group = owner.SocialGroup;
             int turn = owner.Location.Map.LocalTime.TurnCounter;
             KnownCommunity record = State(owner).LearnCommunity(group.Identity, group.CommunityName, turn, "own group");
+            if (owner.Community != null) record.IsTribe = true;
             foreach (Actor actor in owner.Location.Map.Actors)
             {
                 if (actor != owner && !NpcKnowledgeSystem.Visible(game, owner, actor.Location)) continue;
@@ -120,16 +121,18 @@ namespace djack.RogueSurvivor.Gameplay.Personality
             if (!Enabled(game) || speaker.SocialGroup == null || listener.IsSleeping || listener.IsDead ||
                 game.Rules.StdDistance(speaker.Location.Position, listener.Location.Position) > listener.AudioRange) return false;
             game.InitializeCommunityHome(speaker);
+            CommunityCultureSystem.Talk(game,speaker,listener);
             KnownCommunity known = RefreshKnownSurroundings(game, speaker);
             bool first = State(listener).FindCommunity(known.Identity) == null;
             RogueGame.Sayflags speech = RogueGame.Sayflags.IS_STORY | RogueGame.Sayflags.IS_FREE_ACTION | RogueGame.Sayflags.IS_BRIEF;
             game.DoSay(speaker, listener, (first ? "I'm with " : "News from ") + known.Name + ". " +
-                (known.Leader == null ? "Leader: unknown. " : "Last leader: " + known.Leader + " (turn " + known.LeaderTurn + "). ") +
+                (known.Leader == null ? (known.IsTribe ? "Chief: unknown. " : "Leader: unknown. ") : "Last " + (known.IsTribe ? "chief" : "leader") + ": " + known.Leader + " (turn " + known.LeaderTurn + "). ") +
                 (known.Shelter == null ? "Shelter: unknown." : "Last shelter: " + known.Shelter + " (turn " + known.ShelterTurn + ")."), speech);
             // Explicitly spoken, dated snapshots, copied rather than shared with the speaker.
             KnownCommunity received = State(listener).LearnCommunity(known.Identity, known.Name,
                 speaker.Location.Map.LocalTime.TurnCounter, "introduced by " + speaker.UnmodifiedName);
             string source = "reported by " + speaker.UnmodifiedName;
+            received.IsTribe = known.IsTribe;
             if (known.Leader != null && (received.Leader == null || known.LeaderTurn >= received.LeaderTurn))
             { received.Leader = known.Leader; received.LeaderTurn = known.LeaderTurn; received.LeaderSource = source; }
             if (known.Shelter != null && (received.Shelter == null || known.ShelterTurn >= received.ShelterTurn))
@@ -141,6 +144,9 @@ namespace djack.RogueSurvivor.Gameplay.Personality
             CommunityNote news = null;
             CommunityDiplomacySystem.ShareNews(game, speaker, listener);
             for (int i = known.Notes.Count - 1; i >= 0; i--)
+                if (!received.Knows(known.Notes[i]) && (known.Notes[i].Kind.StartsWith("community_") || known.Notes[i].Kind == "group_succession" || known.Notes[i].Kind == "base_loss"))
+                { news = known.Notes[i]; break; }
+            for (int i = known.Notes.Count - 1; news == null && i >= 0; i--)
                 if (!received.Knows(known.Notes[i])) { news = known.Notes[i]; break; }
             if (news != null)
             {
@@ -178,7 +184,7 @@ namespace djack.RogueSurvivor.Gameplay.Personality
         {
             if (!listener.IsPlayer || !CommunityMembershipSystem.IsLeader(game, speaker) ||
                 turn < speaker.Personality.NextCommunityRequestTurn || NpcConversation.Pending(listener, speaker) != null) return false;
-            foreach (Actor member in speaker.PartyTree())
+            foreach (Actor member in speaker.CommunityResidents)
             {
                 if (member == speaker || member.IsDead || member.InPlayerParty || !NpcKnowledgeSystem.Visible(game, speaker, member.Location)) continue;
                 bool food = game.Rules.IsActorHungry(member) && !NpcFoodSupply.HasFood(game, member);

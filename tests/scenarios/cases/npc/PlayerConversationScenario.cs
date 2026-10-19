@@ -15,6 +15,7 @@ static class PlayerConversationScenario
         {
             Session original = Session.Get;
             original.GamePreset = GamePreset.BuiltIn(GameMode.GM_STANDARD);
+            ScenarioRunner.ApplyRequestedMode(world);
             Actor player = NpcIntentSupport.Player(world, 1, 1);
             Actor requester = NpcIntentSupport.Actor(world, "requester", 2, 1);
             Actor stranger = NpcIntentSupport.Actor(world, "stranger", 7, 1);
@@ -91,9 +92,11 @@ static class PlayerConversationScenario
             GamePreset disabled = GamePreset.BuiltIn(GameMode.GM_STANDARD);
             disabled.NpcPersonalitiesEnabled = false;
             Session.Get.GamePreset = disabled;
+            ScenarioRunner.ApplyRequestedMode(world);
             NpcEvents.Publish(world.Game, "requested_food", requester, player);
             Check.Equal(null, NpcConversation.Pending(player, requester), "disabled personality system offers no social request");
             Session.Get.GamePreset = GamePreset.BuiltIn(GameMode.GM_STANDARD);
+            ScenarioRunner.ApplyRequestedMode(world);
             world.Place(stranger, 3, 1);
             world.Map.LocalTime.TurnCounter = 35;
             SignificantEvent overheard = NpcEvents.Publish(world.Game, "requested_food", requester, stranger);

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -260,7 +260,7 @@ namespace djack.RogueSurvivor.Engine
         public static HashSet<Point> ComputeFOVFor(Rules rules, Actor actor, WorldTime time, Weather weather)
         {
             Location fromLocation = actor.Location;
-            HashSet<Point> visibleSet = new HashSet<Point>();
+            HashSet<Point> visibleSet = new HashSet<Point>(djack.RogueSurvivor.Data.PointComparer.Instance);
             Point from = fromLocation.Position;
             Map map = fromLocation.Map;
             int maxRange = rules.ActorFOV(actor, time, weather);

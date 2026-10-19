@@ -8,14 +8,18 @@ using djack.RogueSurvivor.Gameplay;
 
 static class CommunityNewWorldScenario
 {
-    internal static Actor Generate(ScenarioWorld world, bool communities = true, bool patchy = true, Skills.IDs startingSkill = Skills.IDs.CARPENTRY)
+    internal static Actor Generate(ScenarioWorld world, bool communities = true, bool patchy = true, Skills.IDs startingSkill = Skills.IDs.CARPENTRY, bool organic = false)
     {
             Session.Get.GameMode = GameMode.GM_XPD;
             Session.Get.GamePreset = GamePreset.World();
+            Session.Get.GamePreset.Name = organic ? "World" : "Legacy settlement comparison";
+            Session.Get.GamePreset.OrganicCommunities = organic;
             Session.Get.GamePreset.InitialCommunities = communities;
             Session.Get.GamePreset.PatchySupplies = patchy;
             GameOptions options = RogueGame.Options;
-            options.MaxCivilians = 40; options.DistrictSize = 100;
+            // These dated scripted journeys retain their original 40 residents per 100x100 map.
+            // Population-scaling scenarios exercise the new 25/49/100 density separately.
+            options.MaxCivilians = 10; options.DistrictSize = 100;
             typeof(RogueGame).GetField("s_Options", BindingFlags.Static | BindingFlags.NonPublic).SetValue(null, options);
             FieldInfo field = typeof(RogueGame).GetField("m_CharGen", BindingFlags.Instance | BindingFlags.NonPublic);
             object character = Activator.CreateInstance(field.FieldType);

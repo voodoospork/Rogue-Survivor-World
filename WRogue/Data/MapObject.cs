@@ -103,8 +103,13 @@ namespace djack.RogueSurvivor.Data
         public Location Location
         {
             get { return m_Location; }
-            set { m_Location = value; }
+            set {
+                if (m_Location.Map != null) m_Location.Map.GeometryChanged();
+                m_Location = value;
+                GeometryChanged();
+            }
         }
+        protected void GeometryChanged() { if (m_Location.Map != null) m_Location.Map.GeometryChanged(); }
 
         public virtual bool IsTransparent
         {
@@ -170,7 +175,7 @@ namespace djack.RogueSurvivor.Data
         public Break BreakState
         {
             get { return m_BreakState; }
-            set { m_BreakState = value; }
+            set { if (m_BreakState != value) { m_BreakState = value; GeometryChanged(); } }
         }
 
         public bool GivesWood
@@ -221,7 +226,7 @@ namespace djack.RogueSurvivor.Data
         public Fire FireState
         {
             get { return m_FireState; }
-            set { m_FireState = value; }
+            set { if (m_FireState != value) { m_FireState = value; GeometryChanged(); } }
         }
 
         public int HitPoints
@@ -261,7 +266,12 @@ namespace djack.RogueSurvivor.Data
 
         #region Flags helpers
         private bool GetFlag(Flags f) { return (m_Flags & f) != 0; }
-        private void SetFlag(Flags f, bool value) { if (value) m_Flags |= f; else m_Flags &= ~f; }
+        private void SetFlag(Flags f, bool value) {
+            Flags before = m_Flags;
+            if (value) m_Flags |= f; else m_Flags &= ~f;
+            if (m_Flags != before && (f & (Flags.IS_MATERIAL_TRANSPARENT | Flags.IS_WALKABLE | Flags.STANDON_FOV_BONUS)) != 0)
+                GeometryChanged();
+        }
         #endregion
     }
 }

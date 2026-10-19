@@ -1,5 +1,7 @@
 # Rogue Survivor World
 
+Current World version: **0.1.0**.
+
 A continuation of Rogue Survivor about **independent communities enduring the
 collapse**. You are one survivor among groups with homes, needs, relationships
 and uncertain futures. Cooperation, scarcity, zombies and violence have real
@@ -11,19 +13,36 @@ which continues [Tranquill6's Expanded project](https://github.com/Tranquill6/Ro
 and **roguedjack's original Rogue Survivor**. See [CREDITS.md](CREDITS.md) for the
 source lineage, bundled artwork and original licensing references.
 
+World uses its own release numbering. The title screen, window title and Windows
+file details identify World; saves, mod requirements and existing user folders
+retain compatibility version **0.4.1**. See [versioning](docs/world-versioning.md).
+
 ## World features
 
-- A World preset with independent civilian communities and named local police units.
+- A World preset with organically founded civilian tribes and named local police units.
 - Community introductions, real needs, aid, NPC-led membership and shared homes.
 - Home routines, eligible watch duty and witnessed defense.
+- Independent chiefs and residents, household admissions, real food and space concerns,
+  communicated relocation, scarcity eviction, fragmentation and last-member collapse.
 - Persistent relationships, blood feuds and negotiated peace carried through encounters.
+- Hostile communities assembling willing residents for raids on reported rival shelters,
+  with real travel, normal combat, home reserves and bounded withdrawal.
+- Lasting community cultures: open visitors, private homes, forceful defense and grudges.
+- Heard territorial warnings, temporary household permission, and item-specific restitution.
+- Property disputes that can escalate to feuds; amends settle losses and peace ends declarations.
 - Dated supply leads and food/medicine expeditions using existing resources.
+- Personal barter and entrusted food/medicine deliveries on the same trade circuit,
+  with real cargo, carried receipts, promised payment and accountable failed journeys.
 - Personal followers that travel together, remember contact and exits, and can be recalled.
 - Adjacent trap disarming without stepping onto the trap.
 
 Player knowledge comes from observations and reports and remains visibly dated.
 Supplies are finite; groups and followers have no guaranteed safety or survival.
-Community adaptation and distant strategic simulation remain future work.
+Personal leaders command travelling followers; chiefs coordinate independent residents.
+Fresh World games seed no civilian settlements or Leadership bonuses. Civilians must
+actually agree to share and legally claim a home. Existing settlements upgrade during
+ordinary play, preserving identities, homes and personal follower orders.
+Player founding, wider crisis balancing and distant strategic simulation remain future work.
 
 ## Current Windows development
 
@@ -34,17 +53,23 @@ generated Resources, mods and runtime configuration beside it. Choose **World**
 when starting a new game. Existing format-5 saves gain knowledge through play;
 loading does not generate groups or resources.
 
+The October 19 World 0.1.0 Windows build passes native unit tests and all
+**554 gameplay scenarios**, including genuine pre-community format-5 loading
+and the existing large-save/load limits. The title menu was rendered with the
+native Windows renderer and visually checked. Linux/Docker workflows remain
+unverified locally; these checks do not replace long-running human play.
+
 | Default control | Action |
 |---|---|
-| **V** | Talk; leader conversations include membership, departure, relations and supply leads. |
+| **V** | Talk; membership, departure, relations, supply leads and **6: Trade / deliveries**. |
 | **G** | Hover an inventory item, then choose an adjacent direction to give it. |
-| **J / Tab** | Heard journal, Communities and Scavenging notebook. |
+| **J / Tab** | Heard journal, Communities, Scavenging and Trade circuits. |
 | **O** | Personal follower orders and dated travel/contact status. |
 | **S** | Sound-off and follower replies. |
-| **Shift+S** | Recall travelling followers within actual hearing range. |
+| **Ctrl+R** | Recall travelling followers within actual hearing range. |
 | **D** | Disarm an adjacent armed trap; choose direction or click nearby. |
 | **Ctrl+B** | Personal base claims and storage management. |
-| **Ctrl+Shift+S** | Save. |
+| **Shift+S** | Save. |
 | **Shift+L** | Load. |
 | **Shift+K** | Rebind controls. |
 
@@ -53,10 +78,53 @@ Sprung traps retain existing escape rules. Witnessed interference with claimed
 supplies or defenses can provoke their owners. Assigned follower work stays
 intact when recalling; surviving followers left across a district remain in the party.
 
-The latest native build has **407/409 scenarios passing**. Two generated survival
-trials lose their NPC participants before completing diplomacy or medicine
-delivery. All six disarm cases and the genuine older format-5 check pass.
+Listen to a community's stated rules or ask with **V**. Permission to visit lasts
+180 local turns and gives no right to supplies. A heard territorial warning allows
+30 observed awake turns to leave; blocked legal exits pause that grace period.
+Leaving ends local boundary pursuit. Peaceful first thefts receive a restitution
+demand; forceful communities may defend their stock immediately. **G** returns
+matching usable items, including partial repayment. Spoiled food does not count.
+An activated defense must actually be restored at its original position. Returning
+what was taken gives no aid reward and does not end an already declared feud.
+Personal enemies still prevent giving; negotiated peace grants no immunity.
+
+Trade circuits use one player-carried shipment alongside personal barter. **V / 6**
+hears offers, negotiates, asks for commissions, shares remembered needs and reports
+outcomes. **G** transfers cargo to the named recipient or returns it to its sender.
+**J**, then **Tab three times**, shows dated trade records; **C** in this view can
+suspend a journey while retaining the unresolved obligation. Senders use their
+own spare supplies, retaining personal food and medicine reserves. Deadlines use
+two world days; payment is promised from existing goods and may become unavailable.
+No new stock or distant simulation is introduced. NPC caravans remain later work.
+
+The October 15 trade-circuit build passes native units and **485/485 scenarios**,
+including all 20 trade cases and the genuine older format-5 fixture. A controlled
+two-district journey exercises personal barter, mid-trip reload, actual delivery
+and payment. Large save/load budgets pass. Natural commission frequency and
+human menu review remain open; generated supplier counts alone do not establish
+completed natural trade journeys.
+
+The earlier October 8 performance regression passed native units and **458/461 scenarios**,
+including all **20 community-character cases**, five performance-cache cases,
+and retained adaptation, follower, disarming and genuine older format-5 checks.
+Three generated trials were unsuccessful in that earlier run: the diplomacy chief dies, the
+overnight trial loses membership before its final save assertion, and the
+scavenging expedition misses its unchanged deadline. Fresh character trials
+produce territorial warnings, a feud and community losses; one completes aid,
+departure, return and dated consequence reports. These players eventually die.
+Growth, repair and survival remain contingent on actual conditions.
 Automated journeys are separate from human visual review and unscripted play.
+The first performance pass improves typical headless changing-world turn time
+by 10–15% across controlled 40/104/200-actor workloads, with matching recorded
+turn outcomes and unchanged save/load limits. It reuses unchanged sight and
+departure geometry while keeping perception and simulation rules. Native
+drawing and human input latency still require live measurement; profiling is
+disabled by default.
+The subsequent controls fix passes native units and **53 focused checks** on
+the installed build. All **58 original default bindings** are preserved; Recall
+uses the previously free Ctrl+R and Disarm uses the previously free D. The old
+World Save/Recall default pair migrates on loading key settings, while other
+custom bindings are retained. Rebinding an occupied key requires confirmation.
 The inherited Docker/Linux workflows have not been reproduced for this fork
 in the Windows development session.
 
@@ -228,8 +296,9 @@ another level can join the same base when its claimable
 area has a two-way stair connection to an already claimed area. Claim each
 level separately with **Ctrl+B** and **Y**. Open subway tracks are not claimed
 with a station room. Claiming an unconnected area releases every level of the
-previous base; you can own one base at a time. A group leader's death also
-releases every level of its base.
+previous base; you can own one base at a time. Successful community succession
+preserves its linked home sections; ordinary claim loss still applies when the
+community has no committed survivor.
 
 In your base, stand in a room and press **Ctrl+B**, then **F** to assign food
 storage or **W** to assign weapon storage. In the follower order menu, press
@@ -243,19 +312,54 @@ in the group's inventories. When those reserves cannot cover current hunger
 and the next two days' consumption for everyone, a leader sends an available
 follower from the base for supplies. If none is available, the leader may go instead.
 They leave stored food and weapons in place until they need them. Taking
-supplies from another group's base is possible, but an awake owner who sees
-the theft becomes hostile to the thief.
+supplies from another group's base is possible. Awake witnesses respond according
+to their community's learned rules: restitution first or immediate defense.
+Private player claims retain their existing ownership and theft rules.
+
+## Simulation modes
+
+New games and older saves default to **Classic**. The saved **Simulation mode**
+choice is available in preset creation and the current game's options.
+**Responsive NPCs** lets safe NPCs continue validated guarding, resting and
+movement between decisions, while checking immediate danger and urgent needs.
+**Adaptive World** also accounts for elapsed distant time, using cheaper quiet
+activity and detailed processing for danger and unsupported mechanics. The
+player's district and personal followers remain detailed.
+
+Adaptive World has saved **Catch up while waiting** and **Catch-up effort**
+controls. Entering a district completes required catch-up; cancelling entry
+retains unfinished work. Existing saves keep format-5 compatibility. These
+modes do not increase population defaults or limits.
+
+## District population
+
+**Civs + Police Density** sets the ordinary surface population per **50x50**
+district. The default remains 25. Population scales with map area, rounded to
+the nearest resident: **25 at 50x50, 49 at 70x70, and 100 at 100x100**. The
+options show the reference density and the target for the selected map size.
+The adjustable density remains 10–75 per standard district; at 100x100 this
+corresponds to 40–300 residents.
+
+Street police retain their 15% chance within that shared budget. Fixed-size
+police interiors and other special populations keep their existing staffing.
+Refugee waves use the same scaled surface target and the existing distribution
+between surface, sewers and subway. Existing maps use their actual dimensions;
+loading a save does not add residents, and reducing density does not remove them.
+Zombie counts retain their separate setting. These rules apply in every
+simulation mode, so larger populations can change both survival and performance.
 
 ## Develop and test
 
 To publish a release, open **Actions → Release → Run workflow** on the default
-branch and enter a new `X.Y.Z` version. The workflow updates `VERSION`, the
-game and Windows file versions, bundled mod, README, and save format
-documentation; builds the Windows game; commits the version; creates `vX.Y.Z`;
+branch and enter a new World `X.Y.Z` version. The workflow updates `VERSION`,
+World's version constant, Windows application version and README; builds the
+Windows game; commits the version; creates `world-vX.Y.Z`;
 and publishes a GitHub Release with a ready-to-run Windows ZIP. The ZIP includes
 the executable, resources, and bundled mods. Do not create the tag or GitHub
 Release separately. The workflow needs permission to push to the default branch.
-For local version changes, run `ruby tools/release_version.rb X.Y.Z`.
+Save/mod compatibility and serialized assembly identity stay fixed during World
+release bumps. For local version changes, run `ruby tools/release_version.rb X.Y.Z`.
+World's tag prefix keeps its versions distinct from inherited Expanded tags.
 
 ```sh
 docker build --target test .

@@ -397,6 +397,8 @@ namespace djack.RogueSurvivor.Engine
         WorldTime m_WorldTime;
         World m_World;
         Map m_CurrentMap;
+        [OptionalField] internal int AdaptiveWorkCursor;
+        [OptionalField] internal Point AdaptiveWorkOrigin;
         [OptionalField]
         ResidentRecords m_ResidentRecords;
         #endregion
@@ -469,12 +471,13 @@ namespace djack.RogueSurvivor.Engine
         {
             get
             {
+                if (SimulationClock.RandomFor(this) != null) return SimulationClock.RandomFor(this);
                 if (m_GameDiceRoller == null)
                     m_GameDiceRoller = new DiceRoller(Seed);
                 return m_GameDiceRoller;
             }
         }
-        public WorldTime WorldTime { get { return m_WorldTime; } }
+        public WorldTime WorldTime { get { return SimulationClock.Time(this, m_WorldTime); } }
         public ResidentRecords ResidentRecords
         {
             get { return m_ResidentRecords ?? (m_ResidentRecords = Data.ResidentRecords.Recover(this)); }
@@ -572,6 +575,7 @@ namespace djack.RogueSurvivor.Engine
             m_NpcDirector = null;
             m_PersonalityEventSequence = 0;
             m_WorldTime = new WorldTime();
+            AdaptiveWorkCursor = 0; AdaptiveWorkOrigin = Point.Empty;
             this.LastTurnPlayerActed = 0;
 
             m_Event_Raids = new int[(int)RaidType._COUNT, RogueGame.Options.CitySize, RogueGame.Options.CitySize];

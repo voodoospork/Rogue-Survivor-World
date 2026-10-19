@@ -108,7 +108,7 @@ namespace djack.RogueSurvivor.Engine
             // if not enough civs only.
 #if false // TEST: disabled
             int civs = CountActors(map, (a) => a.Faction == GameFactions.TheCivilians || a.Faction == GameFactions.ThePolice);
-            if (civs >= Options.MaxCivilians)
+            if (civs >= Options.CivilianPopulationForMap(map.Width, map.Height))
                 return false;
 #endif
 
@@ -145,8 +145,9 @@ namespace djack.RogueSurvivor.Engine
 
             // Spawn most on the surface and a small number in sewers and subway.
             int civilians = CountActors(district.EntryMap, (a) => a.Faction == GameFactions.TheCivilians || a.Faction == GameFactions.ThePolice);
-            int size = 1 + (int)(REFUGEES_WAVE_SIZE * RefugeesEventDistrictFactor(district) * s_Options.MaxCivilians);
-            int civiliansToSpawn = Math.Min(size, s_Options.MaxCivilians - civilians);
+            int civilianPopulation = s_Options.CivilianPopulationForMap(district.EntryMap.Width, district.EntryMap.Height);
+            int size = 1 + (int)(REFUGEES_WAVE_SIZE * RefugeesEventDistrictFactor(district) * civilianPopulation);
+            int civiliansToSpawn = Math.Min(size, civilianPopulation - civilians);
             Map spawnMap = null;
             Dictionary<Map, HashSet<Actor>> previous = new Dictionary<Map, HashSet<Actor>>();
             for (int i = 0; i < civiliansToSpawn; i++)
