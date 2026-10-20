@@ -144,10 +144,11 @@ namespace djack.RogueSurvivor.Gameplay.Personality
             CommunityNote news = null;
             CommunityDiplomacySystem.ShareNews(game, speaker, listener);
             for (int i = known.Notes.Count - 1; i >= 0; i--)
-                if (!received.Knows(known.Notes[i]) && (known.Notes[i].Kind.StartsWith("community_") || known.Notes[i].Kind == "group_succession" || known.Notes[i].Kind == "base_loss"))
+                if (!received.Knows(known.Notes[i]) && CommunityCultureSystem.CanRetellPolicy(speaker, listener, known.Notes[i]) &&
+                    (known.Notes[i].Kind.StartsWith("community_") || known.Notes[i].Kind == "group_succession" || known.Notes[i].Kind == "base_loss"))
                 { news = known.Notes[i]; break; }
             for (int i = known.Notes.Count - 1; news == null && i >= 0; i--)
-                if (!received.Knows(known.Notes[i])) { news = known.Notes[i]; break; }
+                if (!received.Knows(known.Notes[i]) && CommunityCultureSystem.CanRetellPolicy(speaker, listener, known.Notes[i])) { news = known.Notes[i]; break; }
             if (news != null)
             {
                 game.DoSay(speaker, listener, "At turn " + news.EventTurn + ": " + news.Text,

@@ -86,6 +86,22 @@ namespace djack.RogueSurvivor.Gameplay.Personality
         static int Band(int n) { return n < 35 ? 20 : n >= 70 ? 80 : 50; }
         static CommunityPolicy Spoken(CommunityPolicy p)
         { var copy = p.Copy(); copy.Territoriality = Band(p.Territoriality); copy.Enforcement = Band(p.Enforcement); copy.Grudge = Band(p.Grudge); return copy; }
+        internal static int ClaimedTerritoriality(Actor speaker)
+        { return new[] { 20, 50, 80 }[speaker.SocialGroup.Identity.ToByteArray()[4] % 3]; }
+        static CommunityPolicy PublicPolicy(Actor speaker, CommunityPolicy policy)
+        {
+            var p = Spoken(policy);
+            if (!CommunityAggressionSystem.PredatoryPolicy(speaker)) return p;
+            // A stable cover story is a spoken claim, never the hidden founding policy.
+            // Identity sampling consumes no gameplay RNG and survives saves and succession.
+            p.Aggression = CommunityAggression.Guarded; p.AggressionKnown = false; p.Complete = false;
+            p.Territoriality = ClaimedTerritoriality(speaker); p.Enforcement = p.Grudge = 50;
+            p.Rules = RulesText(p.Territoriality, p.Enforcement, p.Grudge);
+            return p;
+        }
+        internal static bool CanRetellPolicy(Actor speaker, Actor listener, CommunityNote note)
+        { return speaker.SocialGroup == listener.SocialGroup || !CommunityAggressionSystem.PredatoryPolicy(speaker) ||
+            note.Kind != "community_policy" && note.Kind != "community_territory_statement"; }
         internal static string RulesText(int territory, int force, int grudge)
         {
             return (territory < 35 ? "Visitors are welcome; ask before taking supplies." : territory < 70 ?
@@ -98,9 +114,12 @@ namespace djack.RogueSurvivor.Gameplay.Personality
         {
             if (actor.Personality == null) actor.Personality = new PersonalityState();
             var known = actor.Personality.LearnCommunity(policy.Community,policy.Name,policy.Turn,source);
+            // A later reassuring claim cannot erase a threat already heard in person.
+            if (known.Policy != null && known.Policy.AggressionKnown && known.Policy.Aggression != CommunityAggression.Guarded && !policy.AggressionKnown) return;
             if (known.Policy != null && known.Policy.Revision > policy.Revision) return;
             if (known.Policy != null && known.Policy.Revision == policy.Revision && known.Policy.Complete && !policy.Complete) return;
-            bool changed = known.Policy == null || known.Policy.Revision != policy.Revision || !known.Policy.Complete && policy.Complete;
+            bool changed = known.Policy == null || known.Policy.Revision != policy.Revision || !known.Policy.Complete && policy.Complete ||
+                !known.Policy.AggressionKnown && policy.AggressionKnown;
             known.Policy = policy.Copy(); known.Policy.Source = source;
             if (note && changed) known.Note(new CommunityNote { EventId = -policy.Revision, Kind = policy.Complete?"community_policy":"community_territory_statement", EventTurn = policy.Turn,
                 LearnedTurn = policy.Turn, Source = source, Text = policy.Rules });
@@ -112,27 +131,38 @@ namespace djack.RogueSurvivor.Gameplay.Personality
         public static int GreetingModifier(Actor a) { var p = KnownPolicy(a); return p == null ? 0 : (50-p.Territoriality)/2; }
         public static int PeaceModifier(Actor a) { var p = KnownPolicy(a); return p == null ? 0 : (50-p.Grudge)/5; }
         public static string SpokenRules(Actor speaker)
-        { var p = KnownPolicy(speaker); return p == null ? "" : p.Rules.Substring(0,p.Rules.IndexOf('.')+1); }
+        { var known = KnownPolicy(speaker); if (known == null) return "";
+            var p = PublicPolicy(speaker, known); return p.Rules.Substring(0,p.Rules.IndexOf('.')+1); }
         static bool Hears(RogueGame game, Actor listener, Actor speaker)
         { return !listener.IsDead && !listener.IsSleeping && listener.Model.Abilities.IsIntelligent && !listener.Model.Abilities.IsUndead &&
             listener.Location.Map == speaker.Location.Map && game.Rules.StdDistance(listener.Location.Position,speaker.Location.Position) <= listener.AudioRange; }
         static string Source(RogueGame game, Actor listener, Actor speaker)
         { return game.IdentifiesDiplomacySpeaker(listener,speaker) ? "reported by " + speaker.UnmodifiedName : "heard an unseen voice"; }
+        static bool CanBriefPrivately(RogueGame game, Actor speaker)
+        { return !CommunityAggressionSystem.PredatoryPolicy(speaker) || !speaker.Location.Map.Actors.Any(a =>
+            a.SocialGroup != speaker.SocialGroup && Hears(game, a, speaker) && NpcKnowledgeSystem.Visible(game, speaker, a.Location)); }
         internal static void SayPolicy(RogueGame game, Actor speaker, Actor target, bool free)
         {
             Ensure(game,speaker); if (speaker.SocialGroup == null || speaker.SocialGroup.Culture == null) return;
             var p = speaker.PersonalityIdentity == speaker.SocialGroup.LeaderId ? Snapshot(speaker.SocialGroup,game.Session.WorldTime.TurnCounter) : KnownPolicy(speaker);
             if (p == null) return;
-            game.DoSay(speaker,target,speaker.SocialGroup.CommunityName + ": " + p.Rules,
+            bool internalBriefing = target != null && target.SocialGroup == speaker.SocialGroup && CanBriefPrivately(game, speaker);
+            var spoken = internalBriefing ? Spoken(p) : PublicPolicy(speaker, p);
+            LearnPolicy(speaker, p, "own community policy", false);
+            game.DoSay(speaker,target,speaker.SocialGroup.CommunityName + ": " + spoken.Rules,
                 RogueGame.Sayflags.IS_STORY | RogueGame.Sayflags.IS_BRIEF | (free ? RogueGame.Sayflags.IS_FREE_ACTION : RogueGame.Sayflags.NONE));
             foreach (Actor listener in speaker.Location.Map.Actors) if (Hears(game,listener,speaker)) {
-                LearnPolicy(listener,listener==speaker?p:Spoken(p),Source(game,listener,speaker));LearnSpeaker(game,listener,speaker,p.Community,p.Name,p.Turn); }
+                if (listener != speaker && (spoken.AggressionKnown || listener.SocialGroup != speaker.SocialGroup))
+                    LearnPolicy(listener,spoken,Source(game,listener,speaker));
+                LearnSpeaker(game,listener,speaker,p.Community,p.Name,p.Turn); }
         }
-        public static void HearCallRules(RogueGame game,Actor speaker)
+        public static void HearCallRules(RogueGame game,Actor speaker, bool actualThreat = false)
         {
-            var known=KnownPolicy(speaker);if(known==null)return;var p=known.Copy();p.Complete=false;p.Enforcement=p.Grudge=50;
-            p.Territoriality=p.Aggression==CommunityAggression.Guarded?Band(p.Territoriality):50;p.Rules=SpokenRules(speaker);
-            foreach(Actor listener in speaker.Location.Map.Actors)if(Hears(game,listener,speaker))LearnPolicy(listener,p,Source(game,listener,speaker));
+            var known=KnownPolicy(speaker);if(known==null)return;var p=actualThreat?known.Copy():PublicPolicy(speaker,known);
+            p.Complete=false;p.Enforcement=p.Grudge=50;
+            p.Territoriality=actualThreat?50:Band(p.Territoriality);
+            p.Rules=actualThreat?AggressionText(p.Aggression).Trim():SpokenRules(speaker);
+            foreach(Actor listener in speaker.Location.Map.Actors)if(listener.SocialGroup!=speaker.SocialGroup&&Hears(game,listener,speaker))LearnPolicy(listener,p,Source(game,listener,speaker));
         }
         static KnownCommunityCase Report(SocialGroup group, CommunityCase c, int date, string source)
         { return new KnownCommunityCase { Community = group.Identity, Name = group.CommunityName, Case = c.Copy(), Turn = date, Source = source }; }
@@ -339,7 +369,7 @@ namespace djack.RogueSurvivor.Gameplay.Personality
                 var culture = group.Culture;
                 if (game.Session.WorldTime.TurnCounter-culture.LastRevisionClock >= WorldTime.TURNS_PER_DAY && (culture.Experiences.Count > 0 || culture.Views.Exists(v=>v.Turn>=culture.LastRevisionClock)))
                     return new ActionCommunityCulture(owner,game,null,null,"revise");
-                foreach (Actor member in visible) if (member.SocialGroup == group && member != owner && Hears(game,member,owner) &&
+                foreach (Actor member in visible) if (member.SocialGroup == group && member != owner && Hears(game,member,owner) && CanBriefPrivately(game, owner) &&
                     (KnownPolicy(member) == null || !KnownPolicy(member).Complete || KnownPolicy(member).Revision < culture.Revision))
                     return new ActionCommunityCulture(owner,game,member,null,"policy");
             }

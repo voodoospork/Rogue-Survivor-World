@@ -1,7 +1,7 @@
 Rogue Survivor World
 ====================
 
-Current World version: 0.1.0.
+Current World version: 0.2.0.
 
 A continuation of Rogue Survivor about independent communities enduring the
 collapse. You are one survivor among groups with homes, needs, relationships
@@ -24,6 +24,8 @@ source lineage, bundled artwork and original licensing references.
 World uses its own release numbering. The title screen, window title and Windows
 file details identify World; saves, mod requirements and existing user folders
 retain compatibility version 0.4.1. See versioning (docs/world-versioning.txt).
+World 0.2.0 is the community aggression feature release. Further feature
+releases increase the middle number; fixes increase the final number.
 
 World features
 --------------
@@ -39,6 +41,8 @@ World features
 - Lasting community cultures: open visitors, private homes, forceful defense and grudges.
 - Distinct guarded communities, groups that attack outsiders on sight, and supply
   raiders that choose vulnerable targets, take real loot and withdraw.
+- Predatory groups conceal their intentions behind ordinary introductions and
+  stated rules. Unarmed community members avoid attacking armed survivors.
 - Heard territorial warnings, temporary household permission, and item-specific restitution.
 - Property disputes that can escalate to feuds; amends settle losses and peace ends declarations.
 - Dated supply leads and food/medicine expeditions using existing resources.
@@ -73,12 +77,19 @@ and the existing large-save/load limits. The title menu was rendered with the
 native Windows renderer and visually checked. Linux/Docker workflows remain
 unverified locally; these checks do not replace long-running human play.
 
-The current aggression changes add outsider killers and opportunistic supply
-raiders. Native units and 15 focused checks pass; the full run is
+The initial aggression candidate added outsider killers and opportunistic supply
+raiders. Native units and 15 focused checks passed; that full run was
 566/568, with generated diplomacy and overnight survival failures retained.
 The overnight journey passes on a repeat; diplomacy still loses its leader.
 Save/load budgets and genuine old-format loading pass. These generated journey
 failures remain recorded; a clean full-suite pass is not claimed for this change.
+
+The World 0.2.0 follow-up adds deceptive introductions and unarmed combat
+restraint. Native units and all 87 focused checks pass, including existing home
+behavior, real controller encounters, saved cover stories and old-format loading.
+Full regression is 575/578, with generated diplomacy, overnight membership and
+scavenging failures. Save/load limits and genuine old saves pass. Focused success
+does not establish a clean full-suite pass. See docs/community-aggression.txt.
 
 | Default control | Action |
 |---|---|

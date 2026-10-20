@@ -196,6 +196,20 @@ namespace djack.RogueSurvivor.Gameplay.AI
             }
             // end alpha10
 
+            List<Percept> enemies = FilterEnemies(game, mapPercepts);
+            bool hasEnemies = enemies != null && enemies.Count > 0;
+            // Apply before orders, hunts and fight-or-flee: losing a weapon must not
+            // turn community hostility into a fist attack on an armed survivor.
+            var armedThreats = hasEnemies ? enemies.FindAll(p => CommunityAggressionSystem.AvoidUnarmedAttack(game, m_Actor, p.Percepted as Actor)) : null;
+            if (armedThreats != null && armedThreats.Count > 0) {
+                ActorAction explosive = BehaviorFleeFromExplosives(game, FilterStacks(game, mapPercepts));
+                if (explosive != null) return explosive;
+                ActorAction retreat = BehaviorWalkAwayFrom(game, armedThreats);
+                m_Actor.Activity = Activity.FLEEING;
+                if (retreat != null) RunIfPossible(game.Rules);
+                return retreat ?? new ActionWait(m_Actor, game);
+            }
+
             ActorAction personalIntervention = BehaviorNpcEmergency(game, intentVisible);
             if (personalIntervention != null) return BehaviorFleeFromExplosives(game, FilterStacks(game, mapPercepts)) ?? personalIntervention;
 
@@ -259,8 +273,6 @@ namespace djack.RogueSurvivor.Gameplay.AI
             //////////////////////////////////////////////////////////////////////
 
             // get data.
-            List<Percept> enemies = FilterEnemies(game, mapPercepts);
-            bool hasEnemies = enemies != null && enemies.Count > 0;
             bool checkOurLeader = m_Actor.HasLeader && !DontFollowLeader;
             bool seeLeader = checkOurLeader && m_LOSSensor.FOV.Contains(m_Actor.Leader.Location.Position);
             bool isLeaderFighting = checkOurLeader && IsAdjacentToEnemy(game, m_Actor.Leader);
@@ -307,7 +319,9 @@ namespace djack.RogueSurvivor.Gameplay.AI
             if (predation != null) return predation;
             if (!hasEnemies) {
                 ActorAction aggression = CommunityAggressionSystem.Select(game, m_Actor, intentVisible);
-                if (aggression != null) return aggression;
+                // One ordinary introduction can establish the cover before a first attack.
+                // The saved shared contact cooldown prevents repeated greeting delays.
+                if (aggression != null) return CommunityEncounterSystem.Select(game, m_Actor, intentVisible, false) ?? aggression;
             }
             ActorAction hostileCall = CommunityEncounterSystem.Select(game, m_Actor, intentVisible, true);
             if (hostileCall != null) return hostileCall;

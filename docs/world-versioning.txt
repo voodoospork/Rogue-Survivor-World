@@ -1,7 +1,16 @@
 World versioning
 ================
 
-World starts its own release sequence at 0.1.0, based on Expanded 0.4.1.
+Current World release: 0.2.0. World began at 0.1.0, based on Expanded 0.4.1.
+0.2.0 is the community aggression feature release: outsider killers,
+opportunistic supply raiders, deceptive introductions and unarmed restraint.
+
+During development, use 0.MINOR.PATCH: increase MINOR for a substantial gameplay
+feature and reset PATCH to zero; increase PATCH for fixes within that feature
+release (for example, 0.2.1). Reserve 1.0.0 for a deliberate stable milestone.
+A World version bump alone does not change save compatibility. Change the
+compatibility version or save format only when the corresponding contract
+actually changes, with migration and validation considered separately.
 VERSION records the World release. SetupConfig.WORLD_VERSION supplies the
 title/menu headers, window title, startup log and exported report headings.
 Windows file and product versions identify the same World release; the file
@@ -12,7 +21,8 @@ version. Save envelopes, mod requirements and user data folders keep that value.
 The assembly name and assembly version 0.4.1.0 remain stable because stored
 type names can reference that identity. This prevents a cosmetic release bump
 from hiding existing saves/settings or changing their compatibility checks.
-World format remains 5; no save migration is performed by this branding update.
+World format remains 5. This release retains the inherited assembly identity,
+save/mod compatibility version and existing user data folders.
 
 tools/release_version.rb updates World release values and checks the separate
 compatibility values. File/product versions are compiled from World constants.
@@ -35,3 +45,14 @@ were not executed locally.
 Earlier generated scavenging failures and the October 18 large-save timing
 overrun remain historical evidence; a passing run does not establish a fix to
 those intermittent failures.
+
+October 20, 2026 / World 0.2.0 verification
+------------------------------------------
+VERSION, runtime World title constant, ClickOnce version and README agree on
+0.2.0. The native executable reports file version 0.2.0.0 and product version
+0.2.0 while retaining assembly identity 0.4.1.0. Native units and 87 focused
+gameplay checks pass, including compatibility and genuine old format-5 loading.
+Release has zero warnings/errors. Full gameplay regression is 575/578, with
+generated diplomacy, overnight membership and scavenging failures qualified in
+community-aggression.txt. Save/load budgets pass. The Ruby release helper and
+Linux/Docker were not executed; no new visual or human review is claimed.

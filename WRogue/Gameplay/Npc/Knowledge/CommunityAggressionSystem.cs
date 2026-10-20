@@ -34,11 +34,24 @@ namespace djack.RogueSurvivor.Gameplay.Personality
         static int Strength(RogueGame game, Actor a)
         { return (a.HitPoints * 2 < game.Rules.ActorMaxHPs(a) ? 2 : 4) +
             (a.GetEquippedWeapon() is ItemRangedWeapon ? 12 : a.GetEquippedWeapon() is ItemMeleeWeapon ? 4 : 0); }
+        internal static bool AvoidUnarmedAttack(RogueGame game, Actor a, Actor b)
+        {
+            if (!game.Session.GamePreset.NpcPersonalitiesEnabled || a.InPlayerParty ||
+                a.Faction.ID != (int)GameFactions.IDs.TheCivilians || !CommunityDiplomacySystem.PoliticalGroup(a) ||
+                b == null || b.IsDead || b.Model.Abilities.IsUndead || b.Location.Map != a.Location.Map) return false;
+            var own = a.GetEquippedWeapon();
+            bool ready = own is ItemMeleeWeapon || own is ItemGrenade || own is ItemRangedWeapon && ((ItemRangedWeapon)own).Ammo > 0;
+            if (ready || !NpcKnowledgeSystem.Visible(game, a, b.Location)) return false;
+            // Their ammunition and backpack are unknown. An equipped firearm is a threat
+            // even if its owner secretly has no ammunition.
+            var theirs = b.GetEquippedWeapon();
+            return theirs is ItemMeleeWeapon || theirs is ItemRangedWeapon || theirs is ItemGrenade;
+        }
         public static bool CanAttack(RogueGame game, Actor a, Actor b)
         {
             if (!Eligible(game, a) || a.Predation != null || !Outsider(a, b) ||
                 b.Location.Map != a.Location.Map || !NpcKnowledgeSystem.Visible(game, a, b.Location) ||
-                game.Rules.IsKnownEnemy(a, b)) return false;
+                game.Rules.IsKnownEnemy(a, b) || AvoidUnarmedAttack(game, a, b)) return false;
             var policy = CommunityCultureSystem.KnownPolicy(a);
             if (policy == null || !policy.AggressionKnown || policy.Aggression == CommunityAggression.Guarded) return false;
             if (policy.Aggression == CommunityAggression.AttackOutsiders) return true;
@@ -78,7 +91,7 @@ namespace djack.RogueSurvivor.Gameplay.Personality
             if (!melee) game.DoMakeAggression(a, b);
             game.DoSay(a, b, a.SocialGroup.CommunityName + (a.Predation == null ? ": We kill outsiders on sight!" : ": We're taking whatever supplies you carry!"),
                 RogueGame.Sayflags.IS_FREE_ACTION | RogueGame.Sayflags.IS_DANGER);
-            CommunityCultureSystem.HearCallRules(game, a);
+            CommunityCultureSystem.HearCallRules(game, a, actualThreat: true);
             if (melee) game.DoMeleeAttack(a, b);
             else game.DoWait(a);
         }

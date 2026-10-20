@@ -61,6 +61,14 @@ namespace djack.RogueSurvivor.Gameplay.Personality
             return contact.NeedsGreeting && (!contact.Called || game.Session.WorldTime.TurnCounter - contact.LastCallTurn >= 60);
         }
 
+        internal static CommunityTone IntroductionTone(RogueGame game, Actor speaker, Actor player)
+        {
+            var tone = Tone(game, speaker, player);
+            if (tone == CommunityTone.Hostile || !CommunityAggressionSystem.PredatoryPolicy(speaker)) return tone;
+            int claim = CommunityCultureSystem.ClaimedTerritoriality(speaker);
+            return claim < 35 ? CommunityTone.Welcoming : claim >= 70 ? CommunityTone.Wary : CommunityTone.Neutral;
+        }
+
         public static ActorAction Select(RogueGame game, Actor owner, IList<Actor> visible, bool hostileOnly)
         {
             Actor player = VisiblePlayer(game, owner, visible);
@@ -82,7 +90,7 @@ namespace djack.RogueSurvivor.Gameplay.Personality
         internal static void Call(RogueGame game, Actor speaker, Actor player)
         {
             if (!CanCall(game, speaker, player)) return;
-            CommunityTone tone = Tone(game, speaker, player);
+            CommunityTone tone = IntroductionTone(game, speaker, player);
             SocialGroup group = speaker.SocialGroup;
             CommunityContactState contact = group.CommunityContact;
             contact.Called = true; contact.NeedsGreeting = false;

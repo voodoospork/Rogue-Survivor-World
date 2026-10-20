@@ -128,7 +128,8 @@ static class CommunityHomeScenario
             foreach (Actor member in leader.PartyTree()) world.Map.PlaceActorAt(member, new Point(4 + index++, 5));
             watcher.Personality.AddTrait(new TraitInstance("brave"));
             CommunityCultureSystem.Ensure(world.Game,leader);leader.SocialGroup.Culture.Enforcement=80;
-            CommunityCultureSystem.SayPolicy(world.Game,leader,null,true);
+            // Teach the defender the true policy privately; public rules may be a cover.
+            CommunityCultureSystem.SayPolicy(world.Game,leader,watcher,true);
             Item bat = new ItemMeleeWeapon(world.Game.GameItems.BASEBALLBAT); watcher.Inventory.AddAll(bat); world.Game.DoEquipItem(watcher, bat);
             world.Map.PlaceActorAt(watcher, new Point(5, 2)); world.Map.PlaceActorAt(player, new Point(9, 2));
             index = 0;

@@ -17,6 +17,16 @@ player followers, orders, relocation and active organized raids exclude
 voluntary predation. Ordinary combat, emergency needs and personal judgment
 remain in force. A policy creates neither a global feud nor remote knowledge.
 
+An unarmed civilian community member will not initiate an attack on a visibly
+armed human. During an existing fight or hunt, the member retreats; if trapped,
+the member waits instead of punching the armed opponent. This also applies to
+ordinary community feuds. Equipped melee weapons, loaded firearms and grenades
+count as ready weapons. The opponent's equipped firearm looks armed regardless
+of its hidden ammunition. Backpack weapons are not detected. Two unarmed
+survivors may still fight when the ordinary policy and opportunity checks allow
+it. Equipment decisions still happen first; personal player orders retain their
+existing authority.
+
 Predators use ordinary aggression: victims can defend themselves, killing an
 innocent survivor remains murder, and actual witnessed violence affects later
 diplomacy. Raiders use real ground pickups, not generated rewards. They walk to
@@ -37,9 +47,23 @@ enforcement culture; gentle cultures and police stay guarded. Other identities
 can produce raiders or outsider killers, with stronger enforcement favoring
 predation. Actual world frequency depends on founding, survival and opportunity.
 
-Spoken threats name the community. Nearby awake listeners can learn its stated
-aggression rule through the existing dated community records. No new key is
-required. Save format 5 is retained through optional fields. Older saves create
+Predatory groups use a stable welcoming, neutral or wary cover attitude in
+introductions and outsider conversations. Their stated home rules follow that
+cover. Different residents and saved games retain the same cover for the same
+community. When able to greet a new player contact, a predator can give one
+ordinary introduction before attacking on its following decision. The shared
+contact cooldown prevents repeated introductions from postponing combat.
+Introductory speech and V reports do not confess their hidden policy
+or retell private policy notes. Journal entries store the spoken claim, not the
+hidden culture. Membership, actual property enforcement and attack decisions
+still use the true policy. An actual attack can reveal intentions, and a later
+reassuring claim cannot erase a threat already heard. True internal briefings
+are deferred around visible outsiders in hearing range. A concealed listener
+can still overhear them; observation and third-party warnings remain evidence.
+
+Spoken attack threats name the community. Nearby awake listeners can learn that
+threat through the existing dated community records. No new key is required.
+Save format 5 is retained through optional fields. Older saves create
 no hunt, people or supplies; old cultures initialize the missing policy during
 ordinary play. Foreign reports stay stale until new information is heard.
 
@@ -47,7 +71,8 @@ Responsive NPCs does not continue quiet routines for predators or hunts, and
 Adaptive World keeps awake predators and hunts detailed so encounters and hunt
 deadlines cannot disappear into quiet catch-up.
 
-Windows validation: Release has zero warnings/errors. Native units and all 15
+Initial aggression validation, before the 0.2.0 refinements: Release had zero
+warnings/errors. Native units and all 15
 focused checks pass, including real autonomous combat/looting/return, active-hunt
 save/reload, distant Adaptive safety and genuine old format-5 loading. The full
 suite is 566/568: a generated peace delivery is refused and an overnight player
@@ -57,3 +82,21 @@ passes both journeys. Causality is not isolated, and no clean full pass is claim
 Large, active-hunt and genuine previous-schema saves satisfy unchanged 10-second
 and 50,000,000-byte limits. Natural encounter frequency, long-run survival and
 human playtesting remain open.
+
+World 0.2.0 validation, October 20, 2026
+---------------------------------------
+Release has zero warnings/errors. Native units and all 87 focused checks pass,
+covering the new behavior, existing culture/clarity/home/raid cases, real first
+contact followed by aggression, saved cover stories, evidence retention,
+unarmed/armed decisions, disarmed pursuit, trapped defenders, distant Adaptive
+safety, version metadata and genuine legacy format-5 loading.
+
+The final full regression is 575/578. Generated diplomacy cannot complete its
+scripted V interaction, the overnight community leaves the expected encounter
+map, and the scavenging beneficiary dies during the return. These journeys have
+historical failures, but their current outcomes are not causally isolated or
+declared equivalent to older failures. A clean full-suite pass is not claimed.
+The large and copied-save cases pass the unchanged 10-second/50,000,000-byte
+limits. Initial fixture and home-interaction failures are retained separately;
+the corrected home cases pass without relaxing their gameplay assertions.
+No new population-performance gain or human playtest is claimed for 0.2.0.

@@ -9,7 +9,7 @@ namespace djack.RogueSurvivor
     public static class SetupConfig
     {
         public const string GAME_NAME = "Rogue Survivor World";
-        public const string WORLD_VERSION = "0.1.0";
+        public const string WORLD_VERSION = "0.2.0";
         public const string WORLD_FILE_VERSION = WORLD_VERSION + ".0";
         public const string GAME_TITLE = GAME_NAME + " - " + WORLD_VERSION;
         // Save envelopes, mod requirements and existing user folders use the
