@@ -72,6 +72,17 @@ static class AdaptiveSimulationScenario
     }
     public static void Register()
     {
+        ScenarioRunner.Add("world/adaptive-community-predators-stay-detailed",()=>Arena(5813),w=>{
+            var district=Away();var map=district.EntryMap;var actor=map.GetActor(0);
+            actor.IsSleeping=false;actor.SleepPoints=w.Game.Rules.ActorMaxSleep(actor);
+            var resident=map.GetActor(1);actor.AddFollower(resident);
+            actor.SocialGroup.Home=new CommunityHomeState();
+            actor.SocialGroup.Culture=new CommunityCulture { Aggression=CommunityAggression.AttackOutsiders, AggressionInitialized=true };
+            var known=actor.Personality.LearnCommunity(actor.SocialGroup.Identity,"Predators",360,"own policy");
+            known.Policy=new CommunityPolicy { Aggression=CommunityAggression.AttackOutsiders,AggressionKnown=true };
+            var state=(AdaptiveMapState)Check.Call(w.Game,"AdaptiveState",new[]{typeof(Map)},map);
+            Check.Equal(0,Check.Call(w.Game,"QuietHorizon",map,state,390),"predators cannot bypass possible encounters through quiet batching");
+        });
         ScenarioRunner.Add("world/adaptive-arrival-waits-for-district-boundary",()=>Arena(5673),w=>{
             var district=Away();var map=district.EntryMap;var actor=map.GetActor(0);
             actor.IsSleeping=false;actor.SleepPoints=w.Game.Rules.ActorMaxSleep(actor);actor.ActionPoints=Rules.BASE_ACTION_COST;

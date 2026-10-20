@@ -1,31 +1,33 @@
-# Save format
+Save format
+===========
 
-Game worlds use **format 5**. Old world saves, including format 4 and unmarked
+Game worlds use format 5. Old world saves, including format 4 and unmarked
 BinaryFormatter files, are intentionally unsupported; start a new game.
 No running container or existing world save is deleted by the upgrade.
 Version-4 binary settings (options, keybindings, hints, scores and preset
 collections) remain readable, so changing the world format does not reset them.
 Unmarked BinaryFormatter settings are no longer accepted.
 
-## Envelope and archive
+Envelope and archive
+--------------------
 
-Saves record compatibility version `0.4.1` separately from the World release
+Saves record compatibility version 0.4.1 separately from the World release
 version and the envelope format number. This inherited value also selects the
 existing save/settings folder and mod compatibility; World release bumps do not
-change it. Saves from compatibility versions `0.1.0`, `0.1.1`, and the `0.4.x`
-series through `0.4.1` are accepted;
+change it. Saves from compatibility versions 0.1.0, 0.1.1, and the 0.4.x
+series through 0.4.1 are accepted;
 other versions are rejected before loading their mod list or object graph. The
 error shows the saved and running versions. Older settings formats have no game
 version and remain readable for migration.
 
 Every write uses a temporary file, flushes it, and atomically replaces the
-destination, retaining the previous file as `<name>.bak`. Failed writes remove
+destination, retaining the previous file as <name>.bak. Failed writes remove
 the temporary file. Normal game loading can recover from the backup; Read
 Records reads exactly the selected file and never substitutes its backup.
 
 The envelope contains, in order:
 
-1. `RSE1` magic and one byte `5`.
+1. RSE1 magic and one byte 5.
 2. The game version string and ordered mod name/version manifest.
 3. A Boolean indicating whether the root is a Session.
 4. For a Session: the personality-enabled Boolean, save turn (Int32),
@@ -37,12 +39,12 @@ independent of the envelope version; an accepted game-version string does not
 make an old world format readable. Incompatible game versions are rejected
 before applying mods, and a backup does not hide that error.
 
-The resident archive is stored **once**, in its own length-bounded section.
-The world graph writes null for the Session's `m_ResidentRecords` field without
+The resident archive is stored once, in its own length-bounded section.
+The world graph writes null for the Session's m_ResidentRecords field without
 mutating the live Session. Full loading restores that field from the archive.
 Existing archive data is preserved even if personalities are disabled.
 Normal saves refresh living NPC snapshots before serialization; the diagnostic
-`SaveSnapshot` entry point preserves existing snapshots without accessing
+SaveSnapshot entry point preserves existing snapshots without accessing
 model catalogs.
 
 Read Records reads only the archive section and checks its own GZip integrity.
@@ -56,7 +58,8 @@ The mod manifest remains outside both graphs. Full loading restores available
 mods in saved priority order, with existing fallback/error behavior for missing
 resources or model definitions. The menu mod profile remains separate.
 
-## Compact graph
+Compact graph
+-------------
 
 Each section has its own tables and reference graph:
 
@@ -70,7 +73,7 @@ Each section has its own tables and reference graph:
 - Values have null, reference, literal or value-structure tags. Primitive and
   enum encodings preserve their previous values; strings share immutable text.
 - Collections serialize their elements, not internal capacity or indexes.
-- Tile nodes retain their object ID and write model ID, **all** flags and the
+- Tile nodes retain their object ID and write model ID, all flags and the
   decoration-list reference as three Int32 values. Decoration reference 0 means
   null. Empty lists, ordered contents and shared lists remain distinct as needed.
   Equal tile values do not merge mutable Tile instances.
@@ -83,7 +86,8 @@ permits serializable game types and a small set of framework values/collections.
 The settings-only version-4 reader caps its graph at 20,000 objects and rejects
 a Session root immediately.
 
-## Persistent gameplay state
+Persistent gameplay state
+-------------------------
 
 Numeric model/content IDs and string personality IDs remain stable. Tile,
 actor and item model definitions and personality callbacks are rebuilt from
@@ -109,7 +113,7 @@ these lists is allocated only when needed and capped at 16; active promises are
 never evicted to accept a new obligation. Specific nonstacking possessions use
 an item's lazily assigned persistent GUID, while model preferences retain a
 model ID. Generated goal keys distinguish resources, obligations and specific
-items; their supporting event IDs are retained in `Causes`.
+items; their supporting event IDs are retained in Causes.
 
 Personality state also retains bounded NPC intentions and pending spoken
 reactions, per-template cooldowns and the intention sequence. An intention stores
@@ -118,9 +122,9 @@ and attitude, cause/story IDs, initial priority, start/deadline/finish turns,
 status, retry delay/count, announcement state and outcome. Reactions store target
 IDs, text, kind, cause/story IDs and expiry. These fields contain no Actor
 references. Last known positions share graph Map objects; terminal intentions
-clear that reference. See [npc-intentions.md](npc-intentions.md) for limits.
+clear that reference. See npc-intentions.txt for limits.
 
-Each intention can retain a generated `NpcPlan`: desired-state flags, bound
+Each intention can retain a generated NpcPlan: desired-state flags, bound
 action IDs, participant IDs and shared Map locations, condition/effect flags,
 costs, step cursor, knowledge revision, trait fingerprint, retry turn and the
 last actual causal event ID. Failed bindings retain their expiry and location.
@@ -128,7 +132,7 @@ Terminal intentions release steps and failures to clear Map references. A
 loaded plan is revalidated against current observations and rebuilt when needed;
 predicted effects are never restored as actor/world facts. Search nodes and
 execution callbacks are transient. Existing intention enum values remain
-unchanged; `ObtainFood` is appended. These optional fields use format 5 without
+unchanged; ObtainFood is appended. These optional fields use format 5 without
 a new world envelope.
 
 Plans now optionally retain up to 32 named facts for effects that already
@@ -141,13 +145,13 @@ Modular content adds optional stable value/operator IDs, cached custom value
 descriptions/identity suffixes and a deterministic catalog fingerprint. Existing
 goal cooldown keys retain their spelling. The legacy enum values
 and low-word condition/effect masks keep their encodings. Extended symbolic
-planning masks use optional `NpcPlanningResult`/`NpcPlanningExtension` objects;
+planning masks use optional NpcPlanningResult/NpcPlanningExtension objects;
 ordinary plans allocate neither. The 256-bit runtime state reserves separate
 ranges for existing facts, local places/questions and named catalog facts.
 Loading a plan against a changed catalog revision/layout invalidates its steps
 and recomputes the desired state from registered content and current knowledge.
 Callbacks and search nodes remain transient. Existing types keep their full
-`Gameplay.Personality` names despite the source-directory move to `Gameplay/Npc`.
+Gameplay.Personality names despite the source-directory move to Gameplay/Npc.
 
 Stories optionally retain their completion-goal and delivery-report policies,
 so the director does not need to dispatch on a content ID. Observed events and
@@ -155,15 +159,15 @@ resident entries retain optional category metadata; custom observations also
 cache prose for archive recovery. Resident entries always retain their text.
 The archive-only reader therefore displays and filters extension events without
 restoring runtime modules. Absent optional metadata falls back to the built-in
-event definitions. See [npc-content-modules.md](npc-content-modules.md).
+event definitions. See npc-content-modules.txt.
 
-Generated intentions also store `NpcGeneratedGoal`: value kind, permanent
+Generated intentions also store NpcGeneratedGoal: value kind, permanent
 subject ID, current/desired values, normalized deficit, importance, confidence,
 utility, evaluation turn and desired result flags. Their cooldown keys combine
 value and subject, bounded to 64 entries per personality; separate subjects can
 retain separate goals under the same execution ID. These keys and remaining
 cooldowns survive loading. Earlier intentions without this optional payload
-retain their original execution/acceptance rules. `RestoreHealth` and medicine
+retain their original execution/acceptance rules. RestoreHealth and medicine
 plan actions are appended without changing existing enum values.
 
 Knowledge retains bounded facts with original event IDs/time, source IDs,
@@ -185,7 +189,7 @@ shared Map references, units, ownership risk and original observation age as
 food places. These are remembered snapshots, not references to unseen actors.
 
 Person relationships retain trust, fear, attachment, grievance and debt.
-Actors in a group share one serialized `SocialGroup`: permanent identity,
+Actors in a group share one serialized SocialGroup: permanent identity,
 leader/member IDs, founder faction, plan sequence/cooldown and current plan.
 Nested followers and a successor retain that shared instance. Actor group
 sequences distinguish a newly founded group after a split. Assigned goals save
@@ -193,11 +197,11 @@ group identity, destination, collector progress, coordinator identity/last known
 place and original observation turn, allowing continuation between pickup,
 gift and return report.
 
-Each personality may optionally retain up to sixteen `NpcInterest` records:
+Each personality may optionally retain up to sixteen NpcInterest records:
 stable definition ID, subject identity, last known place, importance/need,
 evidence and expiry turns, and a causal event ID. Definitions and callbacks
 are rebuilt from the catalog. Faction coordinators optionally save one current
-`NpcGroupPlan`, proposal sequence and retry turn on their personality; this
+NpcGroupPlan, proposal sequence and retry turn on their personality; this
 does not change social-group membership. The participant's ordinary goal keeps
 the coordinator and story IDs. Group and faction proposals use the same saved
 plan shape and resume from real observations after loading.
@@ -215,7 +219,7 @@ retains Actor references.
 Story roles retain the assigned intention sequence so concurrent intentions
 using the same execution method remain distinct. Episodes retain up to eight
 parent story IDs, with cycles rejected when connecting episodes. Resident
-entries retain supporting causal event IDs in `SupportingCauses` and readable
+entries retain supporting causal event IDs in SupportingCauses and readable
 links between episodes; the archive-only reader needs no world load to read them.
 
 Session retains the significant-event ID sequence. Observations retain event,
@@ -225,8 +229,8 @@ the same identified event after loading does not create another memory, reward
 or intention. The new fields use format 5's existing graph field encoding;
 absent optional fields initialize to their defaults.
 
-Generated building zones retain an optional `BuildingKind` alongside their
-existing name and bounds. `None` is the default for roads, rooms and older
+Generated building zones retain an optional BuildingKind alongside their
+existing name and bounds. None is the default for roads, rooms and older
 zones. Rumor wording looks up the kind at the fact's saved map position; the
 spoken location is then preserved as text in heard journals and resident
 records. Archive entries still do not store separate building coordinates.
@@ -241,24 +245,24 @@ Entries also retain event/cause/story IDs. Private intention starts and terminal
 outcomes are typed chronicle entries with deduplication by intention sequence
 and outcome. They are available to the archive-only reader and excluded from
 physical-event counts and the interesting-life score. Private missing-contact
-inferences, generated `goal_plan` action lists and story-stage entries use the
-same typed archive path and **Intentions and outcomes** filter, and also do not
+inferences, generated goal_plan action lists and story-stage entries use the
+same typed archive path and Intentions and outcomes filter, and also do not
 inflate those counts.
-Heard speech uses existing resident entries with kinds `heard_rumor`,
-`heard_request` and `heard_reply`. Only awake intelligent NPCs within audio range
+Heard speech uses existing resident entries with kinds heard_rumor,
+heard_request and heard_reply. Only awake intelligent NPCs within audio range
 gain an entry; seeing the speaker is not required. Text, event ID and any known
-cause/story ID survive archive-only load, under the **Encounters** filter.
-Unanswered player requests reuse saved `NpcReaction` state and expire after 30
-turns. Its optional `Overheard` field distinguishes requests made to someone
+cause/story ID survive archive-only load, under the Encounters filter.
+Unanswered player requests reuse saved NpcReaction state and expire after 30
+turns. Its optional Overheard field distinguishes requests made to someone
 else from requests addressed to the player. Player promises use the existing
-`NpcCommitment` state and deadline.
-The player's `PersonalityState` also has an optional bounded `HeardJournalEntry`
+NpcCommitment state and deadline.
+The player's PersonalityState also has an optional bounded HeardJournalEntry
 list (up to 128 entries), storing turn, speech kind, identified or anonymous
 speaker, exact heard text and cause ID. It is populated only for awake players
-within hearing range; it is separate from NPC `ResidentRecords` and is displayed
+within hearing range; it is separate from NPC ResidentRecords and is displayed
 in game with J. Saves made before this field was added load with an empty list.
 Read Records builds a temporary index of archived event IDs and resolves a
-record's `CauseId` and `SupportingCauses` into up to two readable antecedents.
+record's CauseId and SupportingCauses into up to two readable antecedents.
 Only prior, present archive entries are shown; missing links produce no text.
 The explanation and its searchable words are derived at read time, so this
 change adds no persistent fields or save-format version.
@@ -266,7 +270,7 @@ Resident snapshots retain stable group identity alongside the current leader
 label. Searching a story tag links its independent participants without loading
 the world.
 
-Inventory's `TotalReceived` counts item **units** successfully added by AddAll
+Inventory's TotalReceived counts item units successfully added by AddAll
 and AddAsMuchAsPossible, including generation, pickups, gifts and trades.
 Partial additions count only the transferred quantity; failed additions add
 nothing. Consumption/removal does not subtract. Picking up the same item again
@@ -276,22 +280,23 @@ An explicitly missing archive can still be rebuilt from available actors,
 corpses and personality records and marked partial. This does not add support
 for old world envelopes or invent discarded events.
 
-## Verification
+Verification
+------------
 
 When changing saved fields, test save/load state, alias identity and boundaries.
 Renaming fields/types needs an explicit mapping or a new format policy; preserve
 numeric and string content IDs. Run the named scenarios, then
-`docker build --target test .` and `bash tests/e2e.sh`.
+docker build --target test . and bash tests/e2e.sh.
 
-Relevant scenarios: `storage/compact-save`, `npc/interest-save`,
-`npc/faction-medicine`, `npc/records-reader-save`, `npc/records-causes`,
-`npc/records-lifetime-items`, `npc/records-query`, `world/records-browser`,
-`npc/intent-persistence`, `npc/intent-boundaries`, `npc/story-persistence`,
-`npc/story-director`, `factions/social-group-succession`,
-`factions/social-group-nested-succession`, and existing
+Relevant scenarios: storage/compact-save, npc/interest-save,
+npc/faction-medicine, npc/records-reader-save, npc/records-causes,
+npc/records-lifetime-items, npc/records-query, world/records-browser,
+npc/intent-persistence, npc/intent-boundaries, npc/story-persistence,
+npc/story-director, factions/social-group-succession,
+factions/social-group-nested-succession, and existing
 personality/relationship/base persistence cases. The E2E test
 generates a world, writes/loads format 5, then uses search, filters, sorting and
 the interesting-NPC selector through the real VNC UI.
 
-See [performance.md](performance.md) for measurements and
-[save-structure.md](save-structure.md) for the original structural audit.
+See performance.txt for measurements and
+save-structure.txt for the original structural audit.

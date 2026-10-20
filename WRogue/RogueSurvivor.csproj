@@ -514,6 +514,9 @@
     <Compile Include="Data\ScavengingState.cs" />
     <Compile Include="Data\TradeRouteState.cs" />
     <Compile Include="Data\CommunityRaid.cs" />
+    <Compile Include="Gameplay\Npc\Knowledge\CommunityAggressionSystem.cs" />
+    <Compile Include="Gameplay\AI\OrderableAI.CommunityAggression.cs" />
+    <Compile Include="Engine\Actions\ActionCommunityAggression.cs" />
     <Compile Include="Gameplay\Npc\Knowledge\CommunityRaidSystem.cs" />
     <Compile Include="Gameplay\AI\OrderableAI.CommunityRaids.cs" />
     <Compile Include="Engine\Actions\ActionCommunityRaid.cs" />

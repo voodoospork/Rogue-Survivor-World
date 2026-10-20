@@ -43,7 +43,7 @@ jobs:
           $existingTag = git ls-remote --tags origin "refs/tags/$tag"
           if ($LASTEXITCODE -ne 0) { throw 'Could not check remote tags' }
           if ($existingTag) { throw "Tag $tag already exists" }
-          $changedFiles = git diff --name-only -- VERSION WRogue/SetupConfig.cs WRogue/RogueSurvivor.csproj README.md
+          $changedFiles = git diff --name-only -- VERSION WRogue/SetupConfig.cs WRogue/RogueSurvivor.csproj README.txt
           if ($LASTEXITCODE -ne 0) { throw 'Could not inspect version changes' }
           if (-not $changedFiles) { throw 'Version is already current; no release commit to create' }
       - name: Build Windows game
@@ -71,7 +71,7 @@ jobs:
           $archive = "RogueSurvivorWorld-v$env:RELEASE_VERSION-windows.zip"
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add VERSION WRogue/SetupConfig.cs WRogue/RogueSurvivor.csproj README.md
+          git add VERSION WRogue/SetupConfig.cs WRogue/RogueSurvivor.csproj README.txt
           git commit -m "Release $tag"
           if ($LASTEXITCODE -ne 0) { throw 'Could not commit release version' }
           git tag -a $tag -m "Release $tag"

@@ -1,0 +1,59 @@
+Community aggression
+====================
+
+Communities have three saved aggression policies in addition to their home,
+property and feud rules:
+
+- Guarded communities use the existing warning, restitution and feud behavior.
+- Outsider killers initiate attacks on visible human outsiders without needing
+  theft, trespass or a prior feud.
+- Raiders attack vulnerable outsiders for possible supplies when their ordinary
+  food reserve is low, or when wounded without healing medicine.
+
+Raider decisions use visible wounds, equipped weapons and nearby opposition.
+They cannot inspect hidden backpacks, ammunition counts or remote companions.
+Police retain their previous rules. Own residents are excluded as targets;
+player followers, orders, relocation and active organized raids exclude
+voluntary predation. Ordinary combat, emergency needs and personal judgment
+remain in force. A policy creates neither a global feud nor remote knowledge.
+
+Predators use ordinary aggression: victims can defend themselves, killing an
+innocent survivor remains murder, and actual witnessed violence affects later
+diplomacy. Raiders use real ground pickups, not generated rewards. They walk to
+the target's last observed position to collect usable ordinary food or healing
+medicine, excluding entrusted cargo. Capacity, ownership, theft responses and
+ordinary death drop/destruction rules still apply; a hunt may yield nothing.
+
+A hunt lasts at most 40 personal turns. Loot, serious injury, sleepiness,
+starvation, elapsed time, an empty searched location or eight blocked travel
+decisions cause withdrawal. The return has a 60-turn/eight-blocked-decision
+limit. A half-world-day personal cooldown prevents repeated robberies.
+Withdrawal does not erase personal hostility. Unseen relocation never updates
+the remembered target position. Organized shelter raids still require known
+feuds and dated shelter reports.
+
+Policies are stable after initialization. Founder traits determine the existing
+enforcement culture; gentle cultures and police stay guarded. Other identities
+can produce raiders or outsider killers, with stronger enforcement favoring
+predation. Actual world frequency depends on founding, survival and opportunity.
+
+Spoken threats name the community. Nearby awake listeners can learn its stated
+aggression rule through the existing dated community records. No new key is
+required. Save format 5 is retained through optional fields. Older saves create
+no hunt, people or supplies; old cultures initialize the missing policy during
+ordinary play. Foreign reports stay stale until new information is heard.
+
+Responsive NPCs does not continue quiet routines for predators or hunts, and
+Adaptive World keeps awake predators and hunts detailed so encounters and hunt
+deadlines cannot disappear into quiet catch-up.
+
+Windows validation: Release has zero warnings/errors. Native units and all 15
+focused checks pass, including real autonomous combat/looting/return, active-hunt
+save/reload, distant Adaptive safety and genuine old format-5 loading. The full
+suite is 566/568: a generated peace delivery is refused and an overnight player
+later dies in ranged combat. The overnight journey passes a 900-round repeat;
+the diplomacy repeat loses its leader. An unchanged installed-baseline comparison
+passes both journeys. Causality is not isolated, and no clean full pass is claimed.
+Large, active-hunt and genuine previous-schema saves satisfy unchanged 10-second
+and 50,000,000-byte limits. Natural encounter frequency, long-run survival and
+human playtesting remain open.

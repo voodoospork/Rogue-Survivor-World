@@ -164,6 +164,7 @@ namespace djack.RogueSurvivor.Gameplay.AI
             List<Percept> mapPercepts = FilterSameMap(game, percepts);
             List<Actor> intentVisible = PrepareNpcIntents(game, mapPercepts);
             CommunityRaidSystem.Update(game, m_Actor, intentVisible);
+            CommunityAggressionSystem.Update(game, m_Actor, intentVisible);
 
             // DEBUG BOT
 #if DEBUG
@@ -302,6 +303,12 @@ namespace djack.RogueSurvivor.Gameplay.AI
 
             ActorAction raidRetreat = BehaviorCommunityRaid(game, intentVisible, true);
             if (raidRetreat != null) return raidRetreat;
+            ActorAction predation = BehaviorCommunityPredation(game, hasEnemies);
+            if (predation != null) return predation;
+            if (!hasEnemies) {
+                ActorAction aggression = CommunityAggressionSystem.Select(game, m_Actor, intentVisible);
+                if (aggression != null) return aggression;
+            }
             ActorAction hostileCall = CommunityEncounterSystem.Select(game, m_Actor, intentVisible, true);
             if (hostileCall != null) return hostileCall;
             ActorAction alarm = BehaviorCommunityAlarm(game, intentVisible);

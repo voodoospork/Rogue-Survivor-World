@@ -36,11 +36,30 @@ namespace djack.RogueSurvivor.Gameplay.Personality
                 Enforcement = votes.Count == 0 ? 50 : (int)votes.Average(v => v.Enforcement),
                 Grudge = votes.Count == 0 ? 50 : (int)votes.Average(v => v.Grudge),
                 LastRevisionClock = game.Session.WorldTime.TurnCounter };
+            InitializeAggression(group, people.Any(a => a.Faction.ID == (int)GameFactions.IDs.ThePolice));
             foreach (Actor a in people) if(!a.IsSleeping) LearnPolicy(a, Snapshot(group, game.Session.WorldTime.TurnCounter), "founding agreement", false);
         }
         public static void Ensure(RogueGame game, Actor actor)
         {
-            if (!Eligible(actor) || actor.SocialGroup.Culture != null) return;
+            if (!Eligible(actor)) return;
+            if (actor.SocialGroup.Culture != null) {
+                if (!actor.SocialGroup.Culture.AggressionInitialized) {
+                    InitializeAggression(actor.SocialGroup, actor.Faction.ID == (int)GameFactions.IDs.ThePolice);
+                    actor.SocialGroup.Culture.Revision++;
+                }
+                // Old saves lack this fixed founding policy. Upgrade only the resident's own
+                // policy; no foreign policy, person, location or current revision is revealed.
+                var old = KnownPolicy(actor);
+                if (old != null && !old.AggressionKnown) {
+                    if (actor.PersonalityIdentity == actor.SocialGroup.LeaderId) {
+                        LearnPolicy(actor, Snapshot(actor.SocialGroup, game.Session.WorldTime.TurnCounter), "community policy initialized");
+                        return;
+                    }
+                    old.Aggression = actor.SocialGroup.Culture.Aggression; old.AggressionKnown = true;
+                    old.Rules = AggressionText(old.Aggression) + RulesText(old.Territoriality, old.Enforcement, old.Grudge);
+                }
+                return;
+            }
             // Compatibility initialization creates no group, claim, actors or provisions.
             Initialize(game, actor.SocialGroup, actor.CommunityResidents.Where(a => !a.IsPlayer &&
                 a.Location.Map == actor.Location.Map && (a == actor || NpcKnowledgeSystem.Visible(game, actor, a.Location))));
@@ -48,7 +67,22 @@ namespace djack.RogueSurvivor.Gameplay.Personality
         static CommunityPolicy Snapshot(SocialGroup group, int turn)
         { var c = group.Culture; return new CommunityPolicy { Community = group.Identity, Name = group.CommunityName,
             Territoriality = c.Territoriality, Enforcement = c.Enforcement, Grudge = c.Grudge, Revision = c.Revision, Turn = turn,
-            Rules = RulesText(c.Territoriality,c.Enforcement,c.Grudge), Complete = true }; }
+            Aggression = c.Aggression, AggressionKnown = true,
+            Rules = AggressionText(c.Aggression) + RulesText(c.Territoriality,c.Enforcement,c.Grudge), Complete = true }; }
+        static void InitializeAggression(SocialGroup group, bool police)
+        {
+            var c = group.Culture; if (c.AggressionInitialized) return;
+            // Stable identity sampling uses no gameplay RNG draws. Compassionate founding
+            // cultures and police stay guarded; forceful cultures can become predators.
+            var bytes = group.Identity.ToByteArray(); int roll = (bytes[0] * 256 + bytes[1]) % 100;
+            c.Aggression = police || c.Enforcement < 50 ? CommunityAggression.Guarded :
+                c.Enforcement >= 80 || roll < 15 ? CommunityAggression.AttackOutsiders :
+                c.Enforcement >= 65 || roll < 40 ? CommunityAggression.Raiders : CommunityAggression.Guarded;
+            c.AggressionInitialized = true;
+        }
+        internal static string AggressionText(CommunityAggression aggression)
+        { return aggression == CommunityAggression.AttackOutsiders ? "We attack all outsiders on sight. " :
+            aggression == CommunityAggression.Raiders ? "When supplies run short, we attack vulnerable outsiders for what they may carry. " : ""; }
         static int Band(int n) { return n < 35 ? 20 : n >= 70 ? 80 : 50; }
         static CommunityPolicy Spoken(CommunityPolicy p)
         { var copy = p.Copy(); copy.Territoriality = Band(p.Territoriality); copy.Enforcement = Band(p.Enforcement); copy.Grudge = Band(p.Grudge); return copy; }
@@ -97,7 +131,7 @@ namespace djack.RogueSurvivor.Gameplay.Personality
         public static void HearCallRules(RogueGame game,Actor speaker)
         {
             var known=KnownPolicy(speaker);if(known==null)return;var p=known.Copy();p.Complete=false;p.Enforcement=p.Grudge=50;
-            p.Territoriality=Band(p.Territoriality);p.Rules=SpokenRules(speaker);
+            p.Territoriality=p.Aggression==CommunityAggression.Guarded?Band(p.Territoriality):50;p.Rules=SpokenRules(speaker);
             foreach(Actor listener in speaker.Location.Map.Actors)if(Hears(game,listener,speaker))LearnPolicy(listener,p,Source(game,listener,speaker));
         }
         static KnownCommunityCase Report(SocialGroup group, CommunityCase c, int date, string source)

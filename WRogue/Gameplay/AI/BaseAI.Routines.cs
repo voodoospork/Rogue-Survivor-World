@@ -89,7 +89,8 @@ namespace djack.RogueSurvivor.Gameplay.AI
         bool RoutineSafe(RogueGame game, IList<Percept> percepts, out int stock)
         {
             stock = 17;
-            if (!(this is CivilianAI) || m_Actor.IsSleeping || m_Actor.IsDead ||
+            if (!(this is CivilianAI) || m_Actor.IsSleeping || m_Actor.IsDead || m_Actor.Predation != null ||
+                Personality.CommunityAggressionSystem.PredatoryPolicy(m_Actor) ||
                 game.Rules.IsActorHungry(m_Actor) || game.Rules.IsActorSleepy(m_Actor) || game.Rules.IsActorDisturbed(m_Actor) ||
                 m_Actor.HitPoints < game.Rules.ActorMaxHPs(m_Actor)) return false;
             if (m_Actor.Activity == Activity.FIGHTING || m_Actor.Activity == Activity.CHASING ||

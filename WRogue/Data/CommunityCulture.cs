@@ -5,6 +5,7 @@ using System.Drawing;
 
 namespace djack.RogueSurvivor.Data
 {
+    enum CommunityAggression { Guarded, Raiders, AttackOutsiders }
     [Serializable] sealed class CommunityPolicy
     {
         public Guid Community;
@@ -12,6 +13,8 @@ namespace djack.RogueSurvivor.Data
         public int Territoriality, Enforcement, Grudge, Turn;
         public long Revision;
         public bool Complete;
+        [OptionalField] public CommunityAggression Aggression;
+        [OptionalField] public bool AggressionKnown;
         public CommunityPolicy Copy() { return (CommunityPolicy)MemberwiseClone(); }
     }
     [Serializable] sealed class CommunityCulture
@@ -22,6 +25,8 @@ namespace djack.RogueSurvivor.Data
         public readonly List<CommunityView> Views = new List<CommunityView>();
         public readonly List<long> Experiences = new List<long>();
         public int Cooperation, Loss, Violations;
+        [OptionalField] public CommunityAggression Aggression;
+        [OptionalField] public bool AggressionInitialized;
         public void Bound()
         {
             while (Cases.Count > 32) Cases.RemoveAt(0);
@@ -83,6 +88,18 @@ namespace djack.RogueSurvivor.Data
     partial class SocialGroup
     {
         [OptionalField] public CommunityCulture Culture;
+    }
+    [Serializable] sealed class CommunityPredation
+    {
+        public Guid Target;
+        public Location Departure, LastSeen;
+        public int Deadline, InitialFood, InitialMedicine, Blocked;
+        public bool Returning;
+    }
+    partial class Actor
+    {
+        [OptionalField] internal CommunityPredation Predation;
+        [OptionalField] internal int NextPredationClock;
     }
     sealed partial class PersonalityState
     {

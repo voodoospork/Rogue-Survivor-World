@@ -1,8 +1,9 @@
-# Completed optimizations
+Completed optimizations
+=======================
 
 This is a quick inventory of changes to runtime work and code structure.
 For benchmark commands, before/after timings, and measurement limits, see
-[docs/performance.md](docs/performance.md).
+docs/performance.txt.
 
 | Area | Change |
 | --- | --- |

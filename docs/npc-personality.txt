@@ -1,13 +1,15 @@
-# NPC traits and memories
+NPC traits and memories
+=======================
 
-Intelligent living actors created through `ActorModel` receive three distinct starting traits
+Intelligent living actors created through ActorModel receive three distinct starting traits
 and one or two unresolved memories when the new-game preset enables NPC traits
-and memories. The actor owns a `PersonalityState`: trait instances, unresolved
+and memories. The actor owns a PersonalityState: trait instances, unresolved
 memory instances, and a bounded journal of significant events it experienced or
 witnessed. Personal memories also live in lasting relationship records after
 resolution. No definition object or callback is serialized with the actor.
 
-## Relationships
+Relationships
+-------------
 
 An NPC keeps separate private records for people, groups, and factions.
 People use stable actor identities and groups use permanent group identities;
@@ -34,7 +36,7 @@ The three feelings and acquired faction-specific trait biases add for a current
 target, clamped to -100..100. Dislike can
 stop trade offers and recruitment; positive feeling can make a marginal trade
 acceptable. A follower's feeling toward its leader also affects trust growth.
-Accumulated `TrustInLeader` remains the authority for trusting the current
+Accumulated TrustInLeader remains the authority for trusting the current
 leader: while it meets the existing threshold, the follower accepts that
 leader's trade offers and does not exclude them from autonomous trade solely
 because of negative attitude. Memories can reduce trust on subsequent turns;
@@ -42,15 +44,16 @@ once trust falls below the threshold, normal attitude-based refusals apply.
 Relationships only affect behavior while the preset option is enabled. NPC
 inspection shows traits but never reveals private pending or resolved memories.
 
-The original AI systems keep their existing roles: `MemorizedSensor` tracks
-recent perceptions, `ExplorationData` tracks visited places, and aggression/
+The original AI systems keep their existing roles: MemorizedSensor tracks
+recent perceptions, ExplorationData tracks visited places, and aggression/
 self-defense records determine combat hostility. Personality observations track
-experienced or witnessed consequences. `OrderableAI.OnRaid` stores a heard
+experienced or witnessed consequences. OrderableAI.OnRaid stores a heard
 arrival signal for reporting even without line of sight; hearing it alone does
-not create a witnessed personality memory. `Scoring` keeps the player's game
-history, while `ResidentRecords` keeps individual NPC histories for Read Records.
+not create a witnessed personality memory. Scoring keeps the player's game
+history, while ResidentRecords keeps individual NPC histories for Read Records.
 
-## Trait-driven intentions
+Trait-driven intentions
+-----------------------
 
 Civilian, gang, soldier and CHAR guard controllers can turn perceived aid,
 hunger, food requests and violence by their leader into persistent personal
@@ -59,7 +62,7 @@ existing survival and combat priorities interrupt ordinary social actions.
 NPCs can thank a helper, repay with actual food, ask for or decline aid, and
 voluntarily leave an unsafe leader. Private intentions and memories remain
 hidden during gameplay. Read Records retains their starts, outcomes and linked
-physical events, including an **Intentions and outcomes** category.
+physical events, including an Intentions and outcomes category.
 
 NPCs also keep bounded knowledge with sources, confidence and remembered places.
 Real conversations can pass reports or answer a searcher's question; direct
@@ -80,7 +83,7 @@ food, and witnessing another participant's successful delivery can remove a
 redundant step. Plans stay private during gameplay and are retained in Read
 Records alongside their actual outcomes.
 
-`NpcGoalGenerator` creates those desired results by evaluating deficits in the
+NpcGoalGenerator creates those desired results by evaluating deficits in the
 NPC's current needs and remembered conditions. Nutrition, recovery, care,
 reciprocity, safety, justice, belonging and autonomy use trait-driven importance
 and evidence confidence. It accepts no event kind: observations first update
@@ -89,7 +92,7 @@ produce a goal without a new significant event. New urgent needs can replace a
 weaker generated goal at the decision boundary. Private starts record the
 current/desired values and utility explanation in Read Records.
 
-An actual food exchange creates the acquired `traded_for_food` memory, attributed
+An actual food exchange creates the acquired traded_for_food memory, attributed
 to the trading partner. Its resolution can grant CHARISMATIC skill. An offer or
 an invalid transaction alone creates no memory of successful negotiation.
 
@@ -98,20 +101,21 @@ Person records also retain trust, fear, attachment, grievance and debt at
 method motivation. They complement the existing feeling score and explicit
 leader trust. Knowledge, goals and these opinions remain private during play.
 
-See [npc-intentions.md](npc-intentions.md) for implemented behavior, limits and
+See npc-intentions.txt for implemented behavior, limits and
 extension points, including faction preferences and director admission rules.
 
-## Extending the catalog
+Extending the catalog
+---------------------
 
-Definitions live in feature modules under `WRogue/Gameplay/Npc/Content/`.
-The base and world catalogs remain in `PersonalityContent.cs` and
-`PersonalityWorldContent.cs`; modules register additional definitions through
-`NpcCatalogBuilder` into `PersonalityRegistry`. See
-[npc-content-modules.md](npc-content-modules.md) for contracts, ownership,
+Definitions live in feature modules under WRogue/Gameplay/Npc/Content/.
+The base and world catalogs remain in PersonalityContent.cs and
+PersonalityWorldContent.cs; modules register additional definitions through
+NpcCatalogBuilder into PersonalityRegistry. See
+npc-content-modules.txt for contracts, ownership,
 observation order and a complete extension in one file.
-A `TraitDefinition` has a stable string ID,
+A TraitDefinition has a stable string ID,
 display name, starting/advanced flag, optional required trait, optional item
-model parameter, and one or more `TraitEffect`s. Standard effects change common
+model parameter, and one or more TraitEffects. Standard effects change common
 AI decision axes: item value, courage, group trust, law enforcement, trade,
 exploration, compassion, and supply value. Conflicting starting traits can be
 registered as a pair. A trait needing new goals/actions can register its
@@ -120,10 +124,10 @@ these contracts without branching on the trait's ID.
 Group trust uses both the leader's traits and the follower's desire for company;
 a solitary follower can lose trust over time while a sociable one gains it faster.
 
-A `MemoryDefinition` owns its `MemoryTrigger`s and ordered `MemoryOutcome`s.
+A MemoryDefinition owns its MemoryTriggers and ordered MemoryOutcomes.
 Its relationship roles select the event's subject, other participant, or group
 leader, and its feeling values specify personal and collective reactions.
-Triggers filter `SignificantEvent`s by kind and observer relationship. Outcomes
+Triggers filter SignificantEvents by kind and observer relationship. Outcomes
 may inspect current traits and the actor's witnessed-event journal. Definitions
 can declare evidence event kinds; a pending memory retains the latest observed
 turn for each declared kind even after older journal entries are evicted. Use
@@ -134,9 +138,9 @@ does not silently consume a memory. Resolution occurs on the
 actor's map when its local day advances. Starting memories use the same
 definitions and have a randomly rolled two-to-six-day deadline.
 
-For a new trigger of an existing event kind, register another `MemoryTrigger`.
-For a new kind of significant event, publish a `SignificantEvent` from the
-actual game action through `RogueGame.ReportPersonalityEvent`. The event handler
+For a new trigger of an existing event kind, register another MemoryTrigger.
+For a new kind of significant event, publish a SignificantEvent from the
+actual game action through RogueGame.ReportPersonalityEvent. The event handler
 checks the map's line of sight, records only witnesses, and routes the event to
 matching triggers. Events can be about death, violence, leadership, aid, raids,
 starvation, zombification, lost bases, or theft from a base. A theft of food or
@@ -154,14 +158,14 @@ namesakes do not merge or inherit each other's relationships.
 The player starts without NPC starting traits or memories. Direct and witnessed
 events build the player's own relationship records; resolving these memories
 keeps their history but does not grant NPC trait or skill outcomes. Press
-`Shift+I` (rebindable as Relationships) to view personal, leader-group, and
+Shift+I (rebindable as Relationships) to view personal, leader-group, and
 faction feelings. Groups are named after their leader. The screen displays
 only the player's records, qualitative feelings and known trust, fear or
 grievance, never another actor's
 private memories or opinions. The list persists in the saved player actor.
 Direct conversations add a neutral contact; completed trades add trust. A
 dispute over supplies or an attack can create a wary or hostile relationship.
-Press `J` to read the exact rumors, requests and replies the player heard.
+Press J to read the exact rumors, requests and replies the player heard.
 Rumors name the event's district and, when its position falls inside a typed
 building zone, the grocery, gun shop, home, park or other known place. The J
 journal and Read Records color these place labels by type. A report from a
@@ -171,16 +175,17 @@ The catalog contains 50 starting and 66 advanced traits. Advanced traits
 are available only through memory resolution. Most require an existing trait;
 two earned-only traits, Battle scarred and Scarcity hardened, can arise from
 surviving an attack or starvation without an unrelated starting prerequisite.
-`likes_items` and `dislikes_items` each take an item model ID; pistol, shotgun,
+likes_items and dislikes_items each take an item model ID; pistol, shotgun,
 magazine, or any other defined item model uses the same trait definition.
 
-Promises, resource disputes, acquired `reliable` and `disillusioned` traits,
+Promises, resource disputes, acquired reliable and disillusioned traits,
 specific possession and home attachments, and causal continuations are described
-in [npc-social-stories.md](npc-social-stories.md). Reports affect reputation with
+in npc-social-stories.txt. Reports affect reputation with
 confidence discounting. An overdue promise is a private assessment until someone
 actually tells it to others.
 
-## Experiences with unique characters, factions, and world events
+Experiences with unique characters, factions, and world events
+--------------------------------------------------------------
 
 There are 42 additional acquired traits, paired with 42 source-specific memories:
 nine unique encounters, eighteen faction experiences, and fifteen world/story
@@ -188,11 +193,11 @@ events. None of these memories or traits is randomly assigned at character
 creation. Each memory has a two-to-six-day deadline. Its first outcome offers
 the special trait when the NPC has the required starting trait; otherwise it
 offers a related skill, then a fallback skill. Existing traits and skill caps
-still apply. `friend_<faction>` and `wary_<faction>` conflict with each other.
+still apply. friend_<faction> and wary_<faction> conflict with each other.
 Player memories preserve history without awarding these NPC outcomes.
 
 Unique encounters happen when an awake intelligent living observer sees the
-actual actor registered in `Session.UniqueActors`. A matching name or actor
+actual actor registered in Session.UniqueActors. A matching name or actor
 model is insufficient. A wall, distance, sleep, or an unspawned/removed actor
 prevents the encounter. The first encounter is remembered once per observer
 and unique identity, including after resolution and save/load. It changes
@@ -200,21 +205,21 @@ feelings toward the person and their group/faction where applicable.
 
 | Unique | Memory ID | Special trait | Required trait |
 | --- | --- | --- | --- |
-| Big Bear | `met_big_bear` | `bear_resolve` | `brave` |
-| Famu Fataru | `met_famu_fataru` | `blade_discipline` | `disciplined` |
-| Santaman | `met_santaman` | `holiday_spirit` | `generous` |
-| Roguedjack | `met_roguedjack` | `rogue_ingenuity` | `curious` |
-| Duckman | `met_duckman` | `duck_camaraderie` | `sociable` |
-| Hans von Hanz | `met_hans_von_hanz` | `hans_drill` | `disciplined` |
-| The Prisoner Who Should Not Be | `met_prisoner` | `prisoner_secrets` | `suspicious` |
-| Jason Myers | `met_jason_myers` | `masked_survivor` | `cautious` |
-| The Sewers Thing | `met_sewers_thing` | `sewer_dread` | `fearful` |
+| Big Bear | met_big_bear | bear_resolve | brave |
+| Famu Fataru | met_famu_fataru | blade_discipline | disciplined |
+| Santaman | met_santaman | holiday_spirit | generous |
+| Roguedjack | met_roguedjack | rogue_ingenuity | curious |
+| Duckman | met_duckman | duck_camaraderie | sociable |
+| Hans von Hanz | met_hans_von_hanz | hans_drill | disciplined |
+| The Prisoner Who Should Not Be | met_prisoner | prisoner_secrets | suspicious |
+| Jason Myers | met_jason_myers | masked_survivor | cautious |
+| The Sewers Thing | met_sewers_thing | sewer_dread | fearful |
 
 Actual help from CHAR, Army, Bikers, Gangstas, Police, BlackOps, Psychopaths,
-or Survivors can create `aid_<faction>` and develop `friend_<faction>` in a
+or Survivors can create aid_<faction> and develop friend_<faction> in a
 trusting NPC. An attack by one of these factions, Undeads, or Ferals, or a
-witnessed murder committed by them, creates `violence_<faction>` and can develop
-`wary_<faction>` in a suspicious NPC. These experiences supplement the existing
+witnessed murder committed by them, creates violence_<faction> and can develop
+wary_<faction> in a suspicious NPC. These experiences supplement the existing
 personal help/violence memories; their additional feeling changes apply to the
 faction without repeating the personal penalty or reward. Friendship adds +15
 to attitude toward other faction members; distrust adds -20. Both also affect
@@ -225,43 +230,44 @@ Animals and undead have no aid outcome and do not gain personality traits.
 World handlers report events at their actual arrival/drop/discovery positions.
 Only observers who see those positions remember them. Failed spawns create no
 arrival memory. Peaceful arrivals have their own events instead of the generic
-`raid` event, which remains registered for old memories. Named raids attribute
+raid event, which remains registered for old memories. Named raids attribute
 their memories to the actual leader and their group; members of the raiding
 faction do not acquire fear of their own raid.
 
 | World/story event and memory ID | Special trait | Required trait |
 | --- | --- | --- |
-| `zombie_invasion` | `night_watch` | `vigilant` |
-| `sewers_invasion` | `underground_caution` | `cautious` |
-| `refugees_arrival` | `refugee_solidarity` | `kind` |
-| `national_guard_arrival` | `army_confidence` | `trusting` |
-| `army_supplies` | `relief_organizer` | `organized` |
-| `bikers_raid` | `roadside_vigilance` | `vigilant` |
-| `hells_souls_raid` | `hells_souls_defiance` | `brave` |
-| `free_angels_raid` | `free_angels_watchfulness` | `vigilant` |
-| `gangstas_raid` | `streetwise` | `pragmatic` |
-| `craps_raid` | `craps_grudge` | `vindictive` |
-| `floods_raid` | `floods_caution` | `cautious` |
-| `blackops_raid` | `blackops_distrust` | `suspicious` |
-| `survivors_arrival` | `convoy_hope` | `sociable` |
-| `char_discovered` | `char_whistleblower` | `skeptic` |
-| `prisoner_transformed` | `betrayal_scar` | `suspicious` |
+| zombie_invasion | night_watch | vigilant |
+| sewers_invasion | underground_caution | cautious |
+| refugees_arrival | refugee_solidarity | kind |
+| national_guard_arrival | army_confidence | trusting |
+| army_supplies | relief_organizer | organized |
+| bikers_raid | roadside_vigilance | vigilant |
+| hells_souls_raid | hells_souls_defiance | brave |
+| free_angels_raid | free_angels_watchfulness | vigilant |
+| gangstas_raid | streetwise | pragmatic |
+| craps_raid | craps_grudge | vindictive |
+| floods_raid | floods_caution | cautious |
+| blackops_raid | blackops_distrust | suspicious |
+| survivors_arrival | convoy_hope | sociable |
+| char_discovered | char_whistleblower | skeptic |
+| prisoner_transformed | betrayal_scar | suspicious |
 
 Special traits affect existing AI decisions: courage, supplies, exploration,
 compassion, trade, group trust, and law enforcement. World experiences also bias
 attitude toward their source faction. For example, an Army assault can develop
-`wary_army` and make an NPC refuse trade with a previously unfamiliar soldier;
+wary_army and make an NPC refuse trade with a previously unfamiliar soldier;
 meeting Santaman can develop generosity and willingness to trade. Resolved
 memories stay in personal/group/faction histories, and the saved-world chronicle
 records the encounter, memory, and eventual trait or skill outcome.
 
-## Reading saved records
+Reading saved records
+---------------------
 
-`Read Records`, directly below `Load Game` in the main menu, opens a saved-world
-chronicle. Choose a `.dat` or `.sav` file in the user `Saves` directory, including
-explicit `.bak` backups, with NPC personalities enabled. The game still has one
+Read Records, directly below Load Game in the main menu, opens a saved-world
+chronicle. Choose a .dat or .sav file in the user Saves directory, including
+explicit .bak backups, with NPC personalities enabled. The game still has one
 active save slot; copies kept in that directory can be browsed independently.
-Then choose `All residents` or an individual NPC. Namesakes have distinct identity
+Then choose All residents or an individual NPC. Namesakes have distinct identity
 tags, and dead NPCs remain available even after their bodies disappear.
 
 The chronicle records intelligent living NPCs from their arrival: starting traits
@@ -271,7 +277,7 @@ personality system's significant events, not a log of every movement or action.
 Unlike the short AI observation journal, this archive does not evict early events.
 It therefore adds to save size as a world grows older.
 For entries with an actual archived cause, Read Records adds a short
-**Prompted by** or **Connected to** explanation, such as a compensation demand
+Prompted by or Connected to explanation, such as a compensation demand
 linked to a witnessed theft. Search also matches that explanation. No motive
 is inferred from a trait alone: a refusal is linked to revenge only if the
 decision was really caused by a recorded grievance or goal.
@@ -285,20 +291,21 @@ saves carry a separate compressed archive, so reading does not load the world,
 resume simulation, or change the active session, mods or options. NPC memories
 remain hidden from gameplay inspection. Old world formats are unsupported.
 
-### Search, filters and ordering
+Search, filters and ordering
+----------------------------
 
 In the resident browser:
 
-- **S** searches a name (case insensitive); **F** opens combined filters.
+- S searches a name (case insensitive); F opens combined filters.
 - Filter by current/last faction or group leader, alive/dead status, minimum
   item acquisitions, memories, events, unique participants appearing in events, human kills,
   resolved memories and gained traits; specify a minimum/maximum lifespan.
-- **O** sorts by name or any of those metrics, including lifespan and interest
-  score. Numeric sorts default to most/longest first; **V** reverses the order.
-- **I**, or the “Most interesting NPC” row, opens the highest-scoring resident
-  **among the current matches**. Empty results are explained. Ties use name and
+- O sorts by name or any of those metrics, including lifespan and interest
+  score. Numeric sorts default to most/longest first; V reverses the order.
+- I, or the “Most interesting NPC” row, opens the highest-scoring resident
+  among the current matches. Empty results are explained. Ties use name and
   persistent identity, so the same save/query selects the same resident.
-- **R** resets the browser; Enter opens one resident or the merged history of
+- R resets the browser; Enter opens one resident or the merged history of
   all matching residents.
 
 Item acquisitions count successful incoming units over the entire life,
@@ -316,19 +323,20 @@ world experiences (4, cap 15) and help given (4, cap 12). It does not reward
 item farming or age by themselves. The resident's page shows its metrics and
 the formula so the selection is explainable.
 
-In a timeline, **S** searches event text and **F** selects memories/traits,
+In a timeline, S searches event text and F selects memories/traits,
 combat, help, encounters/groups, world events, life/survival or intentions and
 outcomes. Both restrictions
-combine; **R** clears them. Up/Down and PgUp/PgDn scroll, Home/End jump, Escape
+combine; R clears them. Up/Down and PgUp/PgDn scroll, Home/End jump, Escape
 returns. Changing a timeline filter does not change the resident's life score.
 Text prompts support Backspace, Ctrl+A to clear and Ctrl+V to paste names.
 
 
-## Verification
+Verification
+------------
 
-Add a named scenario in its own file under `tests/scenarios/cases/npc/` for each
+Add a named scenario in its own file under tests/scenarios/cases/npc/ for each
 new behavior or trigger. Test a real action or AI choice and a boundary case.
-Run `sh tests/scenario.sh <name>`, `docker build --target test .`, and for
-menu or rendering changes `bash tests/e2e.sh`.
-`npc/personality-catalog` audits all registered traits, memory triggers and
+Run sh tests/scenario.sh <name>, docker build --target test ., and for
+menu or rendering changes bash tests/e2e.sh.
+npc/personality-catalog audits all registered traits, memory triggers and
 outcomes, so run it whenever the catalog changes.

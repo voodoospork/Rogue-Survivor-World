@@ -1,0 +1,71 @@
+Larger populations and performance
+==================================
+
+World supports larger civilian communities through population scaling and
+performance improvements. Both features are present; selecting an optional
+simulation mode does not itself change the population setting.
+
+Population targets
+------------------
+
+Civs + Police Density is the ordinary civilian/street-police budget per 50x50
+surface map. The default is 25 and scales with actual district area:
+
+District size    Default target    Target at density 75
+30x30            9                 27
+50x50            25                75
+70x70            49                147
+100x100          100               300
+
+These are ordinary surface targets, not a cap on all actors: special residents,
+the player, zombies and travel can increase the total. The civilian/police split
+retains the existing 15% police chance. Refugee waves use the same scaled target.
+Loading or reducing density does not add/remove existing residents. A native
+generation check successfully places 300 residents on a 100x100 map.
+
+Where the extra simulation capacity comes from
+---------------------------------------------
+
+Classic is the default and includes shared decision calculations, geometry-only
+visibility reuse, bounded path-search storage and cheaper event recipient work.
+Observers still check their own visibility, hearing, knowledge and relationships.
+
+Responsive NPCs also lets safe civilians continue validated guarding, resting or
+movement between full decisions, at most four local turns apart. Damage, danger,
+orders, urgent needs, changed supplies and relevant events interrupt continuation.
+
+Adaptive World includes Responsive NPCs and accounts for elapsed distant time.
+Eligible quiet resting, guarding and isolated travel can use cheaper work; the
+player's district, personal followers, combat, injury, fire, raids, active hunts
+and awake predatory communities remain detailed. Real actors, inventories,
+ownership, deadlines and dated information remain authoritative. Catch-up effort
+and catch-up while waiting are saved options. Format 5 remains supported.
+
+Measured results and limits
+--------------------------
+
+Prior Windows performance measurements used three sequential unprofiled repeats,
+the same preserved controlled saves and actual changing-world turns. In a
+crowded 200-actor fixture, median CPU round time was 236.439 ms on the preserved
+baseline, 188.700 ms on optimized Classic, and 73.966 ms on Responsive NPCs:
+3.20x baseline throughput for Responsive. The actual native offscreen command
+cycle median changed from 223.012 to 118.518 ms, a 46.9% reduction. This does not
+measure physical input latency, desktop composition or representative human play.
+
+Quiet distant catch-up improved 24.35x in warmed comparisons and 4.90x in cold
+processes. Dangerous maps stayed detailed and improved much less. The cold
+result remains below the earlier 5x target; the warmed result does not replace it.
+
+Separate generated-map population measurements show the cost of more residents.
+At 100x100, the default ordinary target rises from the old fixed 25 to 100.
+Median CPU round time was 6.886 ms at the old population, 25.215 ms for scaled
+optimized Classic, and 23.858 ms for scaled Responsive. Responsive was about
+5% faster there and slightly slower in smaller generated workloads. The 3.20x
+crowded-fixture result is not a promise for every larger world.
+
+The performance improvements provide headroom for larger populations, while
+actual turn time still depends on population, danger, activity and hardware.
+No new timing claim is made for the subsequent aggression feature. Its full
+regression is 566/568; native units, 15 focused checks, genuine legacy loading
+and the unchanged 10-second/50-MB save budgets pass. Generated diplomacy and
+survival outcomes remain qualified in docs/community-aggression.txt.

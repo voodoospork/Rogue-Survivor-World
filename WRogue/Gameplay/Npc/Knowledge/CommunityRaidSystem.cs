@@ -20,7 +20,7 @@ namespace djack.RogueSurvivor.Gameplay.Personality
         { return actor.Inventory != null && actor.Inventory.Items.Any(i => !i.IsEntrustedCargo && i.Quantity > 0 &&
             i is ItemFood && !game.Rules.IsFoodSpoiled((ItemFood)i, actor.Location.Map.LocalTime.TurnCounter)); }
         static bool Ready(RogueGame game, Actor actor)
-        { return Free(actor) && actor.CommunityRaid == null && !game.Rules.IsActorHungry(actor) &&
+        { return Free(actor) && actor.CommunityRaid == null && actor.Predation == null && !game.Rules.IsActorHungry(actor) &&
             !game.Rules.IsActorTired(actor) && !game.Rules.IsActorSleepy(actor) &&
             actor.HitPoints >= 3 * game.Rules.ActorMaxHPs(actor) / 4 && Food(game, actor) &&
             actor.Inventory.Items.Any(i => !i.IsEntrustedCargo && (i is ItemMeleeWeapon || i is ItemRangedWeapon && ((ItemRangedWeapon)i).Ammo > 0)); }
