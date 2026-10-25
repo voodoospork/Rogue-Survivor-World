@@ -1,0 +1,52 @@
+Survivor activity / World 0.3.1
+==============================
+
+Survivors keep their ordinary gathering and trading while becoming familiar
+with neighbors. Familiarity is still earned through actual observed turns or
+useful cooperation; membership still needs a proposal and an independent answer.
+
+Shared-refuge movement is a low-priority activity. It needs a viable claim with
+sleeping space, keeps the survivor exploring near a visible partner, and never
+returns a social wait. Shared-refuge movement precedes personal leader recruitment,
+so gaining followers cannot silently prevent independent community formation. A failed social opportunity stops guiding movement after
+four game hours of actual shared observation. A cached shelter check is refreshed hourly or when changing
+buildings, so idle acquaintance does not flood-fill the map every turn.
+
+Residents who are not on watch can use normal exploration and gathering at home
+and nearby. An idle outing lasts at most two game hours and stays within twelve
+tiles of the home anchor on that map. Its next home decision starts a return
+when time or distance is exceeded, or on another map. Returning continues all
+the way to the claim rather than oscillating at the radius. Active tasks,
+combat, urgent survival, personal parties and explicit orders retain priority.
+Watchers still use real posts and ordinary alarm/rotation rules.
+
+Saved optional AI fields retain outing destination identity, deadline and return
+state. Existing saves default to an ordinary return if already away; no new game
+is required. Save format 5, compatibility 0.4.1 and assembly identity 0.4.1.0 are
+unchanged. Shelter-check caches are not serialized.
+
+Validation - October 24, 2026
+-----------------------------
+Windows Release builds with zero warnings/errors and passes native units. All
+seven new activity cases pass in Classic, Responsive NPCs and Adaptive World.
+The installed executable passes native units and 14 focused checks covering
+activity, formation/refusal, home/watch/orders and genuine pre-community saves.
+
+Full regression records 622/624. It retains a generated diplomacy player death
+and follower reunion driver failure. The corrected follower driver separately
+passes its complete 197-round journey, including reload and district travel;
+the earlier full result remains qualified. All robbery/tribute and stair cases
+pass, as do overnight membership and the unchanged save/load budget checks.
+Large-fixture saves take 8.200 / 7.930 / 7.771 seconds, cold loads take
+6.166 / 6.222 seconds, and the file is 9,996,297 bytes, within 10 seconds / 50 MB.
+
+The repeated generated 50x50 initial-decision sample records 0/67 waits, compared
+with 22/67 on the preserved 0.3.0 baseline. This samples one decision per civilian
+across three seeds, not a long-term scheduler or natural-frequency measurement.
+Longer generated trials produce 0/3/1 tribes across 1080/1010/125 rounds; the
+last two end in ordinary player death. Formation varies and safety is not assured.
+
+Evidence is retained outside the source repository under
+working/community-validation/startup-activity/. Human playtesting remains open
+for outing frequency and settlement survival. Linux/Docker were not verified
+locally for this release.

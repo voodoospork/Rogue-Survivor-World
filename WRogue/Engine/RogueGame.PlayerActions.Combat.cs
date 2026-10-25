@@ -229,21 +229,16 @@ namespace djack.RogueSurvivor.Engine
                             Actor actorTo = mapTo.GetActorAt(exitThere.ToPosition);
                             if (actorTo != null)
                             {
-                                // only if enemy.
-                                if (m_Rules.IsKnownEnemy(player, actorTo))
+                                // Explicitly attack the blocker, including non-enemies.
+                                // DoMeleeAttack applies the normal aggression consequences.
+                                if (m_Rules.CanActorMeleeAttack(player, actorTo, out reason))
                                 {
-                                    // check melee rule.
-                                    if (m_Rules.CanActorMeleeAttack(player, actorTo, out reason))
-                                    {
-                                        DoMeleeAttack(player, actorTo);
-                                        loop = false;
-                                        actionDone = true;
-                                    }
-                                    else
-                                        AddMessage(MakeErrorMessage(String.Format("Cannot attack {0} : {1}.", actorTo.Name, reason)));
+                                    DoMeleeAttack(player, actorTo);
+                                    loop = false;
+                                    actionDone = true;
                                 }
                                 else
-                                    AddMessage(MakeErrorMessage(String.Format("{0} is not your enemy.", actorTo.Name)));
+                                    AddMessage(MakeErrorMessage(String.Format("Cannot attack {0} : {1}.", actorTo.Name, reason)));
                             }
                             else
                             {

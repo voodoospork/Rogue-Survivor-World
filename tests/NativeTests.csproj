@@ -13,7 +13,7 @@
     <OutputPath Condition="'$(OutputPath)' == ''">bin\Release\</OutputPath>
     <GameAssembly Condition="'$(GameAssembly)' == ''">..\WRogue\bin\Release\RogueSurvivor.exe</GameAssembly>
     <ExcludedFollowerTravelCases Condition="'$(ExcludeFollowerTravelScenarios)' == 'true'">scenarios\cases\npc\FollowerTravel*.cs;scenarios\cases\world\FollowerTravel*.cs</ExcludedFollowerTravelCases>
-    <ExcludedCommunityCases Condition="'$(ExcludeCommunityScenarios)' == 'true'">scenarios\cases\npc\Community*.cs;scenarios\cases\world\Community*.cs;scenarios\cases\npc\FollowerCallScenario.cs;scenarios\cases\npc\FollowerTravel*.cs;scenarios\cases\world\FollowerTravel*.cs;scenarios\cases\npc\Scavenging*.cs;scenarios\cases\world\Scavenging*.cs</ExcludedCommunityCases>
+    <ExcludedCommunityCases Condition="'$(ExcludeCommunityScenarios)' == 'true'">scenarios\cases\npc\ExtortionScenario.cs;scenarios\cases\npc\Community*.cs;scenarios\cases\world\Community*.cs;scenarios\cases\npc\FollowerCallScenario.cs;scenarios\cases\npc\FollowerTravel*.cs;scenarios\cases\world\FollowerTravel*.cs;scenarios\cases\npc\Scavenging*.cs;scenarios\cases\world\Scavenging*.cs</ExcludedCommunityCases>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />

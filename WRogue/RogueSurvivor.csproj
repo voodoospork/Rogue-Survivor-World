@@ -42,7 +42,7 @@
     <PublisherName>roguedjack</PublisherName>
     <OpenBrowserOnPublish>false</OpenBrowserOnPublish>
     <ApplicationRevision>0</ApplicationRevision>
-    <ApplicationVersion>0.2.0.0</ApplicationVersion>
+    <ApplicationVersion>0.3.1.0</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <CreateDesktopShortcut>true</CreateDesktopShortcut>
     <PublishWizardCompleted>true</PublishWizardCompleted>
@@ -514,6 +514,12 @@
     <Compile Include="Data\ScavengingState.cs" />
     <Compile Include="Data\TradeRouteState.cs" />
     <Compile Include="Data\CommunityRaid.cs" />
+    <Compile Include="Data\ExtortionState.cs" />
+    <Compile Include="Engine\Actions\ActionRobbery.cs" />
+    <Compile Include="Engine\RogueGame.PlayerActions.Robbery.cs" />
+    <Compile Include="Gameplay\Npc\Knowledge\RobberySystem.cs" />
+    <Compile Include="Gameplay\Npc\Knowledge\CommunityTributeSystem.cs" />
+    <Compile Include="Gameplay\AI\OrderableAI.Extortion.cs" />
     <Compile Include="Gameplay\Npc\Knowledge\CommunityAggressionSystem.cs" />
     <Compile Include="Gameplay\AI\OrderableAI.CommunityAggression.cs" />
     <Compile Include="Engine\Actions\ActionCommunityAggression.cs" />

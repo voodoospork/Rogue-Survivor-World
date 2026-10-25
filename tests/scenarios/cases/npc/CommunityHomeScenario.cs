@@ -38,6 +38,8 @@ static class CommunityHomeScenario
             Guid first = leader.SocialGroup.Home.Watcher;
             Check.Equal(false, first == Guid.Empty, "healthy home can assign one watcher");
             Actor watcher = leader.PartyTree().First(a => a.PersonalityIdentity == first);
+            // Test the active watch stint; off-duty residents may now leave on an outing.
+            leader.SocialGroup.Home.NextRotationTurn = 100;
             for (int turn = 51; turn < 64; turn++) Turn(world, watcher, turn);
             Check.Equal(false, world.Map.GetMapObjectAt(watcher.Location.Position) is djack.RogueSurvivor.Engine.MapObjects.DoorWindow,
                 "watcher leaves doorway clear");

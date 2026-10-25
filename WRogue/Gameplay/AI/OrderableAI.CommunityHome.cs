@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Runtime.Serialization;
 using djack.RogueSurvivor.Data;
 using djack.RogueSurvivor.Engine;
 using djack.RogueSurvivor.Engine.Actions;
@@ -13,6 +14,10 @@ namespace djack.RogueSurvivor.Gameplay.AI
 {
     abstract partial class OrderableAI
     {
+        [OptionalField] CommunityShelterLocation m_HomeOutingPlace;
+        [OptionalField] int m_HomeOutingUntil;
+        [OptionalField] bool m_HomeOutingReturning;
+
         protected ActorAction BehaviorCommunityAlarm(RogueGame game, List<Actor> visible)
         {
             SocialGroup group = m_Actor.SocialGroup;
@@ -50,6 +55,34 @@ namespace djack.RogueSurvivor.Gameplay.AI
             game.ScheduleCommunityWatch(m_Actor);
             bool watch = !onlyReturn && home.Watcher == m_Actor.PersonalityIdentity;
             Location destination = resolved.Anchor;
+            XpdBase currentClaim = m_Actor.Location.Map.XpdBaseAt(m_Actor.Location.Position);
+            bool atHome = currentClaim != null && currentClaim.IsPartOf(resolved.Claim);
+            if (watch)
+            {
+                m_HomeOutingUntil = 0;
+                m_HomeOutingReturning = true;
+            }
+            else if (!onlyReturn)
+            {
+                int clock = CommunityAdaptationSystem.Turn(m_Actor);
+                bool sameHome = m_HomeOutingPlace != null && m_HomeOutingPlace.Anchor == home.Place.Anchor &&
+                    m_HomeOutingPlace.Matches(resolved.Map, home.Place.Anchor);
+                if (atHome)
+                {
+                    if (!sameHome || m_HomeOutingReturning || clock >= m_HomeOutingUntil)
+                    {
+                        m_HomeOutingPlace = home.Place.Copy();
+                        m_HomeOutingUntil = clock + 2 * WorldTime.TURNS_PER_HOUR;
+                        m_HomeOutingReturning = false;
+                    }
+                    return null;
+                }
+                if (sameHome && !m_HomeOutingReturning && clock < m_HomeOutingUntil &&
+                    m_Actor.Location.Map == resolved.Map && game.Rules.GridDistance(m_Actor.Location.Position, resolved.Anchor.Position) <= 12)
+                    return null;
+                // Once returning, continue all the way home instead of oscillating at the boundary.
+                m_HomeOutingReturning = true;
+            }
             if (watch)
             {
                 Point? post = WatchPosition(game, resolved);
@@ -58,8 +91,7 @@ namespace djack.RogueSurvivor.Gameplay.AI
             }
             else
             {
-                XpdBase here = m_Actor.Location.Map.XpdBaseAt(m_Actor.Location.Position);
-                if (here != null && here.IsPartOf(resolved.Claim)) return onlyReturn ? null : new ActionWait(m_Actor, game);
+                if (atHome) return null;
                 Point? free = FirstWalkableBaseCell(resolved.Map, resolved.Claim);
                 if (!free.HasValue) { home.Retry(m_Actor.PersonalityIdentity, turn + 30); return null; }
                 destination = new Location(resolved.Map, free.Value);

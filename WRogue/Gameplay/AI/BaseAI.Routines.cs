@@ -90,6 +90,7 @@ namespace djack.RogueSurvivor.Gameplay.AI
         {
             stock = 17;
             if (!(this is CivilianAI) || m_Actor.IsSleeping || m_Actor.IsDead || m_Actor.Predation != null ||
+                Personality.RobberySystem.HasState(m_Actor) || Personality.CommunityTributeSystem.Active(m_Actor) ||
                 Personality.CommunityAggressionSystem.PredatoryPolicy(m_Actor) ||
                 game.Rules.IsActorHungry(m_Actor) || game.Rules.IsActorSleepy(m_Actor) || game.Rules.IsActorDisturbed(m_Actor) ||
                 m_Actor.HitPoints < game.Rules.ActorMaxHPs(m_Actor)) return false;

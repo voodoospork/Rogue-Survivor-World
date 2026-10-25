@@ -141,6 +141,16 @@ namespace djack.RogueSurvivor.Engine
             if (entrusted) return inventory.IsFull ? 0 : item.Quantity;
             return inventory.ReleasedCargoCapacity(item);
         }
+        internal int MoveExtortionUnits(Actor from, Actor to, Item item, int requested)
+        {
+            if (!from.Inventory.Contains(item) || item.IsEntrustedCargo) return 0;
+            int capacity = item.IsEquipped ? (to.Inventory.IsFull ? 0 : item.Quantity) : TradeCapacity(to.Inventory, item);
+            int units = Math.Min(requested, Math.Min(item.Quantity, capacity));
+            if (units <= 0) return 0;
+            if (item.IsEquipped) DoUnequipItem(from, item);
+            MoveTradeUnits(from.Inventory, to.Inventory, item, units);
+            return units;
+        }
         static Item MoveTradeUnits(Inventory from, Inventory to, Item item, int units, TradeCargoTag mark = null)
         {
             if (units <= 0 || !from.Contains(item) || item.Quantity < units) throw new InvalidOperationException("Invalid cargo transfer");

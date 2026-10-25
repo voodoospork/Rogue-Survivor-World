@@ -1,0 +1,116 @@
+Robbery and community tribute - World 0.3.0
+===========================================
+
+Robbery controls
+----------------
+V, then 7: Rob an adjacent awake human. Choose food (up to two units), healing
+medicine (one unit), or the equipped weapon. A pending ordinary request also
+accepts 7. Escape cancels without spending a turn. Existing bindings remain.
+
+A demand costs one ordinary action, inflicts no damage, and gives the victim
+self-defense. An NPC independently surrenders or refuses. If you are the victim,
+V offers Y to surrender available requested goods, N to refuse, or Escape to
+choose another action. You may fight or flee instead. The response window lasts
+eight world turns, expires on separation, and is interrupted by injury/combat.
+Only consent transfers your inventory. A robbery never reveals your backpack.
+
+Real items change hands, preserving quantities, weapon state and food expiry.
+Entrusted freight, spoiled food and non-healing medicine are excluded. Capacity
+can prevent or limit a transfer. A partial surrender settles that personal demand;
+a full inventory or missing goods cannot create loot. Successful surrender ends
+only the newly created personal threat, earns no aid/trust reward, and retains
+witnessed coercion. Prior crimes, faction hostility and community feuds remain.
+The same robber cannot issue another demand for half a world day.
+
+Raider behavior
+---------------
+Community raiders now approach suitable visible outsiders and threaten them
+before attacking. Hunger, starvation, low personal food, wounds without medicine,
+visible weapons, armor, wounds and nearby opposition affect opportunity. Greater
+desperation permits greater risk. Own loaded weapons are required against armed
+victims; an opponent's equipped firearm looks armed regardless of its unknown
+ammunition. Hidden gear, stock and remote companions are not inspected. Victim
+courage, personal shortages, visible force and known nearby support affect refusal.
+
+Normal immediate explosive danger, equipment choices, player-party exclusions,
+personal orders and survival rules remain. Raiders with food to eat do not rob
+merely because they are hungry. Outsider-killer communities retain their separate
+attack policy. A refused or unanswered visible demand can start the existing
+bounded hunt, real combat, physical loot collection and withdrawal. If the odds
+have become unfavorable the robber can back down. An unseen fleeing target
+produces no new tracking destination. These decisions do not promise safety.
+
+Tribute
+-------
+A raider chief can approach a visible, identified weaker chief and demand daily
+food tribute. At least one observed community supporter is required. Counts and
+equipment are limited to nearby awake people whose affiliation the observer
+knows. No distant roster, enemy backpack or remote stock is inspected. Chiefs
+with personal orders, player-party duties, relocation, raids or personal hunts
+cannot negotiate. Police keep their existing organization and rules.
+
+Demands specify two to four food units per world day. The receiving chief can
+agree or refuse based on visible force, courage and observed household starvation.
+Acceptance allows 180 world turns for the first collection, including partial
+payments, while keeping one usable food unit for the paying chief. Only the
+chief's carried personal food is available. An impoverished household can seek
+food during that grace period. A full collector does not repeatedly consume the
+payer's turns with zero transfers.
+
+Each installment is physically handed over at adjacent contact. Completing it
+schedules the next due date one day later. Unpaid balances do not grow through
+remote deductions or compounded missed-day taxes. The community accounts remain
+independent, bounded to four each, and are exchanged only at contact. Succession
+retains the community's own account. An absent or unseen community is never
+silently taxed, declared dead, or inferred to have refused from its live stock.
+
+Pending talks and accepted tribute suspend unprovoked predation between the
+participants. Payment buys that community truce, without erasing personal
+hostility or other crimes. A forceful, still stronger collector may publicly
+declare a feud after actual refusal or failed collection at contact. Existing
+normal feud/raid rules then apply. Twelve unanswered turns retire an initial
+demand at contact without automatically treating silence as refusal. These are
+local encounters and collections, not a remote taxation or courier system.
+
+Player information and compatibility
+-----------------------------------
+V / 4 (Relations) / 5 reports a chief's dated tribute accounts. Overheard demands,
+agreements and collections can enter existing community news and the J journal.
+Reports preserve dates and sources; they do not grant access to the live ledger.
+Threats can generate attributed diplomatic grievances only through participants,
+actual witnesses and later reports. No player government authority is added.
+
+Optional serialized fields retain format 5, assembly identity 0.4.1.0 and inherited
+save/mod compatibility 0.4.1. Introduced in World 0.3.0. Responsive NPCs and
+Adaptive World retain detailed handling for pending coercion and tribute accounts.
+No people, supplies, gear or permissions are generated by loading an older save.
+
+Validation - October 22, 2026
+-----------------------------
+Final Windows Release: zero compiler warnings/errors, World 0.3.0, executable
+SHA256 244388CD7D389D05D4CFC57882CA3CFDD052BAE6F38CED52DC9E58AE2FDCCA27.
+Native units and all 26 new production scenarios pass. All 26 also pass separately
+in Responsive NPCs and Adaptive World. Controls are exercised through production
+V handlers, including cancellation, surrender, account reports and interrupted
+long waiting. The genuine pre-community format-5 fixture loads empty new state
+and retains its original hash. Pending demands and agreements survive reload.
+
+Full regression is 615/617. Generated diplomacy loses its chief before the actual
+conversation, and scavenging loses its request beneficiary before delivery. The
+900-round overnight and generated follower journeys pass. Those two unsuccessful
+journeys and their participant losses are retained; causality is not isolated,
+and no clean full-suite pass is claimed. The first full candidate's nine null-
+percept failures in opt-out personality/base scenarios were fixed and those
+cases pass in the final run. Earlier build/runner corrections and logs remain.
+
+Large fixture: 416 maps, 1,124,864 tiles, 6,240 actors. Saves take
+7.338 / 7.199 / 7.643 seconds, fresh loads 5.473 / 5.325 seconds, archive-only
+0.892 seconds; file size 10,000,290 bytes. The unchanged 10-second / 50,000,000-
+byte limits pass. These are persistence budget checks, not responsiveness claims.
+
+Human native interface review and natural robbery/tribute frequency remain
+unmeasured. Later World 0.3.1 validation also passes all robbery/tribute cases;
+see survivor-activity.txt for the qualified full-regression result.
+Repeatable helpers are working/run-extortion-validation.ps1 and
+working/deploy-extortion.ps1. Final manifests/logs are under
+working/community-validation/extortion outside the source repository.

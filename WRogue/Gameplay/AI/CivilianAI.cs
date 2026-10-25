@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Drawing;   // Point
 
@@ -106,8 +106,41 @@ namespace djack.RogueSurvivor.Gameplay.AI
         ExplorationData m_Exploration;
 
         string[] m_Emotes;
+        [NonSerialized] CommunityShelterLocation m_RefugePlace;
+        [NonSerialized] HashSet<Point> m_RefugeCells;
+        [NonSerialized] int m_RefugeReviewTurn;
         #endregion
 
+        ActorAction BehaviorSharedRefuge(RogueGame game, List<Actor> visible)
+        {
+            Actor partner = CommunityAdaptationSystem.RefugePartner(game, m_Actor, visible);
+            if (partner == null) return null;
+            int turn = CommunityAdaptationSystem.Turn(m_Actor);
+            var contact = m_Actor.ResidentCommunity.Contact(partner.PersonalityIdentity);
+            // An unsuccessful social opportunity cannot reserve an actor's whole day.
+            if (contact.ObservedTurns >= 4 * WorldTime.TURNS_PER_HOUR) return null;
+            if (m_RefugePlace == null || !m_RefugePlace.Matches(m_Actor.Location.Map, m_Actor.Location.Position) || turn >= m_RefugeReviewTurn)
+            {
+                m_RefugePlace = CommunityShelterLocation.At(m_Actor.Location);
+                m_RefugeReviewTurn = turn + WorldTime.TURNS_PER_HOUR;
+                string reason;
+                var cells = XpdBasePlanner.Preview(m_Actor.Location.Map, m_Actor, game.Rules, out reason);
+                m_RefugeCells = cells != null && CommunityAdaptationSystem.SleepingSpace(game, m_Actor, m_Actor.Location.Map, cells) >= 2 ?
+                    new HashSet<Point>(cells, PointComparer.Instance) : null;
+            }
+            if (m_RefugeCells == null) return null;
+            if (CommunityAdaptationSystem.ReadyToDiscuss(m_Actor, partner) &&
+                game.Rules.GridDistance(m_Actor.Location.Position, partner.Location.Position) > 1)
+            {
+                ActorAction approach = BehaviorIntelligentBumpToward(game, partner.Location.Position, false, false);
+                if (approach != null) return approach;
+            }
+            return BehaviorWander(game, next => next.Map.IsInBounds(next.Position) && m_RefugeCells.Contains(next.Position) &&
+                next.Map.GetTileAt(next.Position).IsInside && next.Map.GetExitAt(next.Position) == null &&
+                !(next.Map.GetMapObjectAt(next.Position) is Engine.MapObjects.DoorWindow) &&
+                game.Rules.GridDistance(next.Position, partner.Location.Position) <= 3 &&
+                !IsAnyUnsafeDamagingTrapThere(game, next.Map, next.Position), m_Exploration);
+        }
         #region BaseAI
         public override void TakeControl(Actor actor)
         {
@@ -121,6 +154,9 @@ namespace djack.RogueSurvivor.Gameplay.AI
             m_LastSoldierSaw = null;
             m_LastRaidHeard = null;
             m_Emotes = null;
+            m_RefugePlace = null;
+            m_RefugeCells = null;
+            m_RefugeReviewTurn = 0;
         }
 
         protected override void CreateSensors()
@@ -195,6 +231,10 @@ namespace djack.RogueSurvivor.Gameplay.AI
                 return bestEquip;
             }
             // end alpha10
+
+            ActorAction robberyResponse = BehaviorRobberyResponse(game);
+            if (robberyResponse != null)
+                return BehaviorFleeFromExplosives(game, FilterStacks(game, mapPercepts)) ?? robberyResponse;
 
             List<Percept> enemies = FilterEnemies(game, mapPercepts);
             bool hasEnemies = enemies != null && enemies.Count > 0;
@@ -318,6 +358,8 @@ namespace djack.RogueSurvivor.Gameplay.AI
             ActorAction predation = BehaviorCommunityPredation(game, hasEnemies);
             if (predation != null) return predation;
             if (!hasEnemies) {
+                ActorAction extortion = BehaviorExtortion(game, intentVisible);
+                if (extortion != null) return extortion;
                 ActorAction aggression = CommunityAggressionSystem.Select(game, m_Actor, intentVisible);
                 // One ordinary introduction can establish the cover before a first attack.
                 // The saved shared contact cooldown prevents repeated greeting delays.
@@ -540,18 +582,6 @@ namespace djack.RogueSurvivor.Gameplay.AI
                 if (decision != null && decision.IsLegal()) return decision;
                 ActorAction relocation = BehaviorCommunityRelocation(game);
                 if (relocation != null) return relocation;
-                Actor partner = CommunityAdaptationSystem.RefugePartner(game, m_Actor, intentVisible);
-                if (partner != null)
-                {
-                    if (CommunityAdaptationSystem.ReadyToDiscuss(m_Actor, partner) &&
-                        game.Rules.GridDistance(m_Actor.Location.Position, partner.Location.Position) > 1)
-                    {
-                        ActorAction approach = BehaviorIntelligentBumpToward(game, partner.Location.Position, false, false);
-                        if (approach != null) return approach;
-                    }
-                    // A real pause in a shared refuge earns observed time, never automatic admission.
-                    if (m_Actor.ResidentCommunity.Proposal == null) return new ActionWait(m_Actor, game);
-                }
             }
             #region
             ActorAction dropUseless = BehaviorDropUselessItem(game);
@@ -834,6 +864,10 @@ namespace djack.RogueSurvivor.Gameplay.AI
             // Home work follows survival, speech, current jobs and supply work.
             if (!hasEnemies)
             {
+                // Give co-occupants time to form an independent community before personal recruitment.
+                // Gathering, trade, survival and current jobs have already had their turn.
+                ActorAction refuge = BehaviorSharedRefuge(game, intentVisible);
+                if (refuge != null) return refuge;
                 ActorAction homeAction = BehaviorCommunityHome(game);
                 if (homeAction != null) return homeAction;
             }
@@ -925,9 +959,14 @@ namespace djack.RogueSurvivor.Gameplay.AI
                 return revive;
             }
 
+
             // 23 use exit.
             #region
-            if (game.Rules.RollChance(Math.Max(0, Math.Min(100,
+            ResolvedCommunityHome idleHome = game.ResolveCommunityHome(m_Actor);
+            bool knownHome = idleHome != null && (m_Actor.Community == null ||
+                m_Actor.ResidentCommunity.KnownHome != null && m_Actor.ResidentCommunity.KnownHome.Matches(idleHome.Map, idleHome.Anchor.Position));
+            // Idle outings stay on the home map; real jobs and survival travel run earlier.
+            if (!knownHome && game.Rules.RollChance(Math.Max(0, Math.Min(100,
                 USE_EXIT_CHANCE + PersonalitySystem.Bias(m_Actor, DecisionKind.Explore)))))
             {
                 ActorAction useExit = BehaviorUseExit(game, UseExitFlags.DONT_BACKTRACK);

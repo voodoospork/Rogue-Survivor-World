@@ -52,11 +52,12 @@ namespace djack.RogueSurvivor.Gameplay.Personality
             bool property = e.Kind == "base_theft" || e.Kind == "community_defense_tampered";
             bool boundary = e.Kind == "community_trespass_defied";
             bool restitution = e.Kind == "community_restitution_failed" || e.Kind == "community_restitution_refused" || e.Kind == "restitution_refused";
-            bool harm = killing || assault || property || boundary || e.Kind == "promise_broken" || restitution;
+            bool coercion = e.Kind == "robbery_threat" || e.Kind == "tribute_demand";
+            bool harm = killing || assault || property || boundary || e.Kind == "promise_broken" || restitution || coercion;
             bool help = e.Kind == "helped" || e.Kind == "promise_kept" || e.Kind == "traded" || e.Kind == "bartered_food" || e.Kind == "restitution_given";
             if (!harm && !help) return null;
             int severity = assault ? 25 : killing ? 40 : property ? 15 : e.Kind == "promise_broken" ? 5 :
-                boundary || restitution ? 10 : e.Kind == "traded" || e.Kind == "bartered_food" ? 2 : 10;
+                boundary || restitution || coercion ? 10 : e.Kind == "traded" || e.Kind == "bartered_food" ? 2 : 10;
             string explanation = e.Kind.Replace('_', ' ');
             if (killing)
             {
@@ -82,7 +83,7 @@ namespace djack.RogueSurvivor.Gameplay.Personality
                 SubjectPerson = attribution == null ? (o.SeesSubject ? e.Subject.PersonalityIdentity : Guid.Empty) : attribution.SubjectPerson,
                 OtherPerson = attribution == null ? (o.SeesOther ? e.Other.PersonalityIdentity : Guid.Empty) : attribution.OtherPerson,
                 Severity = severity, Explanation = explanation, Killing = killing, Assault = assault,
-                Violence = killing || assault, Positive = help, Turn = e.Turn, Property = property || boundary, Nonviolent = property || boundary || restitution || e.Kind == "promise_broken" };
+                Violence = killing || assault, Positive = help, Turn = e.Turn, Property = property || boundary, Nonviolent = property || boundary || restitution || coercion || e.Kind == "promise_broken" };
         }
         public static void Observe(NpcObservation observation)
         {

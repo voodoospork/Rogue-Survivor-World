@@ -76,6 +76,7 @@ namespace djack.RogueSurvivor.Engine
                 if (actor.IsDead || actor.IsPlayer || actor.Model.Abilities.IsUndead || actor.Model.Abilities.IsRotting || actor.Infection > 0 || actor.IsRunning ||
                     actor.HitPoints != m_Rules.ActorMaxHPs(actor) || m_Rules.IsActorDisturbed(actor) ||
                     m_Rules.IsActorHungry(actor) || actor.DraggedCorpse != null || actor.CommunityRaid != null || actor.Predation != null ||
+                    Gameplay.Personality.RobberySystem.HasState(actor) || Gameplay.Personality.CommunityTributeSystem.Active(actor) ||
                     !actor.IsSleeping && Gameplay.Personality.CommunityAggressionSystem.PredatoryPolicy(actor)) return 0;
                 var brain = actor.Controller as BaseAI;
                 if (!actor.IsSleeping && (brain == null || !brain.QuietWait(this))) {
@@ -123,6 +124,7 @@ namespace djack.RogueSurvivor.Engine
                     stamp = stamp*31 + (int)actor.Activity;
                     stamp = stamp*31 + (actor.IsDead || actor.IsRunning || actor.DraggedCorpse != null || actor.CommunityRaid != null || actor.Predation != null ? 1 : 0);
                     stamp = stamp*31 + (Gameplay.Personality.CommunityAggressionSystem.PredatoryPolicy(actor) ? 1 : 0);
+                    stamp = stamp*31 + (Gameplay.Personality.RobberySystem.HasState(actor) || Gameplay.Personality.CommunityTributeSystem.Active(actor) ? 1 : 0);
                     stamp = stamp*31 + (actor.Leader == null ? 0 : actor.Leader.PersonalityIdentity.GetHashCode());
                     stamp = stamp*31 + (actor.Personality?.HasPendingSocialState == true ? 1 : 0);
                     stamp = stamp*31 + ((actor.Controller as BaseAI)?.QuietWait(this) == true ? 1 : 0);

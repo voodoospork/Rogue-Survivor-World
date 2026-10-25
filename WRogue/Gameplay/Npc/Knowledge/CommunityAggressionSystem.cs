@@ -49,7 +49,8 @@ namespace djack.RogueSurvivor.Gameplay.Personality
         }
         public static bool CanAttack(RogueGame game, Actor a, Actor b)
         {
-            if (!Eligible(game, a) || a.Predation != null || !Outsider(a, b) ||
+            if (!Eligible(game, a) || a.Predation != null || RobberySystem.HasState(a) || !Outsider(a, b) ||
+                CommunityTributeSystem.Truce(a, b) ||
                 b.Location.Map != a.Location.Map || !NpcKnowledgeSystem.Visible(game, a, b.Location) ||
                 game.Rules.IsKnownEnemy(a, b) || AvoidUnarmedAttack(game, a, b)) return false;
             var policy = CommunityCultureSystem.KnownPolicy(a);
@@ -70,7 +71,7 @@ namespace djack.RogueSurvivor.Gameplay.Personality
             if (!Eligible(game, a) || visible == null) return null;
             // Neutral policies cost no target scans. Initialization is part of ordinary culture observation.
             var policy = CommunityCultureSystem.KnownPolicy(a);
-            if (policy == null || policy.Aggression == CommunityAggression.Guarded) return null;
+            if (policy == null || policy.Aggression != CommunityAggression.AttackOutsiders) return null;
             foreach (Actor b in visible.OrderBy(b => game.Rules.GridDistance(a.Location.Position, b.Location.Position)))
                 if (CanAttack(game, a, b)) return new ActionCommunityAggression(a, game, b);
             return null;

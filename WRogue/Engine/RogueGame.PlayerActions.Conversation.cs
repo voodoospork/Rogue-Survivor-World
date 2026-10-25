@@ -11,6 +11,8 @@ namespace djack.RogueSurvivor.Engine
     {
         bool HandlePlayerTalk(Actor player)
         {
+            RobberySystem.Update(this, player);
+            if (RobberySystem.Robber(this, player) != null) return HandleRobberyAnswer(player);
             Actor target = null;
             int nearby = 0;
             for (int dx = -1; dx <= 1; dx++) for (int dy = -1; dy <= 1; dy++)
@@ -56,7 +58,7 @@ namespace djack.RogueSurvivor.Engine
                 AddCommunitySpeech("1: News / requests" + (CommunityMembershipSystem.IsLeader(this, target) ? "   2: Membership" : "") +
                     (player.CommunityMembership != null && player.SocialGroup == target.SocialGroup ? "   3: Leave" : "") +
                     (CommunityDiplomacySystem.IsLeader(target) ? "   4: Relations / peace" : "") +
-                    (m_Session.GamePreset.NpcPersonalitiesEnabled ? "   5: Supply leads   6: Trade / deliveries" : "") + "   Esc: cancel",
+                    (m_Session.GamePreset.NpcPersonalitiesEnabled ? "   5: Supply leads   6: Trade / deliveries   7: Rob" : "") + "   Esc: cancel",
                     Color.LightSkyBlue);
                 RedrawPlayScreen();
                 while (true)
@@ -66,6 +68,7 @@ namespace djack.RogueSurvivor.Engine
                     if ((choice == Keys.D4 || choice == Keys.NumPad4) && CommunityDiplomacySystem.IsLeader(target)) return HandleCommunityRelations(player, target);
                     if ((choice == Keys.D5 || choice == Keys.NumPad5) && m_Session.GamePreset.NpcPersonalitiesEnabled) return HandleSupplyConversation(player, target);
                     if ((choice == Keys.D6 || choice == Keys.NumPad6) && m_Session.GamePreset.NpcPersonalitiesEnabled) return HandleTradeRoutes(player, target);
+                    if ((choice == Keys.D7 || choice == Keys.NumPad7) && m_Session.GamePreset.NpcPersonalitiesEnabled) return HandlePlayerRobbery(player, target);
                     if (choice == Keys.D1 || choice == Keys.NumPad1 || choice == Keys.Enter) break;
                     if (choice == Keys.D3 || choice == Keys.NumPad3)
                     {
@@ -108,12 +111,13 @@ namespace djack.RogueSurvivor.Engine
             if (pending != null)
             {
                 AddMessage(new Message(target.TheName + (pending.Overheard ? " asked someone for " : " asked you for ") +
-                    pending.Text + ". Y: agree, N: decline, ESC: later.",
+                    pending.Text + ". Y: agree, N: decline, 7: Rob, ESC: later.",
                     m_Session.WorldTime.TurnCounter));
                 RedrawPlayScreen();
                 while (true)
                 {
                     Keys key = m_UI.UI_WaitKey().KeyCode;
+                    if (key == Keys.D7 || key == Keys.NumPad7) return HandlePlayerRobbery(player, target);
                     if (key == Keys.Y) { answer = true; break; }
                     if (key == Keys.N) { answer = false; break; }
                     if (key == Keys.Escape) return false;

@@ -81,7 +81,10 @@ namespace djack.RogueSurvivor.Engine
 
         readonly string[] CLOSE_DOOR_MODE_TEXT = new string[] { "CLOSE MODE - click an adjacent tile or press a direction, ESC cancels" };
         readonly string[] BARRICADE_MODE_TEXT = new string[] { "BARRICADE/REPAIR MODE - click adjacent tile or press a direction, ESC cancels" };
-        readonly string[] BREAK_MODE_TEXT = new string[] { "BREAK MODE - click adjacent tile/self or press a direction, ESC cancels" };
+        readonly string[] BREAK_MODE_TEXT = new string[] {
+            "BREAK MODE - click adjacent tile/self or press a direction, ESC cancels",
+            "On stairs, target self to attack the blocker, even a non-enemy."
+        };
         readonly string[] BUILD_LARGE_FORT_MODE_TEXT = new string[] { "BUILD LARGE FORTIFICATION - click adjacent tile or press a direction, ESC cancels" };
         readonly string[] BUILD_SMALL_FORT_MODE_TEXT = new string[] { "BUILD SMALL FORTIFICATION - click adjacent tile or press a direction, ESC cancels" };
         readonly string[] TRADE_MODE_TEXT = new string[] { "TRADE MODE - Y to accept the deal, N to refuse" };
@@ -749,6 +752,24 @@ namespace djack.RogueSurvivor.Engine
 
 
         #region Loud noises
+        void OnShoutNoise(Actor speaker)
+        {
+            Map map = speaker.Location.Map;
+            Point position = speaker.Location.Position;
+            OnLoudNoise(map, position, "A SHOUT");
+
+            // Only a shout from the bottom stair carries to the linked upper landing.
+            // Apply noise there directly so it cannot relay through another exit.
+            if (!map.GetTileAt(position.X, position.Y).HasDecoration(GameImages.DECO_STAIRS_UP)) return;
+            Exit exit = map.GetExitAt(position);
+            if (exit == null || exit.ToMap == map || !exit.ToMap.IsInBounds(exit.ToPosition)) return;
+            OnLoudNoise(exit.ToMap, exit.ToPosition, "A SHOUT from below");
+            if (m_Player != null && !m_Player.IsSleeping && m_Player.Location.Map == exit.ToMap &&
+                m_Player.AudioRange > 0 &&
+                m_Rules.StdDistance(m_Player.Location.Position, exit.ToPosition) <= m_Player.AudioRange)
+                AddMessage(new Message("You hear a shout from below.", exit.ToMap.LocalTime.TurnCounter));
+        }
+
         void OnLoudNoise(Map map, Point noisePosition, string noiseName)
         {
             ////////////////////////////////////////////

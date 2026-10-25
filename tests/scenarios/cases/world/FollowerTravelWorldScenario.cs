@@ -78,7 +78,16 @@ static class FollowerTravelWorldScenario
         for (int n = 0; n < 180 && (f.Location.Map != w.Map || f.IsSleeping || w.Game.Rules.GridDistance(f.Location.Position, w.Game.Player.Location.Position) > range); n++)
         {
             Check.Equal(false, f.IsDead, "companion survives normal survival and danger decisions");
-            if (!Survival(w)) { w.Try(new ActionWait(w.Game.Player, w.Game)); Round(w); }
+            if (!Survival(w))
+            {
+                // A lost follower only knows its last contact. The driver must regain contact too.
+                if (w.Game.FollowerVisible(f) && w.Game.Rules.GridDistance(f.Location.Position, w.Game.Player.Location.Position) > range)
+                    Step(w, f.Location.Position, range, true);
+                else if (!w.Game.FollowerVisible(f) && lastSeen.HasValue &&
+                    w.Game.Rules.GridDistance(lastSeen.Value, w.Game.Player.Location.Position) > 1)
+                    Step(w, lastSeen.Value, 1, true);
+                else { w.Try(new ActionWait(w.Game.Player, w.Game)); Round(w); }
+            }
         }
         Check.Same(w.Map, f.Location.Map, "regrouped on actual map"); Check.Equal(false, f.IsSleeping, "companion awake before crossing");
         Check.Equal(true, w.Game.Rules.GridDistance(f.Location.Position, w.Game.Player.Location.Position) <= range, "ordinary NPC decisions reunite party");

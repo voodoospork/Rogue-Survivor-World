@@ -100,3 +100,10 @@ The large and copied-save cases pass the unchanged 10-second/50,000,000-byte
 limits. Initial fixture and home-interaction failures are retained separately;
 the corrected home cases pass without relaxing their gameplay assertions.
 No new population-performance gain or human playtest is claimed for 0.2.0.
+
+World 0.3.0 update - October 22, 2026
+-------------------------------------
+Raider communities now prefer an actual robbery demand and independent answer
+before starting a supply hunt. Desperation and visible gear influence the risk;
+chiefs can also demand daily food tribute from weaker communities at contact.
+The current rules and final validation are in robbery-and-tribute.txt.

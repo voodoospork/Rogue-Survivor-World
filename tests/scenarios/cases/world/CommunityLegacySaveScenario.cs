@@ -33,6 +33,9 @@ static class CommunityLegacySaveScenario
             Check.Same(leader, follower.Leader, "existing leader/follower relationship survives loading");
             Check.Equal(2, NpcIntentSupport.FoodUnits(follower), "existing resources survive loading");
             Check.Equal(null, leader.Predation, "old save has no invented predation duty");
+            Check.Equal(null, leader.Robbing, "old save invents no robbery demand");
+            Check.Equal(null, player.BeingRobbed, "old save invents no coercion response");
+            Check.Equal(false, leader.SocialGroup.HasTributeAccounts, "old save invents no tribute agreement");
             Check.Equal(0, leader.NextPredationClock, "old save has no invented predation cooldown");
             Guid identity = leader.SocialGroup.Identity;
             restored.Map.PlaceActorAt(player, new System.Drawing.Point(2, 1));

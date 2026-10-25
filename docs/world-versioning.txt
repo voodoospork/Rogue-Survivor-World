@@ -1,7 +1,7 @@
 World versioning
 ================
 
-Current World release: 0.2.0. World began at 0.1.0, based on Expanded 0.4.1.
+Current World release: 0.3.1. World began at 0.1.0, based on Expanded 0.4.1.
 0.2.0 is the community aggression feature release: outsider killers,
 opportunistic supply raiders, deceptive introductions and unarmed restraint.
 
@@ -56,3 +56,23 @@ Release has zero warnings/errors. Full gameplay regression is 575/578, with
 generated diplomacy, overnight membership and scavenging failures qualified in
 community-aggression.txt. Save/load budgets pass. The Ruby release helper and
 Linux/Docker were not executed; no new visual or human review is claimed.
+
+World 0.3.0 adds personal robbery and recurring community tribute. Save format,
+assembly identity, save/mod compatibility and existing user folders remain.
+
+World 0.3.1 fixes startup survivor waiting and lets idle residents make bounded
+nearby outings. Community consent, watch duty and survival priorities remain.
+This source also includes explicit attacks against neutral stair blockers and
+one-floor upward shouts from the bottom stair. Details: README.txt and
+survivor-activity.txt. Save and assembly compatibility remain unchanged.
+
+October 24, 2026 / World 0.3.1 verification
+------------------------------------------
+The Windows Release has zero warnings/errors. Native units and seven new
+activity cases pass; those seven also pass in each optional simulation mode.
+The installed executable passes 14 focused activity/home/consent/watch/legacy
+checks. Full regression is 622/624, retaining a generated diplomacy death and
+a follower reunion driver failure. A corrected follower driver passes its
+separate complete journey; no clean full-suite result is claimed. The unchanged
+10-second/50-MB persistence limits and genuine pre-community saves pass.
+See survivor-activity.txt for the exact results and measurement limits.

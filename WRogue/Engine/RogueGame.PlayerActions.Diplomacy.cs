@@ -23,7 +23,7 @@ namespace djack.RogueSurvivor.Engine
                 ClearOverlays();
                 CommunityRelation relation = relations.Count == 0 ? null : relations[selected];
                 CommunityPeaceOffer offer = offers.Count == 0 ? null : offers[packet];
-                var lines = new List<string> { leader.SocialGroup.CommunityName + " - relations / peace", "Left/Right: relationship   Space: carried offer", "1: Hear report   2: Request peace offer   3: Deliver offer   4: Ratify reply   Esc: cancel" };
+                var lines = new List<string> { leader.SocialGroup.CommunityName + " - relations / peace", "Left/Right: relationship   Space: carried offer", "1: Hear report   2: Request peace offer   3: Deliver offer   4: Ratify reply   5: Tribute accounts   Esc: cancel" };
                 if (relation == null) lines.Add("No relationships recorded by this leader.");
                 else
                 {
@@ -87,6 +87,8 @@ namespace djack.RogueSurvivor.Engine
                     completed = offer != null && CommunityDiplomacySystem.Deliver(this, player, leader, offer, out reason);
                 else if (key == Keys.D4 || key == Keys.NumPad4)
                     completed = offer != null && CommunityDiplomacySystem.Ratify(this, player, leader, offer, out reason);
+                else if (key == Keys.D5 || key == Keys.NumPad5)
+                { ClearOverlays(); CommunityTributeSystem.Report(this, leader, player); completed = true; }
                 else continue;
                 ClearOverlays();
                 if (!completed) AddCommunitySpeech(reason ?? "No suitable carried offer is selected.", Color.LightSkyBlue);

@@ -327,7 +327,7 @@ namespace djack.RogueSurvivor.Engine
             if ((flags & Sayflags.IS_FREE_ACTION) == 0)
                 SpendActorActionPoints(speaker, Rules.BASE_ACTION_COST);
             if ((flags & Sayflags.IS_SHOUT) != 0)
-                OnLoudNoise(speaker.Location.Map, speaker.Location.Position, "A SHOUT");
+                OnShoutNoise(speaker);
             FollowerSpeech(speaker, target, flags, text);
 
             // message.
@@ -412,7 +412,7 @@ namespace djack.RogueSurvivor.Engine
             SpendActorActionPoints(speaker, Rules.BASE_ACTION_COST);
 
             // loud noise.
-            OnLoudNoise(speaker.Location.Map, speaker.Location.Position, "A SHOUT");
+            OnShoutNoise(speaker);
 
             // message.
             if (IsVisibleToPlayer(speaker) || AreLinkedByPhone(speaker, m_Player))

@@ -1,7 +1,10 @@
 Rogue Survivor World
 ====================
 
-Current World version: 0.2.0.
+Current World version: 0.3.1.
+Recent improvements include active survivors, robbery and community tribute,
+attacking stair blockers, and shouts carrying up from the bottom stair.
+Existing saves remain supported.
 
 A continuation of Rogue Survivor about independent communities enduring the
 collapse. You are one survivor among groups with homes, needs, relationships
@@ -24,7 +27,7 @@ source lineage, bundled artwork and original licensing references.
 World uses its own release numbering. The title screen, window title and Windows
 file details identify World; saves, mod requirements and existing user folders
 retain compatibility version 0.4.1. See versioning (docs/world-versioning.txt).
-World 0.2.0 is the community aggression feature release. Further feature
+World 0.3.0 adds robbery and recurring community tribute. Further feature
 releases increase the middle number; fixes increase the final number.
 
 World features
@@ -33,11 +36,15 @@ World features
 - A World preset with organically founded civilian tribes and named local police units.
 - Community introductions, real needs, aid, NPC-led membership and shared homes.
 - Home routines, eligible watch duty and witnessed defense.
+- Ordinary gathering and trading during acquaintance, plus bounded nearby outings
+  for residents who are off watch, with a return home when time or distance runs out.
 - Independent chiefs and residents, household admissions, real food and space concerns,
   communicated relocation, scarcity eviction, fragmentation and last-member collapse.
 - Persistent relationships, blood feuds and negotiated peace carried through encounters.
 - Hostile communities assembling willing residents for raids on reported rival shelters,
   with real travel, normal combat, home reserves and bounded withdrawal.
+- Robbery demands for real food, medicine or weapons, with desperation and visible gear decisions.
+- Recurring community tribute, physical collection, refusal and locally declared consequences.
 - Lasting community cultures: open visitors, private homes, forceful defense and grudges.
 - Distinct guarded communities, groups that attack outsiders on sight, and supply
   raiders that choose vulnerable targets, take real loot and withdraw.
@@ -50,6 +57,8 @@ World features
   with real cargo, carried receipts, promised payment and accountable failed journeys.
 - Personal followers that travel together, remember contact and exits, and can be recalled.
 - Adjacent trap disarming without stepping onto the trap.
+- Explicit attacks against stair blockers, including neutral survivors.
+- One-floor upward shout propagation when standing on the bottom stair.
 - District populations that scale with map area, supported by shared calculation
   optimizations and optional Responsive NPCs / Adaptive World simulation.
 
@@ -61,6 +70,26 @@ actually agree to share and legally claim a home. Existing settlements upgrade d
 ordinary play, preserving identities, homes and personal follower orders.
 Player founding, wider crisis balancing and distant strategic simulation remain future work.
 
+Recent improvements / World 0.3.1
+---------------------------------
+
+- Startup activity: survivors keep gathering and trading while getting acquainted.
+  Failed shelter opportunities no longer trap them in a social wait. Community
+  founding still needs familiarity, a viable home and independent consent.
+- Resident activity: off-duty residents can explore and gather near home for up
+  to two game hours / twelve tiles, then return. Watch, orders and urgent needs
+  retain priority. See docs/survivor-activity.txt.
+- Robbery: V / 7 demands real food, medicine or a weapon. NPC choices account for
+  desperation, visible equipment and nearby support; V answers an active demand.
+- Community tribute: chiefs can demand recurring food payments from weaker
+  communities at contact. Collection transfers actual carried food, and refusal
+  can have local consequences. V / 4 / 5 reports dated accounts. See
+  docs/robbery-and-tribute.txt.
+- Stair blockers: stand on the exit, press K, then NumPad5 or click yourself to
+  attack the actor at the other landing. Neutral targets can defend themselves.
+- Stair shouts: S carries to the upper landing only from the exact bottom stair.
+  Normal hearing and waking rules apply; shouts do not relay through more floors.
+
 Current Windows development
 ---------------------------
 
@@ -71,35 +100,31 @@ generated Resources, mods and runtime configuration beside it. Choose World
 when starting a new game. Existing format-5 saves gain knowledge through play;
 loading does not generate groups or resources.
 
-The October 19 World 0.1.0 Windows build passes native unit tests and all
-554 gameplay scenarios, including genuine pre-community format-5 loading
-and the existing large-save/load limits. The title menu was rendered with the
-native Windows renderer and visually checked. Linux/Docker workflows remain
-unverified locally; these checks do not replace long-running human play.
+The October 24 World 0.3.1 Release builds with zero warnings/errors and passes
+native units. All seven new activity cases pass in Classic, Responsive NPCs and
+Adaptive World. The installed build passes 14 focused activity, home, consent,
+watch and genuine older-save checks. Robbery/tribute and stair cases pass in the
+latest full regression, which records 622/624 successful scenarios.
 
-The initial aggression candidate added outsider killers and opportunistic supply
-raiders. Native units and 15 focused checks passed; that full run was
-566/568, with generated diplomacy and overnight survival failures retained.
-The overnight journey passes on a repeat; diplomacy still loses its leader.
-Save/load budgets and genuine old-format loading pass. These generated journey
-failures remain recorded; a clean full-suite pass is not claimed for this change.
-
-The World 0.2.0 follow-up adds deceptive introductions and unarmed combat
-restraint. Native units and all 87 focused checks pass, including existing home
-behavior, real controller encounters, saved cover stories and old-format loading.
-Full regression is 575/578, with generated diplomacy, overnight membership and
-scavenging failures. Save/load limits and genuine old saves pass. Focused success
-does not establish a clean full-suite pass. See docs/community-aggression.txt.
+That full run retains a generated diplomacy player death and a follower reunion
+driver failure. The corrected follower driver passes its separate complete
+journey; the full run remains qualified. Unchanged 10-second/50-MB save/load
+limits pass. A repeated generated-map initial-decision sample improves from
+22/67 waits to 0/67; this does not measure long-term encounter frequency.
+Human playtesting and Linux/Docker verification remain open. See
+docs/survivor-activity.txt and docs/robbery-and-tribute.txt for details;
+docs/community-aggression.txt retains earlier aggression evidence.
 
 | Default control | Action |
 |---|---|
-| V | Talk; membership, departure, relations, supply leads and 6: Trade / deliveries. |
+| V | Talk; 4/5: Tribute accounts, 6: Trade / deliveries, 7: Robbery; answer an active demand. |
 | G | Hover an inventory item, then choose an adjacent direction to give it. |
 | J / Tab | Heard journal, Communities, Scavenging and Trade circuits. |
 | O | Personal follower orders and dated travel/contact status. |
-| S | Sound-off and follower replies. |
+| S | Sound-off and follower replies; carries one floor up from the bottom stair. |
 | Ctrl+R | Recall travelling followers within actual hearing range. |
 | D | Disarm an adjacent armed trap; choose direction or click nearby. |
+| K / NumPad5 | On an exit, explicitly attack the actor blocking the other landing. |
 | Ctrl+B | Personal base claims and storage management. |
 | Shift+S | Save. |
 | Shift+L | Load. |
